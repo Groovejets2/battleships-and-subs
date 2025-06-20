@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Battleships & Subs</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #111385f4;
+            overflow: hidden;
+        }
+        #game-container {
+            position: relative;
+        }
+    </style>
+    
+</head>
+<body>
+    <div id="game-container"></div>
+    <script src="node_modules/phaser/dist/phaser.min.js"></script>
+    <script>
+        // Function to handle orientation and resize changes
+        function handleResize() {
+            // Reload the game to adjust to the new screen size
+            window.location.reload();
+        }
+
+        // Debounce function to limit the rate at which a function can fire
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                const context = this, args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    func.apply(context, args);
+                }, wait);
+            };
+        }
+
+        // Listen for orientation changes
+        window.addEventListener('orientationchange', handleResize);
+
+        // Listen for resize events with debounce
+        window.addEventListener('resize', debounce(handleResize, 500));
+
+        // Function to save game state
+        function saveGameState() {
+            // Implement saving game state logic here
+            console.log("Game state saved");
+        }
+
+        // Function to load game state
+        function loadGameState() {
+            // Implement loading game state logic here
+            console.log("Game state loaded");
+        }
+
+        // Load the game state when the page loads
+        window.onload = function() {
+            loadGameState();
+        };
+    </script>
+    <script type="module" src="src/game.js"></script>
+</body>
+</html>
