@@ -12,60 +12,34 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
-            background-color: #111385f4;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             overflow: hidden;
+            font-family: 'Arial', sans-serif;
         }
         #game-container {
             position: relative;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 1000;
         }
     </style>
-    
 </head>
 <body>
-    <div id="game-container"></div>
-    <script src="node_modules/phaser/dist/phaser.min.js"></script>
-    <script>
-        // Function to handle orientation and resize changes
-        function handleResize() {
-            // Reload the game to adjust to the new screen size
-            window.location.reload();
-        }
-
-        // Debounce function to limit the rate at which a function can fire
-        function debounce(func, wait) {
-            let timeout;
-            return function() {
-                const context = this, args = arguments;
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    func.apply(context, args);
-                }, wait);
-            };
-        }
-
-        // Listen for orientation changes
-        window.addEventListener('orientationchange', handleResize);
-
-        // Listen for resize events with debounce
-        window.addEventListener('resize', debounce(handleResize, 500));
-
-        // Function to save game state
-        function saveGameState() {
-            // Implement saving game state logic here
-            console.log("Game state saved");
-        }
-
-        // Function to load game state
-        function loadGameState() {
-            // Implement loading game state logic here
-            console.log("Game state loaded");
-        }
-
-        // Load the game state when the page loads
-        window.onload = function() {
-            loadGameState();
-        };
-    </script>
+    <div id="game-container">
+        <div id="loading">Loading Battleships & Subs...</div>
+    </div>
+    
+    <!-- Load Phaser from CDN for better compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.90.0/phaser.min.js"></script>
     <script type="module" src="src/main.js"></script>
 </body>
 </html>

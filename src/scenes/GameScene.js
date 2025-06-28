@@ -1,135 +1,237 @@
 /**
- * @fileoverview Defines the main game scene for Battleships and Subs.
- * Handles asset loading, game object creation, and game state updates.
+ * @fileoverview Enhanced GameScene with navigation and responsive design.
  * @namespace GameScene
  */
 
 import { createGrid } from '../components/Grid.js';
-import { calculateDimensions } from '../utils/dimensions.js';
+import { GAME_CONSTANTS } from '../config/gameConfig.js';
 
 /**
- * Main game scene class.
- * Manages the core game loop, including asset loading, initial setup, and ongoing updates.
+ * Enhanced game scene class with navigation support
  * @class
  * @augments Phaser.Scene
  */
 export class GameScene extends Phaser.Scene {
     constructor() {
         super({ key: 'GameScene' });
-        /**
-         * The player's game grid.
-         * @type {object}
-         */
         this.playerGrid = null;
-        /**
-         * The enemy's game grid.
-         * @type {object}
-         */
         this.enemyGrid = null;
-        /**
-         * The current game state.
-         * @type {string}
-         */
         this.gameState = 'SETUP';
-        /**
-         * The current player turn.
-         * @type {string}
-         */
         this.currentPlayer = 'PLAYER';
+        this.uiElements = {};
     }
 
-    /**
-     * Preloads assets required for the scene.
-     * This method is called by Phaser before the scene is created.
-     * @method
-     */
     preload() {
-        // Load assets here (e.g., images, sounds)
-        // Example: this.load.image('ship', 'assets/images/ship.png');
+        // Load game assets here
+        // this.load.image('ship', 'assets/images/ship.png');
     }
 
-    /**
-     * Creates game objects and initializes the scene.
-     * This method is called by Phaser once assets are loaded.
-     * @method
-     */
     create() {
-        // Game constants (KISS principle - keep simple constants here for now)
-        const gridSize = 10;
-        const cellSize = 40;
-        const gridWidth = gridSize * cellSize;
-        const gridHeight = gridSize * cellSize;
-        const gridSpacing = 100; // Space between grids
-
-        // Determine if layout should be stacked based on window size (SOC principle - layout logic kept together)
-        const shouldStack = this.scale.width < gridWidth * 2 + gridSpacing;
-
-        let playerGridX, playerGridY, enemyGridX, enemyGridY;
-
-        if (shouldStack) {
-            // Stacked layout calculations
-            const labelSpace = 50;
-            const titleSpace = 70;
-            const bottomMargin = 30;
-
-            const totalHeight = (gridHeight * 2) + gridSpacing + (labelSpace * 2) + (titleSpace * 2) + bottomMargin;
-            const availableHeight = this.sys.game.config.height - 40; // Use actual config height
-            const scale = availableHeight < totalHeight ? availableHeight / totalHeight : 1;
-
-            const scaledGridHeight = gridHeight * scale;
-            const scaledGridSpacing = gridSpacing * scale;
-            const scaledLabelSpace = labelSpace * scale;
-            const scaledTitleSpace = titleSpace * scale;
-
-            const xOffset = (this.sys.game.config.width - gridWidth * scale) / 2; // Use actual config width
-            const startY = 20;
-
-            playerGridX = xOffset;
-            playerGridY = startY + scaledTitleSpace;
-            enemyGridX = xOffset;
-            enemyGridY = startY + scaledTitleSpace + scaledGridHeight + scaledLabelSpace + scaledGridSpacing + scaledTitleSpace;
-        } else {
-            // Side-by-side layout calculations
-            const labelSpace = 30;
-            const titleSpace = 50;
-            const totalWidth = (gridWidth * 2) + gridSpacing + (labelSpace * 2);
-            const startX = Math.max(20, (this.sys.game.config.width - totalWidth) / 2); // Use actual config width
-            const yOffset = Math.max(20, (this.sys.game.config.height - gridHeight - titleSpace - 30) / 2); // Use actual config height
-
-            playerGridX = startX + labelSpace;
-            playerGridY = yOffset + titleSpace;
-            enemyGridX = startX + labelSpace + gridWidth + gridSpacing;
-            enemyGridY = yOffset + titleSpace;
-        }
-
-        // Log positions for debugging purposes (DYC - Don't Repeat Yourself, move console logs to a debug util if many)
-        console.log(`Canvas Dimensions: Width = ${this.sys.game.config.width}, Height = ${this.sys.game.config.height}`);
-        console.log(`Player Grid Position: x = ${playerGridX}, y = ${playerGridY}`);
-        console.log(`Enemy Grid Position: x = ${enemyGridX}, y = ${enemyGridY}`);
-
-        // Set background color
-        this.cameras.main.setBackgroundColor('#0066aa');
-
-        // Create and position both grids (SLAP principle - delegating complex grid creation to Grid.js)
-        this.playerGrid = createGrid(this, playerGridX, playerGridY, gridSize, cellSize, 'PLAYER');
-        this.enemyGrid = createGrid(this, enemyGridX, enemyGridY, gridSize, cellSize, 'ENEMY');
-
-        // Add grid titles
-        const titleStyle = { font: '24px Arial', fill: '#ffffff', fontStyle: 'bold' };
-        this.add.text(playerGridX + gridWidth / 2, playerGridY - 30, 'YOUR FLEET', titleStyle).setOrigin(0.5);
-        this.add.text(enemyGridX + gridWidth / 2, enemyGridY - 30, 'ENEMY WATERS', titleStyle).setOrigin(0.5);
-
-        // Initialize game state (SRP - initial state management within scene)
-        this.gameState = 'SETUP';
-        this.currentPlayer = 'PLAYER';
+        this.createGameLayout();
+        this.createUI();
+        this.setupInput();
+        // Add debug text to confirm scene loading
+        this.add.text(100, 100, 'GameScene Loaded!', { font: '32px Arial', fill: '#ffffff' });
     }
 
     /**
-     * Updates game logic during the game loop.
-     * This method is called by Phaser once per frame.
-     * @method
+     * Create responsive game layout
      */
+    createGameLayout() {
+        const { width, height } = this.scale;
+        const { GRID_SIZE, CELL_SIZE, GRID_SPACING, COLORS } = GAME_CONSTANTS;
+        
+        // Set background
+        this.cameras.main.setBackgroundColor(COLORS.BACKGROUND);
+        
+        // Calculate layout
+        const layout = this.calculateLayout(width, height);
+        
+        // Create grids
+        this.playerGrid = createGrid(
+            this, layout.playerX, layout.playerY, 
+            GRID_SIZE, layout.cellSize, 'PLAYER'
+        );
+        
+        this.enemyGrid = createGrid(
+            this, layout.enemyX, layout.enemyY, 
+            GRID_SIZE, layout.cellSize, 'ENEMY'
+        );
+        
+        // Add grid titles
+        const titleStyle = { 
+            font: `${Math.min(24, width * 0.03)}px Arial`, 
+            fill: COLORS.TEXT, 
+            fontStyle: 'bold' 
+        };
+        
+        this.add.text(
+            layout.playerX + (GRID_SIZE * layout.cellSize) / 2, 
+            layout.playerY - 30, 
+            'YOUR FLEET', 
+            titleStyle
+        ).setOrigin(0.5);
+        
+        this.add.text(
+            layout.enemyX + (GRID_SIZE * layout.cellSize) / 2, 
+            layout.enemyY - 30, 
+            'ENEMY WATERS', 
+            titleStyle
+        ).setOrigin(0.5);
+        
+        // Store layout for resize handling
+        this.currentLayout = layout;
+    }
+
+    /**
+     * Calculate responsive layout based on screen dimensions
+     */
+    calculateLayout(width, height) {
+        const { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
+        
+        // Determine optimal cell size based on screen
+        const maxCellSize = Math.min(
+            (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
+            (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
+        );
+        
+        const cellSize = Math.max(GAME_CONSTANTS.MIN_CELL_SIZE, Math.min(CELL_SIZE, maxCellSize));
+        const gridWidth = GRID_SIZE * cellSize;
+        
+        // Determine if we should stack grids
+        const shouldStack = width < (gridWidth * 2 + GRID_SPACING + MARGIN * 2);
+        
+        let playerX, playerY, enemyX, enemyY;
+        
+        if (shouldStack) {
+            // Vertical stacking for mobile
+            const totalHeight = gridWidth * 2 + GRID_SPACING + TITLE_SPACE * 2;
+            const startY = Math.max(MARGIN, (height - totalHeight) / 2);
+            const centerX = (width - gridWidth) / 2;
+            
+            playerX = centerX;
+            playerY = startY + TITLE_SPACE;
+            enemyX = centerX;
+            enemyY = startY + TITLE_SPACE + gridWidth + GRID_SPACING + TITLE_SPACE;
+        } else {
+            // Horizontal layout for desktop
+            const totalWidth = gridWidth * 2 + GRID_SPACING;
+            const startX = Math.max(MARGIN, (width - totalWidth) / 2);
+            const centerY = Math.max(MARGIN, (height - gridWidth - TITLE_SPACE) / 2);
+            
+            playerX = startX;
+            playerY = centerY + TITLE_SPACE;
+            enemyX = startX + gridWidth + GRID_SPACING;
+            enemyY = centerY + TITLE_SPACE;
+        }
+        
+        return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack };
+    }
+
+    /**
+     * Create game UI elements
+     */
+    createUI() {
+        const { width, height } = this.scale;
+        
+        // Back button (top-left)
+        const backButton = this.add.rectangle(60, 30, 100, 40, 0x2c3e50)
+            .setStrokeStyle(2, 0xe74c3c) // Fixed from setStroke
+            .setInteractive({ useHandCursor: true });
+            
+        const backText = this.add.text(60, 30, 'BACK', {
+            fontSize: '16px',
+            fontFamily: 'Arial',
+            fill: '#ffffff',
+            fontWeight: 'bold'
+        }).setOrigin(0.5);
+        
+        // Back button interactions
+        backButton.on('pointerover', () => {
+            backButton.setFillStyle(0xe74c3c);
+            this.tweens.add({
+                targets: [backButton, backText],
+                scaleX: 1.1,
+                scaleY: 1.1,
+                duration: 150
+            });
+        });
+        
+        backButton.on('pointerout', () => {
+            backButton.setFillStyle(0x2c3e50);
+            this.tweens.add({
+                targets: [backButton, backText],
+                scaleX: 1,
+                scaleY: 1,
+                duration: 150
+            });
+        });
+        
+        backButton.on('pointerdown', () => {
+            this.scene.start('TitleScene');
+        });
+        
+        // Game status display
+        this.uiElements.statusText = this.add.text(width / 2, 20, 'SETUP PHASE - Place your ships', {
+            fontSize: '18px',
+            fontFamily: 'Arial',
+            fill: GAME_CONSTANTS.COLORS.TEXT,
+            fontWeight: 'bold'
+        }).setOrigin(0.5);
+        
+        // Store UI elements for updates
+        this.uiElements.backButton = backButton;
+        this.uiElements.backText = backText;
+    }
+
+    /**
+     * Setup input handling including keyboard shortcuts
+     */
+    setupInput() {
+        // ESC key to return to title
+        this.input.keyboard.on('keydown-ESC', () => {
+            this.scene.start('TitleScene');
+        });
+        
+        // Add other keyboard shortcuts as needed
+        this.input.keyboard.on('keydown-R', () => {
+            // Could add restart functionality
+            console.log('Restart game');
+        });
+    }
+
+    /**
+     * Handle dynamic resize
+     */
+    handleResize(width, height) {
+        // Recalculate layout and reposition elements
+        const newLayout = this.calculateLayout(width, height);
+        
+        // Update grid positions (would need to enhance Grid.js to support repositioning)
+        // For now, restart the scene
+        this.scene.restart();
+    }
+
+    /**
+     * Update game state text
+     */
+    updateGameState(newState) {
+        this.gameState = newState;
+        
+        const stateMessages = {
+            'SETUP': 'SETUP PHASE - Place your ships',
+            'PLAYER_TURN': 'YOUR TURN - Choose target',
+            'ENEMY_TURN': 'ENEMY TURN - Wait...',
+            'GAME_OVER': 'GAME OVER'
+        };
+        
+        if (this.uiElements.statusText) {
+            this.uiElements.statusText.setText(stateHandler(newState) || newState);
+        }
+    }
+
     update() {
-        // Update game logic here if necessary (YAGNI principle - only add what's needed now)
+        // Game logic updates here
+        // This is where AI turns, animations, etc. would be handled
     }
 }
