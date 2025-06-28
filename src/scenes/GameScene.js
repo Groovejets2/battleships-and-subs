@@ -19,6 +19,7 @@ export class GameScene extends Phaser.Scene {
         this.gameState = 'SETUP';
         this.currentPlayer = 'PLAYER';
         this.uiElements = {};
+        this.gridTitles = []; // Store grid titles
     }
 
     preload() {
@@ -30,8 +31,6 @@ export class GameScene extends Phaser.Scene {
         this.createGameLayout();
         this.createUI();
         this.setupInput();
-        // Add debug text to confirm scene loading
-        this.add.text(100, 100, 'GameScene Loaded!', { font: '32px Arial', fill: '#ffffff' });
     }
 
     /**
@@ -46,13 +45,13 @@ export class GameScene extends Phaser.Scene {
         
         // Calculate layout
         const layout = this.calculateLayout(width, height);
+        console.log('Layout:', { width, height, ...layout }); // Debug layout
         
         // Create grids
         this.playerGrid = createGrid(
             this, layout.playerX, layout.playerY, 
             GRID_SIZE, layout.cellSize, 'PLAYER'
         );
-        
         this.enemyGrid = createGrid(
             this, layout.enemyX, layout.enemyY, 
             GRID_SIZE, layout.cellSize, 'ENEMY'
@@ -65,19 +64,21 @@ export class GameScene extends Phaser.Scene {
             fontStyle: 'bold' 
         };
         
-        this.add.text(
+        const playerTitle = this.add.text(
             layout.playerX + (GRID_SIZE * layout.cellSize) / 2, 
             layout.playerY - 30, 
             'YOUR FLEET', 
             titleStyle
         ).setOrigin(0.5);
         
-        this.add.text(
+        const enemyTitle = this.add.text(
             layout.enemyX + (GRID_SIZE * layout.cellSize) / 2, 
             layout.enemyY - 30, 
             'ENEMY WATERS', 
             titleStyle
         ).setOrigin(0.5);
+        
+        this.gridTitles = [playerTitle, enemyTitle];
         
         // Store layout for resize handling
         this.currentLayout = layout;
@@ -136,7 +137,7 @@ export class GameScene extends Phaser.Scene {
         
         // Back button (top-left)
         const backButton = this.add.rectangle(60, 30, 100, 40, 0x2c3e50)
-            .setStrokeStyle(2, 0xe74c3c) // Fixed from setStroke
+            .setStrokeStyle(2, 0xe74c3c)
             .setInteractive({ useHandCursor: true });
             
         const backText = this.add.text(60, 30, 'BACK', {
@@ -204,12 +205,27 @@ export class GameScene extends Phaser.Scene {
      * Handle dynamic resize
      */
     handleResize(width, height) {
-        // Recalculate layout and reposition elements
-        const newLayout = this.calculateLayout(width, height);
-        
-        // Update grid positions (would need to enhance Grid.js to support repositioning)
-        // For now, restart the scene
-        this.scene.restart();
+        // Destroy existing grids and titles
+        if (this.playerGrid) {
+            this.playerGrid.cells.clear(true, true); // Clear and destroy all cells
+            this.playerGrid.graphics.destroy();
+            this.playerGrid.labels.forEach(label => label.destroy());
+            this.playerGrid = null;
+        }
+        if (this.enemyGrid) {
+            this.enemyGrid.cells.clear(true, true); // Clear and destroy all cells
+            this.enemyGrid.graphics.destroy();
+            this.enemyGrid.labels.forEach(label => label.destroy());
+            this.enemyGrid = null;
+        }
+        this.gridTitles.forEach(title => title.destroy());
+        this.gridTitles = [];
+
+        // Recreate the game layout
+        this.createGameLayout();
+
+        // Update UI elements
+        this.uiElements.statusText.setPosition(width / 2, 20);
     }
 
     /**
@@ -226,7 +242,7 @@ export class GameScene extends Phaser.Scene {
         };
         
         if (this.uiElements.statusText) {
-            this.uiElements.statusText.setText(stateHandler(newState) || newState);
+            this.uiElements.statusText.setText(stateMessages[newState] || newState);
         }
     }
 

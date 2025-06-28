@@ -1,52 +1,80 @@
 /**
- * @fileoverview Enhanced main entry point for Battleships and Subs.
- * Implements professional game initialization with proper scene management.
- * @namespace Main
+ * @fileoverview Main game entry point for Battleships & Subs.
+ * Initializes the Phaser game instance and handles responsive resizing.
+ * @namespace BattleshipsGame
  */
 
-import { gameConfig, calculateGameDimensions, GAME_CONSTANTS } from './config/gameConfig.js';
 import { TitleScene } from './scenes/TitleScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { GAME_CONSTANTS } from './config/gameConfig.js';
 
 /**
- * Game class following SRP - handles initialization and lifecycle
+ * Main game class to initialize Phaser and manage scenes
+ * @class
  */
-class BattleshipsGame {
+export class BattleshipsGame {
     constructor() {
         this.game = null;
         this.isInitialized = false;
     }
 
     /**
-     * Initialize the game with proper error handling
+     * Initialize the Phaser game instance
      */
-    async init() {
-        try {
-            // Calculate initial dimensions
-            const { width, height } = calculateGameDimensions();
-            
-            // Update configuration
-            gameConfig.width = width; // Set top-level width/height
-            gameConfig.height = height;
-            gameConfig.scene = [TitleScene, GameScene]; // Include both scenes
-            
-            // Create game instance
-            this.game = new Phaser.Game(gameConfig);
-            this.isInitialized = true;
-            
-            // Setup resize handling
-            this.setupResizeHandler();
-            
-            console.log(`Game initialized: ${width}x${height}`);
-            
-        } catch (error) {
-            console.error('Failed to initialize game:', error);
-            this.showError('Failed to load game. Please refresh the page.');
+    init() {
+        if (this.isInitialized) return;
+
+        const { width, height } = this.calculateGameDimensions();
+
+        const config = {
+            type: Phaser.AUTO,
+            width: width,
+            height: height,
+            parent: 'game-container',
+            scene: [TitleScene, GameScene],
+            backgroundColor: GAME_CONSTANTS.COLORS.BACKGROUND,
+            scale: {
+                mode: Phaser.Scale.FIT,
+                autoCenter: Phaser.Scale.CENTER_BOTH
+            }
+        };
+
+        this.game = new Phaser.Game(config);
+        this.isInitialized = true;
+
+        this.setupResizeHandler();
+
+        // Hide loading screen after game initialization
+        const loadingElement = document.getElementById('loading');
+        if (loadingElement) {
+            loadingElement.style.display = 'none';
         }
     }
 
     /**
-     * Professional resize handling without page reload
+     * Calculate game dimensions based on window size
+     * @returns {object} Width and height for the game canvas
+     */
+    calculateGameDimensions() {
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const aspectRatio = 16 / 9;
+        let width = windowWidth;
+        let height = windowWidth / aspectRatio;
+
+        if (height > windowHeight) {
+            height = windowHeight;
+            width = windowHeight * aspectRatio;
+        }
+
+        return {
+            width: Math.round(width),
+            height: Math.round(height)
+        };
+    }
+
+    /**
+     * Setup window resize handler with debouncing
      */
     setupResizeHandler() {
         let resizeTimeout;
@@ -56,20 +84,16 @@ class BattleshipsGame {
             
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
-                const { width, height } = calculateGameDimensions();
+                const { width, height } = this.calculateGameDimensions();
                 
-                // Only resize if dimensions changed significantly
-                const currentWidth = this.game.scale.width;
-                const currentHeight = this.game.scale.height;
+                // Force canvas resize
+                this.game.scale.resize(width, height);
+                this.game.scale.setGameSize(width, height);
                 
-                if (Math.abs(width - currentWidth) > 10 || Math.abs(height - currentHeight) > 10) {
-                    this.game.scale.resize(width, height);
-                    
-                    // Notify active scene of resize
-                    const activeScene = this.game.scene.getScene('GameScene') || this.game.scene.getScene('TitleScene');
-                    if (activeScene && activeScene.handleResize) {
-                        activeScene.handleResize(width, height);
-                    }
+                // Notify active scene of resize
+                const activeScene = this.game.scene.getScene('GameScene') || this.game.scene.getScene('TitleScene');
+                if (activeScene && activeScene.handleResize) {
+                    activeScene.handleResize(width, height);
                 }
             }, 250); // Debounced resize
         };
@@ -79,39 +103,8 @@ class BattleshipsGame {
             setTimeout(handleResize, 100); // Small delay for orientation change
         });
     }
-
-    /**
-     * Display error message to user
-     */
-    showError(message) {
-        const container = document.getElementById('game-container');
-        container.innerHTML = `
-            <div style="
-                color: white; 
-                text-align: center; 
-                padding: 20px;
-                font-family: Arial, sans-serif;
-            ">
-                <h3>Game Error</h3>
-                <p>${message}</p>
-                <button onclick="window.location.reload()" style="
-                    padding: 10px 20px;
-                    background: #2a5298;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                    cursor: pointer;
-                ">Reload Game</button>
-            </div>
-        `;
-    }
 }
 
-// Initialize game when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    const battleshipsGame = new BattleshipsGame();
-    battleshipsGame.init();
-});
-
-// Export for debugging
-window.BattleshipsGame = BattleshipsGame;
+// Initialize the game
+const game = new BattleshipsGame();
+game.init();
