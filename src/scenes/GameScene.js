@@ -31,6 +31,7 @@ export class GameScene extends Phaser.Scene {
         this.createGameLayout();
         this.createUI();
         this.setupInput();
+        // Removed: this.createGrids();
     }
 
     /**
@@ -88,44 +89,67 @@ export class GameScene extends Phaser.Scene {
      * Calculate responsive layout based on screen dimensions
      */
     calculateLayout(width, height) {
-        const { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
-        
-        // Determine optimal cell size based on screen
-        const maxCellSize = Math.min(
+        // Use tighter spacing for mobile portrait
+        let { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
+
+        // If in stacked mode (mobile portrait), reduce spacing
+        const isPortrait = height > width;
+        const shouldStack = width < (GRID_SIZE * CELL_SIZE * 2 + GRID_SPACING + MARGIN * 2);
+
+        if (shouldStack && isPortrait) {
+            TITLE_SPACE = 18;
+            MARGIN = 6;
+            GRID_SPACING = 10;
+        }
+
+        const verticalPadding = 2 * MARGIN + 3 * TITLE_SPACE + GRID_SPACING;
+        const maxCellSizeStacked = (height - verticalPadding) / (GRID_SIZE * 2);
+
+        const maxCellSizeSideBySide = Math.min(
             (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
             (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
         );
-        
-        const cellSize = Math.max(GAME_CONSTANTS.MIN_CELL_SIZE, Math.min(CELL_SIZE, maxCellSize));
+
+        let cellSize;
+        if (shouldStack) {
+            cellSize = Math.max(
+                GAME_CONSTANTS.MIN_CELL_SIZE,
+                Math.min(CELL_SIZE, maxCellSizeStacked)
+            );
+        } else {
+            cellSize = Math.max(
+                GAME_CONSTANTS.MIN_CELL_SIZE,
+                Math.min(CELL_SIZE, maxCellSizeSideBySide)
+            );
+        }
+
         const gridWidth = GRID_SIZE * cellSize;
-        
-        // Determine if we should stack grids
-        const shouldStack = width < (gridWidth * 2 + GRID_SPACING + MARGIN * 2);
-        
+
         let playerX, playerY, enemyX, enemyY;
-        
+
         if (shouldStack) {
             // Vertical stacking for mobile
-            const totalHeight = gridWidth * 2 + GRID_SPACING + TITLE_SPACE * 2;
+            const totalHeight = gridWidth * 2 + GRID_SPACING + 3 * TITLE_SPACE;
             const startY = Math.max(MARGIN, (height - totalHeight) / 2);
+
             const centerX = (width - gridWidth) / 2;
-            
+
             playerX = centerX;
             playerY = startY + TITLE_SPACE;
             enemyX = centerX;
-            enemyY = startY + TITLE_SPACE + gridWidth + GRID_SPACING + TITLE_SPACE;
+            enemyY = playerY + gridWidth + GRID_SPACING + TITLE_SPACE;
         } else {
             // Horizontal layout for desktop
             const totalWidth = gridWidth * 2 + GRID_SPACING;
             const startX = Math.max(MARGIN, (width - totalWidth) / 2);
             const centerY = Math.max(MARGIN, (height - gridWidth - TITLE_SPACE) / 2);
-            
+
             playerX = startX;
             playerY = centerY + TITLE_SPACE;
             enemyX = startX + gridWidth + GRID_SPACING;
             enemyY = centerY + TITLE_SPACE;
         }
-        
+
         return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack };
     }
 

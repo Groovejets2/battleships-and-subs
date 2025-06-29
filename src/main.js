@@ -34,7 +34,7 @@ export class BattleshipsGame {
             scene: [TitleScene, GameScene],
             backgroundColor: GAME_CONSTANTS.COLORS.BACKGROUND,
             scale: {
-                mode: Phaser.Scale.FIT,
+                mode: Phaser.Scale.RESIZE,
                 autoCenter: Phaser.Scale.CENTER_BOTH
             }
         };
@@ -56,20 +56,9 @@ export class BattleshipsGame {
      * @returns {object} Width and height for the game canvas
      */
     calculateGameDimensions() {
-        const windowWidth = window.innerWidth;
-        const windowHeight = window.innerHeight;
-        const aspectRatio = 16 / 9;
-        let width = windowWidth;
-        let height = windowWidth / aspectRatio;
-
-        if (height > windowHeight) {
-            height = windowHeight;
-            width = windowHeight * aspectRatio;
-        }
-
         return {
-            width: Math.round(width),
-            height: Math.round(height)
+            width: window.innerWidth,
+            height: window.innerHeight
         };
     }
 
