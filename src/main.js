@@ -38,6 +38,15 @@ export class BattleshipsGame {
             scale: {
                 mode: Phaser.Scale.RESIZE,
                 autoCenter: Phaser.Scale.CENTER_BOTH
+            },
+            callbacks: {
+                postBoot: (game) => {
+                    // Hide loading screen after Phaser boots
+                    const loadingElement = document.getElementById('loading');
+                    if (loadingElement) {
+                        loadingElement.style.display = 'none';
+                    }
+                }
             }
         };
 
@@ -45,12 +54,6 @@ export class BattleshipsGame {
         this.isInitialized = true;
 
         this.setupResizeHandler();
-
-        // Hide loading screen after game initialization
-        const loadingElement = document.getElementById('loading');
-        if (loadingElement) {
-            loadingElement.style.display = 'none';
-        }
     }
 
     /**
