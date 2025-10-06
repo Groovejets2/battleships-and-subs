@@ -36,6 +36,56 @@ export const GAME_CONSTANTS = {
 };
 
 /**
+ * Ship type definitions
+ * Following requirements: Carrier(5), Nuclear Sub(3), Cruiser(3), Attack Sub(2), Destroyer(2)
+ */
+export const SHIP_TYPES = {
+    CARRIER: {
+        type: 'CARRIER',
+        name: 'Carrier',
+        length: 5,
+        color: 0x808080
+    },
+    NUCLEAR_SUB: {
+        type: 'NUCLEAR_SUB',
+        name: 'Nuclear Submarine',
+        length: 3,
+        color: 0x0000ff
+    },
+    CRUISER: {
+        type: 'CRUISER',
+        name: 'Cruiser',
+        length: 3,
+        color: 0x00ff00
+    },
+    ATTACK_SUB: {
+        type: 'ATTACK_SUB',
+        name: 'Attack Submarine',
+        length: 2,
+        color: 0xff00ff
+    },
+    DESTROYER: {
+        type: 'DESTROYER',
+        name: 'Destroyer',
+        length: 2,
+        color: 0xffff00
+    }
+};
+
+/**
+ * Get array of all ship types in placement order
+ */
+export function getShipPlacementOrder() {
+    return [
+        SHIP_TYPES.CARRIER,
+        SHIP_TYPES.NUCLEAR_SUB,
+        SHIP_TYPES.CRUISER,
+        SHIP_TYPES.ATTACK_SUB,
+        SHIP_TYPES.DESTROYER
+    ];
+}
+
+/**
  * Calculates optimal game dimensions based on screen size
  * @returns {object} Calculated width and height
  */
