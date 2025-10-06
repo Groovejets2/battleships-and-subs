@@ -6,6 +6,8 @@
 
 import { TitleScene } from './scenes/TitleScene.js';
 import { GameScene } from './scenes/GameScene.js';
+import { SettingsScene } from './scenes/SettingsScene.js';
+import { HighScoresScene } from './scenes/HighScoresScene.js';
 import { GAME_CONSTANTS } from './config/gameConfig.js';
 
 /**
@@ -31,7 +33,7 @@ export class BattleshipsGame {
             width: width,
             height: height,
             parent: 'game-container',
-            scene: [TitleScene, GameScene],
+            scene: [TitleScene, GameScene, SettingsScene, HighScoresScene], 
             backgroundColor: GAME_CONSTANTS.COLORS.BACKGROUND,
             scale: {
                 mode: Phaser.Scale.RESIZE,

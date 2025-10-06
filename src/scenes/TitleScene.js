@@ -275,10 +275,10 @@ export class TitleScene extends Phaser.Scene {
                 this.scene.start('GameScene');
                 break;
             case 'settings':
-                console.log('Settings not implemented yet');
+                this.scene.start('SettingsScene');  // CHANGE FROM console.log
                 break;
             case 'scores':
-                console.log('High Scores not implemented yet');
+                this.scene.start('HighScoresScene');  // CHANGE FROM console.log
                 break;
         }
     }
