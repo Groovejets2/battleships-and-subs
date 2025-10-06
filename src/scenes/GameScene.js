@@ -231,13 +231,13 @@ export class GameScene extends Phaser.Scene {
     handleResize(width, height) {
         // Destroy existing grids and titles
         if (this.playerGrid) {
-            this.playerGrid.cells.clear(true, true); // Clear and destroy all cells
+            this.playerGrid.cells.clear(true, true);
             this.playerGrid.graphics.destroy();
             this.playerGrid.labels.forEach(label => label.destroy());
             this.playerGrid = null;
         }
         if (this.enemyGrid) {
-            this.enemyGrid.cells.clear(true, true); // Clear and destroy all cells
+            this.enemyGrid.cells.clear(true, true);
             this.enemyGrid.graphics.destroy();
             this.enemyGrid.labels.forEach(label => label.destroy());
             this.enemyGrid = null;
@@ -248,8 +248,10 @@ export class GameScene extends Phaser.Scene {
         // Recreate the game layout
         this.createGameLayout();
 
-        // Update UI elements
-        this.uiElements.statusText.setPosition(width / 2, 20);
+        // Update UI elements - ADD NULL CHECK
+        if (this.uiElements.statusText) {
+            this.uiElements.statusText.setPosition(width / 2, 20);
+        }
     }
 
     /**
