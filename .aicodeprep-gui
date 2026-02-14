@@ -10,7 +10,7 @@ version=1.0
 [window]
 width=1536
 height=794
-splitter_state=AAAA/wAAAAEAAAACAAADAAAAAPoB/////wEAAAACAA==
+splitter_state=AAAA/wAAAAEAAAACAAAA+gAAAAAB/////wEAAAACAA==
 
 [format]
 output_format=xml
@@ -29,6 +29,14 @@ assets\fonts\fonts.here.txt
 src\main.js
 src\components\Grid.js
 src\config\gameConfig.js
+src\managers\FleetManager.js
+src\managers\FleetManager.test.js
+src\models\Ship.js
+src\models\Ship.test.js
 src\scenes\GameScene.js
+src\scenes\HighScoresScene.js
+src\scenes\SettingsScene.js
 src\scenes\TitleScene.js
 src\utils\dimensions.js
+src\utils\gridValidation.js
+src\utils\gridValidation.test.js

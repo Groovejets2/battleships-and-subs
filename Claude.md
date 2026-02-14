@@ -29,9 +29,11 @@ See Development-Workflow-Protocol document for complete handoff procedures and t
 
 ### Comprehensive Documentation Suite Created: 2025-10-27
 
-Three formal project documents exist in the root directory:
+**Location:** All project documentation moved to `/doc/output` (2026-02-14)
 
-#### 1. **GAME_RULES.md** (~25 pages)
+Three formal project documents:
+
+#### 1. **GAME_RULES.md** (~25 pages) - `/doc/output/GAME_RULES.md`
 - Complete game rules and mechanics
 - Fleet composition (5 ships with specifications)
 - Placement rules (10×10 grid, 1-square spacing including diagonals)
@@ -43,7 +45,7 @@ Three formal project documents exist in the root directory:
 - Settings, audio, and customization options
 - Technical requirements and platform support
 
-#### 2. **REQUIREMENTS.md** (~40 pages)
+#### 2. **REQUIREMENTS.md** (~40 pages) - `/doc/output/REQUIREMENTS.md`
 - Complete technical requirements specification
 - Functional Requirements (FR) organized into 11 categories:
   - Game Initialization, Title Screen, Ship Placement, Combat Phase
@@ -57,7 +59,7 @@ Three formal project documents exist in the root directory:
 - Deployment and maintenance procedures
 - All requirements prioritized (P0=Critical, P1=High, P2=Nice to Have)
 
-#### 3. **DELIVERY_PLAN.md** (~50 pages)
+#### 3. **DELIVERY_PLAN.md** (~50 pages) - `/doc/output/DELIVERY_PLAN.md`
 - Comprehensive 10-week project delivery plan
 - Three-phase approach:
   - **Phase 1 (Weeks 1-4):** Core Gameplay - MVP with basic AI
@@ -279,6 +281,7 @@ src/
 | 2026-02-14 | 1.3 | Added Claude Code Skills section and gitflow skill v1.0.0 | Claude/JH |
 | 2026-02-14 | 1.4 | Added 400-line mandate, model roles (Kerry/Tony), required reading section | Kerry McGregor |
 | 2026-02-14 | 1.5 | Comprehensive analysis complete - screen adaptation root cause identified | Kerry McGregor |
+| 2026-02-14 | 1.6 | Reorganised documentation - moved existing docs to /doc/output, investigations to /investigation | Kerry McGregor |
 
 ---
 
@@ -286,27 +289,31 @@ src/
 
 ### Kerry McGregor (Sonnet 4.5) Analysis Complete
 
-**Four comprehensive analysis documents created in `/doc/output`:**
+**Four comprehensive analysis documents created in `/doc/output/investigation`:**
 
 1. **Dynamic-UI-Resolution-Analysis** - Root cause of responsive design failure identified
+   - **Location:** `/doc/output/investigation/Dynamic-UI-Resolution-Analysis_Sonnet-4.5_v1.0_2026-02-14.md`
    - 5 critical architectural issues preventing screen adaptation
    - Primary cause: Hardcoded 1100px height in dimensions.js
    - Solution: Phaser Scale Manager integration + unified resize pattern
    - Estimated fix time: 5-6 hours
 
 2. **Documentation-Assessment** - Project documentation quality review
+   - **Location:** `/doc/output/investigation/Documentation-Assessment_Sonnet-4.5_v1.0_2026-02-14.md`
    - 3,836 lines of structured documentation analysed
    - Overall grade: B+ (professional standard)
    - Gaps identified: Testing docs, architecture diagrams, API reference
    - Recommendation: Add testing strategy and architecture diagrams
 
 3. **Accelerated-Delivery-Plan** - Claude Code timeline projection
+   - **Location:** `/doc/output/investigation/Accelerated-Delivery-Plan_Sonnet-4.5_v1.0_2026-02-14.md`
    - Original 8-week timeline (Weeks 3-10) compressed to 5-7 days
    - 10x faster code generation vs solo developer
    - Detailed day-by-day breakdown with deliverables
    - Total estimated effort: 58-62 hours
 
 4. **Testing-Strategy** - Comprehensive testing approach
+   - **Location:** `/doc/output/investigation/Testing-Strategy_Sonnet-4.5_v1.0_2026-02-14.md`
    - 30-40% automated coverage target (Playwright + Jest)
    - Manual testing checklist for cross-browser/device
    - Zero-cost tooling (Chrome DevTools, Playwright, Jest)
@@ -351,4 +358,5 @@ src/
 **Current Blocker:** Screen adaptation (root cause identified, solution ready)
 **Next Milestone:** Fix responsive design, then accelerate to completion
 **Skills Added:** gitflow v1.0.0
-**Analysis Complete:** 4 comprehensive documents in /doc/output
+**Analysis Complete:** 4 comprehensive documents in /doc/output/investigation
+**Documentation Reorganised:** Core docs in /doc/output, workflow in /doc/output, investigations in /doc/output/investigation
