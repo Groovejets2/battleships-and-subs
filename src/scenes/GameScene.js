@@ -98,16 +98,27 @@ export class GameScene extends Phaser.Scene {
         );
 
         // Calculate maximum possible cell size for stacked layout with tighter spacing
-        const stackedTitleSpace = 28; // Increased from 18 to prevent text overlap
-        const stackedMargin = 10; // Increased from 6 for better top/bottom spacing
-        const stackedGridSpacing = 15; // Increased from 10 for better grid separation
-        const verticalPadding = 60 + 2 * stackedTitleSpace + stackedGridSpacing + (2 * 30) + stackedMargin;
+        const stackedTitleSpace = 35; // More space to prevent overlap
+        const stackedMargin = 10;
+        const stackedGridSpacing = 20; // More separation between grids
+        // Vertical padding includes: status text (60), 2 titles, grid spacing, 2 sets of labels (LABEL_SPACE), margins
+        const verticalPadding = 60 + 2 * stackedTitleSpace + stackedGridSpacing + (2 * LABEL_SPACE) + stackedMargin;
         const maxCellSizeStacked = (height - verticalPadding) / (GRID_SIZE * 2);
 
-        // Decide layout mode: use side-by-side if it gives decent cell size (>= 20px)
-        // and we're not in portrait orientation with limited width
+        // Decide layout mode based on which gives better results
         const isPortrait = height > width;
-        const shouldStack = maxCellSizeSideBySide < 20 || (isPortrait && width < 600);
+
+        // For landscape: ALWAYS use side-by-side (we don't have vertical space to stack)
+        // For portrait: stack if width < 600px (we have vertical space)
+        let shouldStack;
+        if (isPortrait) {
+            // Portrait: stack unless we have tablet-width (>= 600px)
+            shouldStack = width < 600;
+        } else {
+            // Landscape: always side-by-side, even with small cells
+            // Stacking in landscape doesn't work due to limited height
+            shouldStack = false;
+        }
 
         // Use appropriate spacing based on mode
         let finalTitleSpace = TITLE_SPACE;
@@ -135,7 +146,8 @@ export class GameScene extends Phaser.Scene {
 
         if (shouldStack) {
             // Vertical stacking for mobile - use tighter spacing
-            const totalHeight = gridWidth * 2 + finalGridSpacing + 3 * finalTitleSpace;
+            // Account for grid labels (LABEL_SPACE at bottom of each grid)
+            const totalHeight = gridWidth * 2 + (LABEL_SPACE * 2) + finalGridSpacing + 2 * finalTitleSpace;
             const startY = Math.max(finalMargin, (height - totalHeight) / 2);
 
             const centerX = (width - gridWidth) / 2;
@@ -143,7 +155,8 @@ export class GameScene extends Phaser.Scene {
             playerX = centerX;
             playerY = startY + finalTitleSpace;
             enemyX = centerX;
-            enemyY = playerY + gridWidth + finalGridSpacing + finalTitleSpace;
+            // Position enemy grid AFTER player grid + its labels + spacing
+            enemyY = playerY + gridWidth + LABEL_SPACE + finalGridSpacing + finalTitleSpace;
         } else {
             // Horizontal layout for landscape/desktop - use standard spacing
             const totalWidth = gridWidth * 2 + finalGridSpacing;

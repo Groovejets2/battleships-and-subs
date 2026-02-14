@@ -92,3 +92,6 @@ export class BattleshipsGame {
 // Initialize the game
 const game = new BattleshipsGame();
 game.init();
+
+// Expose game instance globally for testing/debugging
+window.battleshipsGame = game;
