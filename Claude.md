@@ -30,12 +30,15 @@ See Development-Workflow-Protocol document for complete handoff procedures and t
 
 ### Comprehensive Documentation Suite Created: 2025-10-27
 
-**Location:** All project documentation in `/doc/output` with organised subfolders (2026-02-14)
+**Location:** All project documentation in `/doc/output` with organised subfolders (Updated 2026-02-15)
+
+**CRITICAL RULE:** ALL documentation MUST be placed in `/doc/output` folder or subfolders. Never create documentation in project root.
 
 **Folder Structure:**
 - `/doc/output/` - Workflow and protocol documents
 - `/doc/output/Investigation/` - Analysis and investigation reports (Kerry's work)
-- `/doc/output/Original-Docs/` - Core project specification documents
+- `/doc/output/Original-Docs/` - Core project specification documents (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
+- `/doc/output/Test-Plan/` - Testing documentation and manual test plans
 
 Three formal project documents:
 
@@ -360,13 +363,15 @@ src/
 
 ---
 
-**Last Updated:** 2026-02-14
-**Project Status:** Week 3 - Analysis Complete, Awaiting Approval
-**Current Blocker:** Screen adaptation (root cause identified, solution ready)
-**Next Milestone:** Fix responsive design, then accelerate to completion
+**Last Updated:** 2026-02-15
+**Project Status:** Week 3 - Responsive Design Fixes Complete, Awaiting User Verification
+**Recent Work:** GameScene rotation and scaling fixes implemented and committed (commit 9c9c503)
+**Next Milestone:** User verification of rotation fixes, then proceed to Week 4 (AI opponent)
 **Skills Added:** gitflow v1.0.0
-**Analysis Complete:** 4 comprehensive documents in /doc/output/Investigation
+**Tools Added:** Playwright for automated visual testing
 **Documentation Structure:**
 - Workflow: /doc/output/Development-Workflow-Protocol
 - Investigations: /doc/output/Investigation/ (4 analysis documents)
 - Original Specs: /doc/output/Original-Docs/ (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
+- Test Plans: /doc/output/Test-Plan/ (Manual testing procedures)
+- Technical Summaries: /doc/output/GameScene-Rotation-Fix-Summary
