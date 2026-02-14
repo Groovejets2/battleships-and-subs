@@ -26,14 +26,12 @@ export class BattleshipsGame {
     init() {
         if (this.isInitialized) return;
 
-        const { width, height } = this.calculateGameDimensions();
-
         const config = {
             type: Phaser.AUTO,
-            width: width,
-            height: height,
+            width: window.innerWidth,
+            height: window.innerHeight,
             parent: 'game-container',
-            scene: [TitleScene, GameScene, SettingsScene, HighScoresScene], 
+            scene: [TitleScene, GameScene, SettingsScene, HighScoresScene],
             backgroundColor: GAME_CONSTANTS.COLORS.BACKGROUND,
             scale: {
                 mode: Phaser.Scale.RESIZE,
@@ -53,48 +51,27 @@ export class BattleshipsGame {
         this.game = new Phaser.Game(config);
         this.isInitialized = true;
 
-        this.setupResizeHandler();
+        this.setupScaleManagerEvents();
     }
 
-    /**
-     * Calculate game dimensions based on window size
-     * @returns {object} Width and height for the game canvas
-     */
-    calculateGameDimensions() {
-        return {
-            width: window.innerWidth,
-            height: window.innerHeight
-        };
-    }
+    // Removed calculateGameDimensions - Phaser.Scale.RESIZE handles this automatically
 
     /**
-     * Setup window resize handler with debouncing
+     * Setup Phaser Scale Manager events (replaces manual window listeners)
      */
-    setupResizeHandler() {
-        let resizeTimeout;
-        
-        const handleResize = () => {
-            if (!this.isInitialized) return;
-            
-            clearTimeout(resizeTimeout);
-            resizeTimeout = setTimeout(() => {
-                const { width, height } = this.calculateGameDimensions();
-                
-                // Force canvas resize
-                this.game.scale.resize(width, height);
-                this.game.scale.setGameSize(width, height);
-                
-                // Notify active scene of resize
-                const activeScene = this.game.scene.getScene('GameScene') || this.game.scene.getScene('TitleScene');
-                if (activeScene && activeScene.handleResize) {
-                    activeScene.handleResize(width, height);
+    setupScaleManagerEvents() {
+        // Listen to Phaser's built-in resize event
+        this.game.scale.on('resize', (gameSize) => {
+            // Get the currently active scene
+            const activeScenes = this.game.scene.getScenes(true);
+            if (activeScenes.length > 0) {
+                const activeScene = activeScenes[0];
+
+                // Call handleResize if the scene implements it
+                if (activeScene && typeof activeScene.handleResize === 'function') {
+                    activeScene.handleResize(gameSize.width, gameSize.height);
                 }
-            }, 250); // Debounced resize
-        };
-
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(handleResize, 100); // Small delay for orientation change
+            }
         });
     }
 }

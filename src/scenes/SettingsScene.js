@@ -283,9 +283,70 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize
+     * Handle dynamic resize - reposition elements without restart
      */
     handleResize(width, height) {
-        this.scene.restart();
+        // Update title position
+        const titleText = this.children.list.find(child => child.type === 'Text' && child.text === 'SETTINGS');
+        if (titleText) {
+            titleText.setPosition(width / 2, height * 0.12);
+            titleText.setFontSize(Math.min(width * 0.06, 42) + 'px');
+        }
+
+        // Update audio controls positions
+        const startY = height * 0.25;
+        const spacing = height * 0.12;
+        const sliderWidth = Math.min(width * 0.5, 300);
+
+        this.sliders.forEach((slider, index) => {
+            const y = startY + (index * spacing);
+
+            // Update label
+            const labels = this.children.list.filter(child => child.type === 'Text');
+            const label = labels[index * 2 + 1]; // Skip title
+            if (label) {
+                label.setPosition(width / 2, y - 20);
+            }
+
+            // Update slider components
+            slider.track.setPosition(width / 2, y + 10);
+            slider.track.width = sliderWidth;
+
+            slider.fill.setPosition(width / 2 - sliderWidth / 2, y + 10);
+
+            const value = this.settings[slider.key];
+            slider.handle.setPosition(width / 2 - sliderWidth / 2 + (sliderWidth * value), y + 10);
+
+            slider.valueText.setPosition(width / 2, y + 35);
+        });
+
+        // Update visual controls positions
+        const visualStartY = height * 0.65;
+        const visualSpacing = height * 0.08;
+
+        this.toggles.forEach((toggle, index) => {
+            const y = visualStartY + (index * visualSpacing);
+
+            const labels = this.children.list.filter(child => child.type === 'Text');
+            const label = labels[6 + index]; // After audio labels
+            if (label) {
+                label.setPosition(width / 2 - 80, y);
+            }
+
+            toggle.toggleBg.setPosition(width / 2 + 80, y);
+            const isOn = this.settings[toggle.key];
+            toggle.toggleHandle.setPosition(width / 2 + 80 + (isOn ? 15 : -15), y);
+        });
+
+        // Update back button
+        const backButton = this.children.list.find(child => child.type === 'Rectangle' && child.fillColor === 0x2c3e50);
+        const backText = this.children.list.find(child => child.type === 'Text' && child.text === 'BACK');
+        if (backButton && backText) {
+            const buttonY = height * 0.88;
+            const buttonWidth = Math.min(width * 0.4, 200);
+            backButton.setPosition(width / 2, buttonY);
+            backButton.setSize(buttonWidth, 50);
+            backText.setPosition(width / 2, buttonY);
+        }
     }
 }

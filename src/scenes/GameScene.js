@@ -89,38 +89,44 @@ export class GameScene extends Phaser.Scene {
      * Calculate responsive layout based on screen dimensions
      */
     calculateLayout(width, height) {
-        // Use tighter spacing for mobile portrait
-        let { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
+        const { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
 
-        // If in stacked mode (mobile portrait), reduce spacing
-        const isPortrait = height > width;
-        const shouldStack = width < (GRID_SIZE * CELL_SIZE * 2 + GRID_SPACING + MARGIN * 2);
-
-        if (shouldStack && isPortrait) {
-            TITLE_SPACE = 18;
-            MARGIN = 6;
-            GRID_SPACING = 10;
-        }
-
-        const verticalPadding = 2 * MARGIN + 3 * TITLE_SPACE + GRID_SPACING;
-        const maxCellSizeStacked = (height - verticalPadding) / (GRID_SIZE * 2);
-
+        // Calculate maximum possible cell size for side-by-side layout
         const maxCellSizeSideBySide = Math.min(
             (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
             (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
         );
 
+        // Calculate maximum possible cell size for stacked layout with tighter spacing
+        const stackedTitleSpace = 18;
+        const stackedMargin = 6;
+        const stackedGridSpacing = 10;
+        const verticalPadding = 60 + 2 * stackedTitleSpace + stackedGridSpacing + (2 * 30) + stackedMargin;
+        const maxCellSizeStacked = (height - verticalPadding) / (GRID_SIZE * 2);
+
+        // Decide layout mode: use side-by-side if it gives decent cell size (>= 20px)
+        // and we're not in portrait orientation with limited width
+        const isPortrait = height > width;
+        const shouldStack = maxCellSizeSideBySide < 20 || (isPortrait && width < 600);
+
+        // Use appropriate spacing based on mode
+        let finalTitleSpace = TITLE_SPACE;
+        let finalMargin = MARGIN;
+        let finalGridSpacing = GRID_SPACING;
+
+        if (shouldStack && isPortrait) {
+            finalTitleSpace = stackedTitleSpace;
+            finalMargin = stackedMargin;
+            finalGridSpacing = stackedGridSpacing;
+        }
+
+        // Calculate final cell size with minimum of 20px
+        const minCellSize = 20;
         let cellSize;
         if (shouldStack) {
-            cellSize = Math.max(
-                GAME_CONSTANTS.MIN_CELL_SIZE,
-                Math.min(CELL_SIZE, maxCellSizeStacked)
-            );
+            cellSize = Math.max(minCellSize, Math.min(CELL_SIZE, maxCellSizeStacked));
         } else {
-            cellSize = Math.max(
-                GAME_CONSTANTS.MIN_CELL_SIZE,
-                Math.min(CELL_SIZE, maxCellSizeSideBySide)
-            );
+            cellSize = Math.max(minCellSize, Math.min(CELL_SIZE, maxCellSizeSideBySide));
         }
 
         const gridWidth = GRID_SIZE * cellSize;
@@ -128,29 +134,29 @@ export class GameScene extends Phaser.Scene {
         let playerX, playerY, enemyX, enemyY;
 
         if (shouldStack) {
-            // Vertical stacking for mobile
-            const totalHeight = gridWidth * 2 + GRID_SPACING + 3 * TITLE_SPACE;
-            const startY = Math.max(MARGIN, (height - totalHeight) / 2);
+            // Vertical stacking for mobile - use tighter spacing
+            const totalHeight = gridWidth * 2 + finalGridSpacing + 3 * finalTitleSpace;
+            const startY = Math.max(finalMargin, (height - totalHeight) / 2);
 
             const centerX = (width - gridWidth) / 2;
 
             playerX = centerX;
-            playerY = startY + TITLE_SPACE;
+            playerY = startY + finalTitleSpace;
             enemyX = centerX;
-            enemyY = playerY + gridWidth + GRID_SPACING + TITLE_SPACE;
+            enemyY = playerY + gridWidth + finalGridSpacing + finalTitleSpace;
         } else {
-            // Horizontal layout for desktop
-            const totalWidth = gridWidth * 2 + GRID_SPACING;
-            const startX = Math.max(MARGIN, (width - totalWidth) / 2);
-            const centerY = Math.max(MARGIN, (height - gridWidth - TITLE_SPACE) / 2);
+            // Horizontal layout for landscape/desktop - use standard spacing
+            const totalWidth = gridWidth * 2 + finalGridSpacing;
+            const startX = Math.max(finalMargin, (width - totalWidth) / 2);
+            const centerY = Math.max(finalMargin, (height - gridWidth - finalTitleSpace) / 2);
 
             playerX = startX;
-            playerY = centerY + TITLE_SPACE;
-            enemyX = startX + gridWidth + GRID_SPACING;
-            enemyY = centerY + TITLE_SPACE;
+            playerY = centerY + finalTitleSpace;
+            enemyX = startX + gridWidth + finalGridSpacing;
+            enemyY = centerY + finalTitleSpace;
         }
 
-        return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack };
+        return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack, width, height };
     }
 
     /**
@@ -226,31 +232,53 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize
+     * Handle dynamic resize - always recreate grids for proper scaling
      */
     handleResize(width, height) {
-        // Destroy existing grids and titles
-        if (this.playerGrid) {
-            this.playerGrid.cells.clear(true, true);
-            this.playerGrid.graphics.destroy();
-            this.playerGrid.labels.forEach(label => label.destroy());
-            this.playerGrid = null;
-        }
-        if (this.enemyGrid) {
-            this.enemyGrid.cells.clear(true, true);
-            this.enemyGrid.graphics.destroy();
-            this.enemyGrid.labels.forEach(label => label.destroy());
-            this.enemyGrid = null;
-        }
-        this.gridTitles.forEach(title => title.destroy());
-        this.gridTitles = [];
+        // Calculate new layout
+        const newLayout = this.calculateLayout(width, height);
 
-        // Recreate the game layout
-        this.createGameLayout();
+        // Detect orientation change
+        const oldOrientation = this.currentLayout ?
+            (this.currentLayout.width > this.currentLayout.height ? 'landscape' : 'portrait') : null;
+        const newOrientation = width > height ? 'landscape' : 'portrait';
+        const orientationChanged = oldOrientation && oldOrientation !== newOrientation;
 
-        // Update UI elements - ADD NULL CHECK
+        // Always recreate on orientation change or significant layout change
+        const layoutChanged = !this.currentLayout ||
+                            this.currentLayout.shouldStack !== newLayout.shouldStack ||
+                            orientationChanged;
+
+        if (layoutChanged) {
+            // Destroy existing grids and titles
+            if (this.playerGrid) {
+                this.playerGrid.cells.clear(true, true);
+                this.playerGrid.graphics.destroy();
+                this.playerGrid.labels.forEach(label => label.destroy());
+                this.playerGrid = null;
+            }
+            if (this.enemyGrid) {
+                this.enemyGrid.cells.clear(true, true);
+                this.enemyGrid.graphics.destroy();
+                this.enemyGrid.labels.forEach(label => label.destroy());
+                this.enemyGrid = null;
+            }
+            this.gridTitles.forEach(title => title.destroy());
+            this.gridTitles = [];
+
+            // Recreate the game layout
+            this.createGameLayout();
+        }
+
+        // Always update UI elements positions
         if (this.uiElements.statusText) {
             this.uiElements.statusText.setPosition(width / 2, 20);
+        }
+        if (this.uiElements.backButton) {
+            this.uiElements.backButton.setPosition(60, 30);
+        }
+        if (this.uiElements.backText) {
+            this.uiElements.backText.setPosition(60, 30);
         }
     }
 

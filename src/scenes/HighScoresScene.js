@@ -81,7 +81,16 @@ export class HighScoresScene extends Phaser.Scene {
     createScoresTable(width, height) {
         const startY = height * 0.22;
         const tableWidth = Math.min(width * 0.85, 600);
-        const rowHeight = 45;
+
+        // Calculate available height for table (leave space for buttons at bottom)
+        const buttonAreaHeight = 100; // Space for BACK/CLEAR buttons at bottom
+        const availableHeight = height - startY - buttonAreaHeight;
+
+        // Adjust row height to fit available space, with min/max limits
+        const maxRowHeight = 45;
+        const minRowHeight = 35;
+        const calculatedRowHeight = availableHeight / (this.maxScores + 1.5); // +1.5 for header and padding
+        const rowHeight = Math.max(minRowHeight, Math.min(maxRowHeight, calculatedRowHeight));
 
         // Table background
         const tableHeight = (this.maxScores + 1) * rowHeight + 20;
@@ -361,9 +370,12 @@ export class HighScoresScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize
+     * Handle dynamic resize - restart scene for proper table recreation
      */
     handleResize(width, height) {
+        // High scores table is complex with many elements
+        // Scene restart ensures proper layout recalculation
+        // Settings and scores are persisted in localStorage, so no data loss
         this.scene.restart();
     }
 }
