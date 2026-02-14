@@ -98,9 +98,9 @@ export class GameScene extends Phaser.Scene {
         );
 
         // Calculate maximum possible cell size for stacked layout with tighter spacing
-        const stackedTitleSpace = 18;
-        const stackedMargin = 6;
-        const stackedGridSpacing = 10;
+        const stackedTitleSpace = 28; // Increased from 18 to prevent text overlap
+        const stackedMargin = 10; // Increased from 6 for better top/bottom spacing
+        const stackedGridSpacing = 15; // Increased from 10 for better grid separation
         const verticalPadding = 60 + 2 * stackedTitleSpace + stackedGridSpacing + (2 * 30) + stackedMargin;
         const maxCellSizeStacked = (height - verticalPadding) / (GRID_SIZE * 2);
 

@@ -57,22 +57,35 @@ export class BattleshipsGame {
     // Removed calculateGameDimensions - Phaser.Scale.RESIZE handles this automatically
 
     /**
-     * Setup Phaser Scale Manager events (replaces manual window listeners)
+     * Setup Phaser Scale Manager events and window resize listener
      */
     setupScaleManagerEvents() {
         // Listen to Phaser's built-in resize event
         this.game.scale.on('resize', (gameSize) => {
-            // Get the currently active scene
-            const activeScenes = this.game.scene.getScenes(true);
-            if (activeScenes.length > 0) {
-                const activeScene = activeScenes[0];
-
-                // Call handleResize if the scene implements it
-                if (activeScene && typeof activeScene.handleResize === 'function') {
-                    activeScene.handleResize(gameSize.width, gameSize.height);
-                }
-            }
+            this.handleSceneResize(gameSize.width, gameSize.height);
         });
+
+        // ALSO listen to window resize for Chrome DevTools rotation button
+        // DevTools rotation doesn't always trigger Phaser's resize event properly
+        window.addEventListener('resize', () => {
+            // Use Phaser's scale dimensions which account for device pixel ratio
+            const width = this.game.scale.width;
+            const height = this.game.scale.height;
+            this.handleSceneResize(width, height);
+        });
+    }
+
+    /**
+     * Handle resize for active scene
+     */
+    handleSceneResize(width, height) {
+        const activeScenes = this.game.scene.getScenes(true);
+        if (activeScenes.length > 0) {
+            const activeScene = activeScenes[0];
+            if (activeScene && typeof activeScene.handleResize === 'function') {
+                activeScene.handleResize(width, height);
+            }
+        }
     }
 }
 
