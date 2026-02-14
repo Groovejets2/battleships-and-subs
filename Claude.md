@@ -10,9 +10,10 @@ This file serves as a reference index for AI assistants working on this project.
 
 **CRITICAL:** Both Kerry McGregor (Sonnet 4.5) and Tony Stark (Opus 4.5) MUST read:
 1. This Claude.md file (always)
-2. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles, handoff protocol)
+2. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
 3. `.claude/skills/gitflow/gitflow.md` (git operations)
-4. Any Tony-created architectural directive documents
+4. `/doc/output/Investigation/` (analysis and investigation reports)
+5. `/doc/output/Original-Docs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 
 ---
 
@@ -29,11 +30,16 @@ See Development-Workflow-Protocol document for complete handoff procedures and t
 
 ### Comprehensive Documentation Suite Created: 2025-10-27
 
-**Location:** All project documentation moved to `/doc/output` (2026-02-14)
+**Location:** All project documentation in `/doc/output` with organised subfolders (2026-02-14)
+
+**Folder Structure:**
+- `/doc/output/` - Workflow and protocol documents
+- `/doc/output/Investigation/` - Analysis and investigation reports (Kerry's work)
+- `/doc/output/Original-Docs/` - Core project specification documents
 
 Three formal project documents:
 
-#### 1. **GAME_RULES.md** (~25 pages) - `/doc/output/GAME_RULES.md`
+#### 1. **GAME_RULES.md** (~25 pages) - `/doc/output/Original-Docs/GAME_RULES.md`
 - Complete game rules and mechanics
 - Fleet composition (5 ships with specifications)
 - Placement rules (10×10 grid, 1-square spacing including diagonals)
@@ -45,7 +51,7 @@ Three formal project documents:
 - Settings, audio, and customization options
 - Technical requirements and platform support
 
-#### 2. **REQUIREMENTS.md** (~40 pages) - `/doc/output/REQUIREMENTS.md`
+#### 2. **REQUIREMENTS.md** (~40 pages) - `/doc/output/Original-Docs/REQUIREMENTS.md`
 - Complete technical requirements specification
 - Functional Requirements (FR) organized into 11 categories:
   - Game Initialization, Title Screen, Ship Placement, Combat Phase
@@ -59,7 +65,7 @@ Three formal project documents:
 - Deployment and maintenance procedures
 - All requirements prioritized (P0=Critical, P1=High, P2=Nice to Have)
 
-#### 3. **DELIVERY_PLAN.md** (~50 pages) - `/doc/output/DELIVERY_PLAN.md`
+#### 3. **DELIVERY_PLAN.md** (~50 pages) - `/doc/output/Original-Docs/DELIVERY_PLAN.md`
 - Comprehensive 10-week project delivery plan
 - Three-phase approach:
   - **Phase 1 (Weeks 1-4):** Core Gameplay - MVP with basic AI
@@ -210,7 +216,7 @@ src/
 
 ### When Working on This Project:
 
-1. **Always reference** the three main documents (GAME_RULES.md, REQUIREMENTS.md, DELIVERY_PLAN.md) for detailed specifications
+1. **Always reference** the three main documents in `/doc/output/Original-Docs/` (GAME_RULES.md, REQUIREMENTS.md, DELIVERY_PLAN.md) for detailed specifications
 2. **Follow** the priority system: P0 (Critical) → P1 (High) → P2 (Nice to Have)
 3. **Maintain** the modular architecture (scenes, models, managers, components, utils)
 4. **Test** on mobile as well as desktop (responsive design is critical)
@@ -282,6 +288,7 @@ src/
 | 2026-02-14 | 1.4 | Added 400-line mandate, model roles (Kerry/Tony), required reading section | Kerry McGregor |
 | 2026-02-14 | 1.5 | Comprehensive analysis complete - screen adaptation root cause identified | Kerry McGregor |
 | 2026-02-14 | 1.6 | Reorganised documentation - moved existing docs to /doc/output, investigations to /investigation | Kerry McGregor |
+| 2026-02-14 | 1.7 | Updated paths - Investigation capitalised, original docs to Original-Docs subfolder | Kerry McGregor |
 
 ---
 
@@ -289,31 +296,31 @@ src/
 
 ### Kerry McGregor (Sonnet 4.5) Analysis Complete
 
-**Four comprehensive analysis documents created in `/doc/output/investigation`:**
+**Four comprehensive analysis documents created in `/doc/output/Investigation/`:**
 
 1. **Dynamic-UI-Resolution-Analysis** - Root cause of responsive design failure identified
-   - **Location:** `/doc/output/investigation/Dynamic-UI-Resolution-Analysis_Sonnet-4.5_v1.0_2026-02-14.md`
+   - **Location:** `/doc/output/Investigation/Dynamic-UI-Resolution-Analysis_Sonnet-4.5_v1.0_2026-02-14.md`
    - 5 critical architectural issues preventing screen adaptation
    - Primary cause: Hardcoded 1100px height in dimensions.js
    - Solution: Phaser Scale Manager integration + unified resize pattern
    - Estimated fix time: 5-6 hours
 
 2. **Documentation-Assessment** - Project documentation quality review
-   - **Location:** `/doc/output/investigation/Documentation-Assessment_Sonnet-4.5_v1.0_2026-02-14.md`
+   - **Location:** `/doc/output/Investigation/Documentation-Assessment_Sonnet-4.5_v1.0_2026-02-14.md`
    - 3,836 lines of structured documentation analysed
    - Overall grade: B+ (professional standard)
    - Gaps identified: Testing docs, architecture diagrams, API reference
    - Recommendation: Add testing strategy and architecture diagrams
 
 3. **Accelerated-Delivery-Plan** - Claude Code timeline projection
-   - **Location:** `/doc/output/investigation/Accelerated-Delivery-Plan_Sonnet-4.5_v1.0_2026-02-14.md`
+   - **Location:** `/doc/output/Investigation/Accelerated-Delivery-Plan_Sonnet-4.5_v1.0_2026-02-14.md`
    - Original 8-week timeline (Weeks 3-10) compressed to 5-7 days
    - 10x faster code generation vs solo developer
    - Detailed day-by-day breakdown with deliverables
    - Total estimated effort: 58-62 hours
 
 4. **Testing-Strategy** - Comprehensive testing approach
-   - **Location:** `/doc/output/investigation/Testing-Strategy_Sonnet-4.5_v1.0_2026-02-14.md`
+   - **Location:** `/doc/output/Investigation/Testing-Strategy_Sonnet-4.5_v1.0_2026-02-14.md`
    - 30-40% automated coverage target (Playwright + Jest)
    - Manual testing checklist for cross-browser/device
    - Zero-cost tooling (Chrome DevTools, Playwright, Jest)
@@ -358,5 +365,8 @@ src/
 **Current Blocker:** Screen adaptation (root cause identified, solution ready)
 **Next Milestone:** Fix responsive design, then accelerate to completion
 **Skills Added:** gitflow v1.0.0
-**Analysis Complete:** 4 comprehensive documents in /doc/output/investigation
-**Documentation Reorganised:** Core docs in /doc/output, workflow in /doc/output, investigations in /doc/output/investigation
+**Analysis Complete:** 4 comprehensive documents in /doc/output/Investigation
+**Documentation Structure:**
+- Workflow: /doc/output/Development-Workflow-Protocol
+- Investigations: /doc/output/Investigation/ (4 analysis documents)
+- Original Specs: /doc/output/Original-Docs/ (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
