@@ -244,10 +244,18 @@ export class HighScoresScene extends Phaser.Scene {
     }
 
     /**
-     * Create back button (centered at bottom)
+     * Create back button (fixed distance below table - arcade style!)
      */
     createBackButton(width, height) {
-        const buttonY = height * 0.94;
+        const startY = height * 0.22;
+        const rowHeight = width < 400 ? 50 : 55;
+        const tableHeight = (this.maxScores + 1) * rowHeight + 30;
+        const tableBottom = startY + tableHeight;
+
+        // Fixed spacing below table (like arcade cabinets!)
+        const spacing = width < 400 ? 25 : 35; // ~0.5cm on most screens
+        const buttonY = tableBottom + spacing + 25; // +25 for half button height
+
         const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 
