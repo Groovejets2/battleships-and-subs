@@ -25,22 +25,19 @@ export class HighScoresScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-        
+
         // Create background
         this.createBackground();
-        
+
         // Create title
         this.createTitle(width, height);
-        
+
         // Create scores table
         this.createScoresTable(width, height);
-        
+
         // Create back button
         this.createBackButton(width, height);
-        
-        // Create clear scores button (optional)
-        this.createClearButton(width, height);
-        
+
         // Setup input
         this.setupInput();
     }
@@ -82,9 +79,11 @@ export class HighScoresScene extends Phaser.Scene {
         const startY = height * 0.22;
         const tableWidth = Math.min(width * 0.9, 600);
 
-        // Calculate available height for table (leave space for buttons at bottom)
-        const buttonAreaHeight = 100; // Space for BACK/CLEAR buttons at bottom
-        const availableHeight = height - startY - buttonAreaHeight;
+        // Calculate available height for table (leave space for BACK button at bottom)
+        const buttonY = height * 0.94; // BACK button position
+        const buttonHeight = 50;
+        const buttonMargin = 20;
+        const availableHeight = buttonY - buttonHeight - buttonMargin - startY;
 
         // Adjust row height to fit available space, with min/max limits
         const maxRowHeight = 45;
@@ -198,20 +197,20 @@ export class HighScoresScene extends Phaser.Scene {
     }
 
     /**
-     * Create back button
+     * Create back button (centered at bottom)
      */
     createBackButton(width, height) {
-        const buttonY = height * 0.90;
-        const buttonWidth = Math.min(width * 0.35, 180);
+        const buttonY = height * 0.94;
+        const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 
         const button = this.add.rectangle(
-            width / 2 - 110, buttonY, buttonWidth, buttonHeight, 0x2c3e50
+            width / 2, buttonY, buttonWidth, buttonHeight, 0x2c3e50
         );
         button.setStrokeStyle(3, 0xe74c3c);
         button.setInteractive({ useHandCursor: true });
 
-        const text = this.add.text(width / 2 - 110, buttonY, 'BACK', {
+        const text = this.add.text(width / 2, buttonY, 'BACK', {
             fontSize: '18px',
             fontFamily: 'Arial',
             fill: '#ffffff',
@@ -240,56 +239,6 @@ export class HighScoresScene extends Phaser.Scene {
 
         button.on('pointerdown', () => {
             this.scene.start('TitleScene');
-        });
-    }
-
-    /**
-     * Create clear scores button
-     */
-    createClearButton(width, height) {
-        const buttonY = height * 0.90;
-        const buttonWidth = Math.min(width * 0.35, 180);
-        const buttonHeight = 50;
-
-        const button = this.add.rectangle(
-            width / 2 + 110, buttonY, buttonWidth, buttonHeight, 0x2c3e50
-        );
-        button.setStrokeStyle(3, 0xf39c12);
-        button.setInteractive({ useHandCursor: true });
-
-        const text = this.add.text(width / 2 + 110, buttonY, 'CLEAR', {
-            fontSize: '18px',
-            fontFamily: 'Arial',
-            fill: '#ffffff',
-            fontWeight: 'bold'
-        }).setOrigin(0.5);
-
-        button.on('pointerover', () => {
-            button.setFillStyle(0xf39c12);
-            this.tweens.add({
-                targets: [button, text],
-                scaleX: 1.05,
-                scaleY: 1.05,
-                duration: 150
-            });
-        });
-
-        button.on('pointerout', () => {
-            button.setFillStyle(0x2c3e50);
-            this.tweens.add({
-                targets: [button, text],
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150
-            });
-        });
-
-        button.on('pointerdown', () => {
-            // Confirm before clearing
-            if (confirm('Clear all high scores? This cannot be undone.')) {
-                this.clearHighScores();
-                this.scene.restart();
-            }
         });
     }
 
