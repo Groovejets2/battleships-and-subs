@@ -12,8 +12,9 @@ This file serves as a reference index for AI assistants working on this project.
 1. This Claude.md file (always)
 2. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
 3. `.claude/skills/gitflow/gitflow.md` (git operations)
-4. `/doc/output/analysis/` (technical analysis and investigation reports)
-5. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
+4. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
+5. `/doc/output/analysis/` (technical analysis and investigation reports)
+6. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 
 ---
 
@@ -35,11 +36,21 @@ See Development-Workflow-Protocol document for complete handoff procedures and t
 **CRITICAL RULE:** ALL documentation MUST be placed in `/doc/output` folder or subfolders. Never create documentation in project root.
 
 **Folder Structure:**
-- `/doc/output/` - Workflow and protocol documents
+- `/doc/output/` - Workflow, protocol, and design philosophy documents
 - `/doc/output/project-specs/` - Core project specifications (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 - `/doc/output/analysis/` - Technical analysis and investigation reports
 - `/doc/output/sessions/` - Session state snapshots and breakthrough summaries
 - `/doc/output/testing/` - Testing documentation and manual test plans
+
+**Design Standards:**
+- `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` - Comprehensive arcade UI/UX design philosophy
+  - Old-school arcade cabinet aesthetic
+  - Top 5 / Limited display philosophy
+  - White text philosophy and color palette
+  - Big fonts and touch-friendly sizing
+  - Fixed spacing and content-relative positioning
+  - Arcade-style animations and timing standards
+  - Scene-specific guidelines (HighScoresScene, TitleScene, GameScene, SettingsScene)
 
 See `/doc/README.md` for complete documentation structure guide.
 

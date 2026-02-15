@@ -16,6 +16,7 @@ export class HighScoresScene extends Phaser.Scene {
         super({ key: 'HighScoresScene' });
         this.highScores = [];
         this.maxScores = 5; // Old-school arcade style - top 5 only
+        this.backgroundGraphics = null;
     }
 
     preload() {
@@ -46,9 +47,15 @@ export class HighScoresScene extends Phaser.Scene {
      * Create gradient background matching other scenes
      */
     createBackground() {
-        const graphics = this.add.graphics();
-        graphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        graphics.fillRect(0, 0, this.scale.width, this.scale.height);
+        // Clear existing background if it exists
+        if (this.backgroundGraphics) {
+            this.backgroundGraphics.destroy();
+        }
+
+        this.backgroundGraphics = this.add.graphics();
+        this.backgroundGraphics.setDepth(-100); // Keep background behind all elements
+        this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
+        this.backgroundGraphics.fillRect(0, 0, this.scale.width, this.scale.height);
     }
 
     /**
@@ -380,11 +387,14 @@ export class HighScoresScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize - restart scene for proper table recreation
+     * Handle dynamic resize - recreate background to prevent black screen
      */
     handleResize(width, height) {
-        // High scores table is complex with many elements
-        // Scene restart ensures proper layout recalculation
+        // Recreate background to fill new dimensions (prevents black screen bug)
+        this.createBackground();
+
+        // High scores table is complex with many animated elements
+        // Scene restart ensures proper layout recalculation and animation replay
         // Settings and scores are persisted in localStorage, so no data loss
         this.scene.restart();
     }

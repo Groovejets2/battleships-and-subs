@@ -1,17 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(tree:*)",
-      "Bash(find:*)",
-      "Bash(./node_modules/.bin/http-server:*)",
-      "Bash(python3:*)",
-      "Bash(curl:*)",
-      "Bash(git log:*)",
-      "Bash(mkdir:*)",
-      "Bash(git add:*)",
-      "Bash(git reset:*)",
-      "Bash(git rm:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nAdded workflow protocol and updated Claude.md for Kerry/Tony workflow\n\n- Created Development-Workflow-Protocol document with model roles and handoff procedures\n- Updated Claude.md with 400-line mandate and required reading section\n- Added gitflow skill v1.0.0 in proper folder structure\n- Documented token management strategy for Opus/Sonnet coordination\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(centimeter below the scores table. No matter the size of the screen.\"\n\nVerified across all viewports - perfect fixed spacing maintained.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
     ],
     "deny": [],
     "ask": []
