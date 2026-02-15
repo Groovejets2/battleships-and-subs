@@ -23,6 +23,7 @@ export class SettingsScene extends Phaser.Scene {
         };
         this.sliders = [];
         this.toggles = [];
+        this.backgroundGraphics = null;
     }
 
     preload() {
@@ -45,18 +46,27 @@ export class SettingsScene extends Phaser.Scene {
         
         // Create back button
         this.createBackButton(width, height);
-        
+
         // Setup input
         this.setupInput();
+
+        // Register resize listener to handle window drag/resize
+        this.scale.on('resize', this.handleResize, this);
     }
 
     /**
      * Create gradient background matching title screen
      */
     createBackground() {
-        const graphics = this.add.graphics();
-        graphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        graphics.fillRect(0, 0, this.scale.width, this.scale.height);
+        // Clear existing background if it exists
+        if (this.backgroundGraphics) {
+            this.backgroundGraphics.destroy();
+        }
+
+        this.backgroundGraphics = this.add.graphics();
+        this.backgroundGraphics.setDepth(-100); // Keep background behind all elements
+        this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
+        this.backgroundGraphics.fillRect(0, 0, this.scale.width, this.scale.height);
     }
 
     /**
@@ -286,6 +296,9 @@ export class SettingsScene extends Phaser.Scene {
      * Handle dynamic resize - reposition elements without restart
      */
     handleResize(width, height) {
+        // Recreate background to fill new dimensions (prevents black screen bug)
+        this.createBackground();
+
         // Update title position
         const titleText = this.children.list.find(child => child.type === 'Text' && child.text === 'SETTINGS');
         if (titleText) {
@@ -348,5 +361,13 @@ export class SettingsScene extends Phaser.Scene {
             backButton.setSize(buttonWidth, 50);
             backText.setPosition(width / 2, buttonY);
         }
+    }
+
+    /**
+     * Cleanup on scene shutdown
+     */
+    shutdown() {
+        // Remove resize listener to prevent memory leaks
+        this.scale.off('resize', this.handleResize, this);
     }
 }

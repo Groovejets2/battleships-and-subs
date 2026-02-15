@@ -41,9 +41,12 @@ export class TitleScene extends Phaser.Scene {
         
         // Add subtle animations
         this.createAnimations();
-        
+
         // Setup input handling
         this.setupInput();
+
+        // Register resize listener to handle window drag/resize
+        this.scale.on('resize', this.handleResize, this);
     }
 
     /**
@@ -342,5 +345,13 @@ export class TitleScene extends Phaser.Scene {
             buttonObj.text.setPosition(width / 2, y);
             buttonObj.text.setFontSize(Math.min(buttonHeight * 0.4, 20) + 'px');
         });
+    }
+
+    /**
+     * Cleanup on scene shutdown
+     */
+    shutdown() {
+        // Remove resize listener to prevent memory leaks
+        this.scale.off('resize', this.handleResize, this);
     }
 }
