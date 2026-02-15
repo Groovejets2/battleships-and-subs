@@ -16,7 +16,7 @@ async function testGameScene() {
     const browser = await chromium.launch({ headless: false }); // Non-headless to see what's happening
     const context = await browser.newContext();
 
-    // Test viewports - focusing on problem cases
+    // Test viewports - including mid-width portrait for text overflow testing
     const viewports = [
         { name: 'iphone14-pro-max-portrait', width: 430, height: 932 },
         { name: 'iphone14-pro-max-landscape', width: 932, height: 430 },
@@ -24,6 +24,8 @@ async function testGameScene() {
         { name: 'galaxy-s20-ultra-landscape', width: 915, height: 412 },
         { name: 'iphone-se-portrait', width: 375, height: 667 },
         { name: 'iphone-se-landscape', width: 667, height: 375 },
+        { name: 'mid-width-portrait-500', width: 500, height: 800 },  // Test mid-width text
+        { name: 'mid-width-portrait-600', width: 600, height: 900 },  // Test mid-width text
         { name: 'ipad-portrait', width: 768, height: 1024 },
         { name: 'ipad-landscape', width: 1024, height: 768 },
         { name: 'desktop', width: 1920, height: 1080 }

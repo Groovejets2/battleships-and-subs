@@ -173,14 +173,71 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
+     * Get appropriate status text based on screen width and game state
+     */
+    getStatusText(width, state) {
+        const messages = {
+            'SETUP': {
+                full: 'SETUP PHASE - Place your ships',
+                medium: 'SETUP - Place ships',
+                short: 'Place Ships'
+            },
+            'PLAYER_TURN': {
+                full: 'YOUR TURN - Choose target',
+                medium: 'YOUR TURN',
+                short: 'Your Turn'
+            },
+            'ENEMY_TURN': {
+                full: 'ENEMY TURN - Wait...',
+                medium: 'ENEMY TURN',
+                short: 'Enemy Turn'
+            },
+            'GAME_OVER': {
+                full: 'GAME OVER',
+                medium: 'GAME OVER',
+                short: 'Game Over'
+            }
+        };
+
+        const stateMessages = messages[state] || messages['SETUP'];
+
+        if (width < 400) {
+            return stateMessages.short;
+        } else if (width < 600) {
+            return stateMessages.medium;
+        } else {
+            return stateMessages.full;
+        }
+    }
+
+    /**
+     * Get appropriate font size for status text based on screen width
+     */
+    getStatusFontSize(width) {
+        if (width < 400) {
+            return '13px';
+        } else if (width < 500) {
+            return '14px';
+        } else if (width < 700) {
+            return '16px';
+        } else {
+            return '18px';
+        }
+    }
+
+    /**
      * Create game UI elements
      */
     createUI() {
         const { width, height } = this.scale;
 
         // Game status display - positioned higher to make room for back button
-        this.uiElements.statusText = this.add.text(width / 2, 15, 'SETUP PHASE - Place your ships', {
-            fontSize: width < 450 ? '14px' : '18px', // Smaller font on narrow screens
+        // Use shorter text on very narrow screens to prevent wrapping/overlap
+        const statusText = this.getStatusText(width, 'SETUP');
+        const fontSize = this.getStatusFontSize(width);
+
+        this.uiElements.statusText = this.add.text(width / 2, 15, statusText, {
+            fontSize: fontSize,
             fontFamily: 'Arial',
             fill: GAME_CONSTANTS.COLORS.TEXT,
             fontWeight: 'bold'
@@ -289,10 +346,13 @@ export class GameScene extends Phaser.Scene {
             this.createGameLayout();
         }
 
-        // Always update UI elements positions
+        // Always update UI elements positions and text
         if (this.uiElements.statusText) {
+            const statusText = this.getStatusText(width, this.gameState);
+            const fontSize = this.getStatusFontSize(width);
+            this.uiElements.statusText.setText(statusText);
+            this.uiElements.statusText.setFontSize(fontSize);
             this.uiElements.statusText.setPosition(width / 2, 15);
-            this.uiElements.statusText.setFontSize(width < 450 ? '14px' : '18px');
         }
         const buttonY = width < 450 ? 45 : 35;
         if (this.uiElements.backButton) {
@@ -308,16 +368,11 @@ export class GameScene extends Phaser.Scene {
      */
     updateGameState(newState) {
         this.gameState = newState;
-        
-        const stateMessages = {
-            'SETUP': 'SETUP PHASE - Place your ships',
-            'PLAYER_TURN': 'YOUR TURN - Choose target',
-            'ENEMY_TURN': 'ENEMY TURN - Wait...',
-            'GAME_OVER': 'GAME OVER'
-        };
-        
+
         if (this.uiElements.statusText) {
-            this.uiElements.statusText.setText(stateMessages[newState] || newState);
+            const { width } = this.scale;
+            const statusText = this.getStatusText(width, newState);
+            this.uiElements.statusText.setText(statusText);
         }
     }
 
