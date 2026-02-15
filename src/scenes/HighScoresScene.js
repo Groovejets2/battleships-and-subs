@@ -15,7 +15,7 @@ export class HighScoresScene extends Phaser.Scene {
     constructor() {
         super({ key: 'HighScoresScene' });
         this.highScores = [];
-        this.maxScores = 10;
+        this.maxScores = 5; // Old-school arcade style - top 5 only
     }
 
     preload() {
@@ -73,26 +73,17 @@ export class HighScoresScene extends Phaser.Scene {
     }
 
     /**
-     * Create scores table with headers and data
+     * Create arcade-style scores table - top 5 only
      */
     createScoresTable(width, height) {
         const startY = height * 0.22;
-        const tableWidth = Math.min(width * 0.9, 600);
+        const tableWidth = Math.min(width * 0.85, 550); // Smaller table
 
-        // Calculate available height for table (leave space for BACK button at bottom)
-        const buttonY = height * 0.94; // BACK button position
-        const buttonHeight = 50;
-        const buttonMargin = 20;
-        const availableHeight = buttonY - buttonHeight - buttonMargin - startY;
-
-        // Adjust row height to fit available space, with min/max limits
-        const maxRowHeight = 45;
-        const minRowHeight = 35;
-        const calculatedRowHeight = availableHeight / (this.maxScores + 1.5); // +1.5 for header and padding
-        const rowHeight = Math.max(minRowHeight, Math.min(maxRowHeight, calculatedRowHeight));
+        // Arcade-style: compact table for 5 scores only
+        const rowHeight = width < 400 ? 50 : 55;
+        const tableHeight = (this.maxScores + 1) * rowHeight + 30;
 
         // Table background
-        const tableHeight = (this.maxScores + 1) * rowHeight + 20;
         const tableBg = this.add.rectangle(
             width / 2, startY + tableHeight / 2,
             tableWidth, tableHeight,
@@ -100,14 +91,15 @@ export class HighScoresScene extends Phaser.Scene {
         );
         tableBg.setStrokeStyle(2, 0x3498db);
 
-        // Responsive column positions - 3 columns only (RANK, NAME, SCORE)
-        const leftMargin = width / 2 - tableWidth / 2 + 30;
+        // 4-column layout: RANK, NAME, MEDAL, SCORE
+        const leftMargin = width / 2 - tableWidth / 2 + 25;
         const rankX = leftMargin;
-        const nameX = leftMargin + (width < 500 ? 50 : 70);
-        const scoreX = width / 2 + tableWidth / 2 - 30;
+        const nameX = leftMargin + (width < 400 ? 45 : 60);
+        const medalX = width / 2 + tableWidth / 2 - (width < 400 ? 110 : 140); // Medal before score
+        const scoreX = width / 2 + tableWidth / 2 - 25;
 
-        // Column headers with responsive font size
-        const headerFontSize = width < 400 ? '14px' : '16px';
+        // Column headers with bigger font
+        const headerFontSize = width < 400 ? '15px' : '18px';
         const headerStyle = {
             fontSize: headerFontSize,
             fontFamily: 'Arial',
@@ -125,73 +117,128 @@ export class HighScoresScene extends Phaser.Scene {
         divider.lineStyle(1, 0x3498db, 0.5);
         divider.lineBetween(
             leftMargin - 10,
-            headerY + 20,
+            headerY + 25,
             scoreX + 10,
-            headerY + 20
+            headerY + 25
         );
 
         // Medal colors for top 3 positions
         const medalColors = {
-            0: '#FFD700', // Gold
-            1: '#C0C0C0', // Silver
-            2: '#CD7F32'  // Bronze
+            0: 0xFFD700, // Gold
+            1: 0xC0C0C0, // Silver
+            2: 0xCD7F32  // Bronze
         };
 
-        // Score rows with responsive font sizes
-        const rowFontSize = width < 400 ? '13px' : '14px';
-        const rowStyle = {
-            fontSize: rowFontSize,
-            fontFamily: 'Arial',
-            fill: '#ffffff'
-        };
+        // Bigger font sizes - arcade style
+        const rowFontSize = width < 400 ? '15px' : '18px';
+        const scoreFontSize = width < 400 ? '16px' : '20px'; // Bigger scores!
 
         if (this.highScores.length === 0) {
             // No scores yet - show message
             this.add.text(width / 2, startY + tableHeight / 2, 'No scores yet!\nBe the first to play!', {
-                fontSize: '18px',
+                fontSize: '20px',
                 fontFamily: 'Arial',
                 fill: '#a0c4ff',
                 align: 'center'
             }).setOrigin(0.5);
         } else {
-            // Display scores
+            // Display scores with fly-in animation (arcade style!)
             this.highScores.forEach((score, index) => {
-                const rowY = headerY + 40 + (index * rowHeight);
+                const rowY = headerY + 55 + (index * rowHeight);
 
-                // Determine rank color (gold/silver/bronze for top 3)
-                const rankColor = medalColors[index] || '#ffffff';
-                const isTopThree = index < 3;
+                // All text is WHITE (no colored rank numbers)
+                const rowStyle = {
+                    fontSize: rowFontSize,
+                    fontFamily: 'Arial',
+                    fill: '#ffffff',
+                    fontWeight: 'normal'
+                };
 
                 // Alternate row background
                 if (index % 2 === 0) {
                     const rowBg = this.add.rectangle(
                         width / 2, rowY,
-                        tableWidth - 40, rowHeight - 5,
+                        tableWidth - 30, rowHeight - 8,
                         0x0f3460, 0.3
                     );
                 }
 
-                // Rank number with color coding for top 3
-                this.add.text(rankX, rowY, (index + 1).toString(), {
-                    fontSize: isTopThree ? '18px' : rowFontSize,
-                    fontFamily: 'Arial',
-                    fill: rankColor,
-                    fontWeight: isTopThree ? 'bold' : 'normal'
+                // Rank number (white text)
+                const rankText = this.add.text(rankX, rowY, (index + 1).toString(), {
+                    ...rowStyle,
+                    fontSize: rowFontSize
                 }).setOrigin(0, 0.5);
 
-                // Name
-                this.add.text(
+                // Name (white text)
+                const nameText = this.add.text(
                     nameX, rowY,
                     score.name || 'Player',
                     rowStyle
                 ).setOrigin(0, 0.5);
 
-                // Score
-                this.add.text(
+                // Medal (small colored circle for top 3)
+                let medal = null;
+                if (index < 3) {
+                    const medalSize = width < 400 ? 12 : 16;
+                    medal = this.add.circle(medalX, rowY, medalSize, medalColors[index]);
+                }
+
+                // Score (white text, bigger font)
+                const scoreText = this.add.text(
                     scoreX, rowY,
                     score.score.toLocaleString(),
-                    { ...rowStyle, fontWeight: 'bold', fill: '#2ecc71' }
+                    {
+                        fontSize: scoreFontSize,
+                        fontFamily: 'Arial',
+                        fill: '#ffffff',
+                        fontWeight: 'bold'
+                    }
                 ).setOrigin(1, 0.5);
+
+                // Arcade-style fly-in animation (left to right!)
+                const animDelay = 500 + (index * 150); // Stagger each row
+                const animDuration = 400;
+
+                // Start all elements off-screen to the left
+                rankText.setX(rankText.x - width);
+                nameText.setX(nameText.x - width);
+                if (medal) medal.setX(medal.x - width);
+                scoreText.setX(scoreText.x - width);
+
+                // Animate flying in from left
+                this.tweens.add({
+                    targets: rankText,
+                    x: rankX,
+                    delay: animDelay,
+                    duration: animDuration,
+                    ease: 'Back.easeOut'
+                });
+
+                this.tweens.add({
+                    targets: nameText,
+                    x: nameX,
+                    delay: animDelay + 50,
+                    duration: animDuration,
+                    ease: 'Back.easeOut'
+                });
+
+                if (medal) {
+                    this.tweens.add({
+                        targets: medal,
+                        x: medalX,
+                        delay: animDelay + 100,
+                        duration: animDuration,
+                        ease: 'Back.easeOut'
+                    });
+                }
+
+                this.tweens.add({
+                    targets: scoreText,
+                    x: scoreX,
+                    delay: animDelay + 150,
+                    duration: animDuration,
+                    ease: 'Back.easeOut'
+                });
             });
         }
     }
