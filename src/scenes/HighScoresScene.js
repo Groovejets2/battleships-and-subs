@@ -62,7 +62,12 @@ export class HighScoresScene extends Phaser.Scene {
      * Create high scores title
      */
     createTitle(width, height) {
-        this.add.text(width / 2, height * 0.08, 'HIGH SCORES', {
+        // Detect landscape mode (short screens)
+        const isLandscape = width > height;
+        const titleY = isLandscape ? height * 0.05 : height * 0.08;
+        const subtitleY = isLandscape ? height * 0.10 : height * 0.13;
+
+        this.add.text(width / 2, titleY, 'HIGH SCORES', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -71,7 +76,7 @@ export class HighScoresScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Subtitle
-        this.add.text(width / 2, height * 0.13, 'Top Commanders', {
+        this.add.text(width / 2, subtitleY, 'Top Commanders', {
             fontSize: '16px',
             fontFamily: 'Arial',
             fill: '#a0c4ff',
@@ -83,11 +88,19 @@ export class HighScoresScene extends Phaser.Scene {
      * Create arcade-style scores table - top 5 only
      */
     createScoresTable(width, height) {
-        const startY = height * 0.22;
+        // Detect landscape mode (short screens)
+        const isLandscape = width > height;
+        const startY = isLandscape ? height * 0.16 : height * 0.22;
         const tableWidth = Math.min(width * 0.85, 550); // Smaller table
 
         // Arcade-style: compact table for 5 scores only
-        const rowHeight = width < 400 ? 50 : 55;
+        // Use smaller rows in landscape mode to fit everything
+        let rowHeight;
+        if (isLandscape) {
+            rowHeight = 42; // Compact for landscape
+        } else {
+            rowHeight = width < 400 ? 50 : 55;
+        }
         const tableHeight = (this.maxScores + 1) * rowHeight + 30;
 
         // Table background
@@ -254,13 +267,24 @@ export class HighScoresScene extends Phaser.Scene {
      * Create back button (fixed distance below table - arcade style!)
      */
     createBackButton(width, height) {
-        const startY = height * 0.22;
-        const rowHeight = width < 400 ? 50 : 55;
+        // Detect landscape mode (short screens)
+        const isLandscape = width > height;
+        const startY = isLandscape ? height * 0.16 : height * 0.22;
+
+        // Match row height calculation from createScoresTable
+        let rowHeight;
+        if (isLandscape) {
+            rowHeight = 42; // Compact for landscape
+        } else {
+            rowHeight = width < 400 ? 50 : 55;
+        }
+
         const tableHeight = (this.maxScores + 1) * rowHeight + 30;
         const tableBottom = startY + tableHeight;
 
         // Fixed spacing below table (like arcade cabinets!)
-        const spacing = width < 400 ? 25 : 35; // ~0.5cm on most screens
+        // Use tighter spacing in landscape mode
+        const spacing = isLandscape ? 15 : (width < 400 ? 25 : 35);
         const buttonY = tableBottom + spacing + 25; // +25 for half button height
 
         const buttonWidth = Math.min(width * 0.4, 200);
