@@ -80,7 +80,7 @@ export class HighScoresScene extends Phaser.Scene {
      */
     createScoresTable(width, height) {
         const startY = height * 0.22;
-        const tableWidth = Math.min(width * 0.85, 600);
+        const tableWidth = Math.min(width * 0.9, 600);
 
         // Calculate available height for table (leave space for buttons at bottom)
         const buttonAreaHeight = 100; // Space for BACK/CLEAR buttons at bottom
@@ -101,33 +101,47 @@ export class HighScoresScene extends Phaser.Scene {
         );
         tableBg.setStrokeStyle(2, 0x3498db);
 
-        // Column headers
-        const headerY = startY + 15;
+        // Responsive column positions - 3 columns only (RANK, NAME, SCORE)
+        const leftMargin = width / 2 - tableWidth / 2 + 30;
+        const rankX = leftMargin;
+        const nameX = leftMargin + (width < 500 ? 50 : 70);
+        const scoreX = width / 2 + tableWidth / 2 - 30;
+
+        // Column headers with responsive font size
+        const headerFontSize = width < 400 ? '14px' : '16px';
         const headerStyle = {
-            fontSize: '16px',
+            fontSize: headerFontSize,
             fontFamily: 'Arial',
             fill: '#3498db',
             fontWeight: 'bold'
         };
 
-        this.add.text(width / 2 - tableWidth / 2 + 40, headerY, 'RANK', headerStyle).setOrigin(0, 0.5);
-        this.add.text(width / 2 - tableWidth / 2 + 120, headerY, 'NAME', headerStyle).setOrigin(0, 0.5);
-        this.add.text(width / 2 + tableWidth / 2 - 150, headerY, 'SCORE', headerStyle).setOrigin(1, 0.5);
-        this.add.text(width / 2 + tableWidth / 2 - 40, headerY, 'DATE', headerStyle).setOrigin(1, 0.5);
+        this.add.text(rankX, startY + 15, 'RANK', headerStyle).setOrigin(0, 0.5);
+        this.add.text(nameX, startY + 15, 'NAME', headerStyle).setOrigin(0, 0.5);
+        this.add.text(scoreX, startY + 15, 'SCORE', headerStyle).setOrigin(1, 0.5);
 
         // Header divider
+        const headerY = startY + 15;
         const divider = this.add.graphics();
         divider.lineStyle(1, 0x3498db, 0.5);
         divider.lineBetween(
-            width / 2 - tableWidth / 2 + 20,
+            leftMargin - 10,
             headerY + 20,
-            width / 2 + tableWidth / 2 - 20,
+            scoreX + 10,
             headerY + 20
         );
 
-        // Score rows
+        // Medal colors for top 3 positions
+        const medalColors = {
+            0: '#FFD700', // Gold
+            1: '#C0C0C0', // Silver
+            2: '#CD7F32'  // Bronze
+        };
+
+        // Score rows with responsive font sizes
+        const rowFontSize = width < 400 ? '13px' : '14px';
         const rowStyle = {
-            fontSize: '14px',
+            fontSize: rowFontSize,
             fontFamily: 'Arial',
             fill: '#ffffff'
         };
@@ -144,14 +158,11 @@ export class HighScoresScene extends Phaser.Scene {
             // Display scores
             this.highScores.forEach((score, index) => {
                 const rowY = headerY + 40 + (index * rowHeight);
-                
-                // Rank with medal for top 3
-                let rankText = (index + 1).toString();
-                let rankColor = '#ffffff';
-                if (index === 0) { rankText = '🥇'; }
-                else if (index === 1) { rankText = '🥈'; }
-                else if (index === 2) { rankText = '🥉'; }
-                
+
+                // Determine rank color (gold/silver/bronze for top 3)
+                const rankColor = medalColors[index] || '#ffffff';
+                const isTopThree = index < 3;
+
                 // Alternate row background
                 if (index % 2 === 0) {
                     const rowBg = this.add.rectangle(
@@ -161,31 +172,26 @@ export class HighScoresScene extends Phaser.Scene {
                     );
                 }
 
-                // Rank
-                this.add.text(width / 2 - tableWidth / 2 + 40, rowY, rankText, {
-                    ...rowStyle,
-                    fontSize: index < 3 ? '20px' : '14px'
+                // Rank number with color coding for top 3
+                this.add.text(rankX, rowY, (index + 1).toString(), {
+                    fontSize: isTopThree ? '18px' : rowFontSize,
+                    fontFamily: 'Arial',
+                    fill: rankColor,
+                    fontWeight: isTopThree ? 'bold' : 'normal'
                 }).setOrigin(0, 0.5);
 
                 // Name
                 this.add.text(
-                    width / 2 - tableWidth / 2 + 120, rowY,
+                    nameX, rowY,
                     score.name || 'Player',
                     rowStyle
                 ).setOrigin(0, 0.5);
 
                 // Score
                 this.add.text(
-                    width / 2 + tableWidth / 2 - 150, rowY,
+                    scoreX, rowY,
                     score.score.toLocaleString(),
                     { ...rowStyle, fontWeight: 'bold', fill: '#2ecc71' }
-                ).setOrigin(1, 0.5);
-
-                // Date
-                this.add.text(
-                    width / 2 + tableWidth / 2 - 40, rowY,
-                    this.formatDate(score.date),
-                    { ...rowStyle, fontSize: '12px', fill: '#95a5a6' }
                 ).setOrigin(1, 0.5);
             });
         }
