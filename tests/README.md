@@ -60,6 +60,33 @@ node tests/automated/highscores-scene-layout.test.js
 
 ---
 
+### title-scene-layout.test.js
+**Purpose:** Test TitleScene main menu display and background resize across multiple viewports
+
+**What it tests:**
+- Background gradient fill and wave animations
+- Background resize behavior (portrait → landscape transitions)
+- Title and subtitle positioning
+- Button layout and spacing
+- Tagline text positioning
+- Layout behavior across 11 viewports (same as other scene tests)
+
+**How to run:**
+```bash
+node tests/automated/title-scene-layout.test.js
+```
+
+**Output:** Screenshots in `screenshots/AUTOMATED-TESTS/` with `_title.png` suffix
+
+**Speed:** ~35 seconds for all 11 viewports (includes animation delays)
+
+**Design decisions:**
+- Background recreated on resize to prevent seam/split when dragging browser
+- Background set to depth -100, waves to depth -99 to stay behind UI elements
+- Fixes issue where resizing from portrait to landscape showed vertical seam
+
+---
+
 ### all-scenes-visual.test.js
 **Purpose:** Visual regression testing for all game scenes (Title, Game, Settings, High Scores)
 
@@ -91,8 +118,9 @@ node tests/automated/all-scenes-visual.test.js
 ### Automated Testing Priorities
 1. **GameScene layout** (highest priority) - most complex responsive logic
 2. **HighScoresScene layout** (high priority) - leaderboard table responsiveness
-3. **All scenes visual** (medium priority) - catch regressions across all scenes
-4. **Unit tests** (planned for Week 8) - FleetManager, Ship, gridValidation
+3. **TitleScene layout** (high priority) - background resize and main menu responsiveness
+4. **All scenes visual** (medium priority) - catch regressions across all scenes
+5. **Unit tests** (planned for Week 8) - FleetManager, Ship, gridValidation
 
 ### Manual Testing Checklist
 - [ ] Chrome DevTools device rotation
@@ -123,5 +151,5 @@ When adding new test scripts:
 ---
 
 **Last Updated:** 2026-02-15
-**Current Test Count:** 3 automated scripts
-**Total Viewports Covered:** 11 (GameScene) + 11 (HighScores) + 4 (All Scenes) = 26
+**Current Test Count:** 4 automated scripts
+**Total Viewports Covered:** 11 (GameScene) + 11 (HighScores) + 11 (TitleScene) + 4 (All Scenes) = 37
