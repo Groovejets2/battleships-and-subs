@@ -89,38 +89,55 @@ export class GameScene extends Phaser.Scene {
      * Calculate responsive layout based on screen dimensions
      */
     calculateLayout(width, height) {
-        // Use tighter spacing for mobile portrait
-        let { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
+        const { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
 
-        // If in stacked mode (mobile portrait), reduce spacing
-        const isPortrait = height > width;
-        const shouldStack = width < (GRID_SIZE * CELL_SIZE * 2 + GRID_SPACING + MARGIN * 2);
-
-        if (shouldStack && isPortrait) {
-            TITLE_SPACE = 18;
-            MARGIN = 6;
-            GRID_SPACING = 10;
-        }
-
-        const verticalPadding = 2 * MARGIN + 3 * TITLE_SPACE + GRID_SPACING;
-        const maxCellSizeStacked = (height - verticalPadding) / (GRID_SIZE * 2);
-
+        // Calculate maximum possible cell size for side-by-side layout
         const maxCellSizeSideBySide = Math.min(
             (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
             (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
         );
 
+        // Calculate maximum possible cell size for stacked layout with tighter spacing
+        const stackedTitleSpace = 35; // More space to prevent overlap
+        const stackedMargin = 10;
+        const stackedGridSpacing = 20; // More separation between grids
+        // Vertical padding includes: status text (60), 2 titles, grid spacing, 2 sets of labels (LABEL_SPACE), margins
+        const verticalPadding = 60 + 2 * stackedTitleSpace + stackedGridSpacing + (2 * LABEL_SPACE) + stackedMargin;
+        const maxCellSizeStacked = (height - verticalPadding) / (GRID_SIZE * 2);
+
+        // Decide layout mode based on which gives better results
+        const isPortrait = height > width;
+
+        // For landscape: ALWAYS use side-by-side (we don't have vertical space to stack)
+        // For portrait: stack if width < 600px (we have vertical space)
+        let shouldStack;
+        if (isPortrait) {
+            // Portrait: stack unless we have tablet-width (>= 600px)
+            shouldStack = width < 600;
+        } else {
+            // Landscape: always side-by-side, even with small cells
+            // Stacking in landscape doesn't work due to limited height
+            shouldStack = false;
+        }
+
+        // Use appropriate spacing based on mode
+        let finalTitleSpace = TITLE_SPACE;
+        let finalMargin = MARGIN;
+        let finalGridSpacing = GRID_SPACING;
+
+        if (shouldStack && isPortrait) {
+            finalTitleSpace = stackedTitleSpace;
+            finalMargin = stackedMargin;
+            finalGridSpacing = stackedGridSpacing;
+        }
+
+        // Calculate final cell size with minimum of 20px
+        const minCellSize = 20;
         let cellSize;
         if (shouldStack) {
-            cellSize = Math.max(
-                GAME_CONSTANTS.MIN_CELL_SIZE,
-                Math.min(CELL_SIZE, maxCellSizeStacked)
-            );
+            cellSize = Math.max(minCellSize, Math.min(CELL_SIZE, maxCellSizeStacked));
         } else {
-            cellSize = Math.max(
-                GAME_CONSTANTS.MIN_CELL_SIZE,
-                Math.min(CELL_SIZE, maxCellSizeSideBySide)
-            );
+            cellSize = Math.max(minCellSize, Math.min(CELL_SIZE, maxCellSizeSideBySide));
         }
 
         const gridWidth = GRID_SIZE * cellSize;
@@ -128,29 +145,84 @@ export class GameScene extends Phaser.Scene {
         let playerX, playerY, enemyX, enemyY;
 
         if (shouldStack) {
-            // Vertical stacking for mobile
-            const totalHeight = gridWidth * 2 + GRID_SPACING + 3 * TITLE_SPACE;
-            const startY = Math.max(MARGIN, (height - totalHeight) / 2);
+            // Vertical stacking for mobile - use tighter spacing
+            // Account for grid labels (LABEL_SPACE at bottom of each grid)
+            const totalHeight = gridWidth * 2 + (LABEL_SPACE * 2) + finalGridSpacing + 2 * finalTitleSpace;
+            const startY = Math.max(finalMargin, (height - totalHeight) / 2);
 
             const centerX = (width - gridWidth) / 2;
 
             playerX = centerX;
-            playerY = startY + TITLE_SPACE;
+            playerY = startY + finalTitleSpace;
             enemyX = centerX;
-            enemyY = playerY + gridWidth + GRID_SPACING + TITLE_SPACE;
+            // Position enemy grid AFTER player grid + its labels + spacing
+            enemyY = playerY + gridWidth + LABEL_SPACE + finalGridSpacing + finalTitleSpace;
         } else {
-            // Horizontal layout for desktop
-            const totalWidth = gridWidth * 2 + GRID_SPACING;
-            const startX = Math.max(MARGIN, (width - totalWidth) / 2);
-            const centerY = Math.max(MARGIN, (height - gridWidth - TITLE_SPACE) / 2);
+            // Horizontal layout for landscape/desktop - use standard spacing
+            const totalWidth = gridWidth * 2 + finalGridSpacing;
+            const startX = Math.max(finalMargin, (width - totalWidth) / 2);
+            const centerY = Math.max(finalMargin, (height - gridWidth - finalTitleSpace) / 2);
 
             playerX = startX;
-            playerY = centerY + TITLE_SPACE;
-            enemyX = startX + gridWidth + GRID_SPACING;
-            enemyY = centerY + TITLE_SPACE;
+            playerY = centerY + finalTitleSpace;
+            enemyX = startX + gridWidth + finalGridSpacing;
+            enemyY = centerY + finalTitleSpace;
         }
 
-        return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack };
+        return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack, width, height };
+    }
+
+    /**
+     * Get appropriate status text based on screen width and game state
+     */
+    getStatusText(width, state) {
+        const messages = {
+            'SETUP': {
+                full: 'SETUP PHASE - Place your ships',
+                medium: 'SETUP - Place ships',
+                short: 'Place Ships'
+            },
+            'PLAYER_TURN': {
+                full: 'YOUR TURN - Choose target',
+                medium: 'YOUR TURN',
+                short: 'Your Turn'
+            },
+            'ENEMY_TURN': {
+                full: 'ENEMY TURN - Wait...',
+                medium: 'ENEMY TURN',
+                short: 'Enemy Turn'
+            },
+            'GAME_OVER': {
+                full: 'GAME OVER',
+                medium: 'GAME OVER',
+                short: 'Game Over'
+            }
+        };
+
+        const stateMessages = messages[state] || messages['SETUP'];
+
+        if (width < 400) {
+            return stateMessages.short;
+        } else if (width < 600) {
+            return stateMessages.medium;
+        } else {
+            return stateMessages.full;
+        }
+    }
+
+    /**
+     * Get appropriate font size for status text based on screen width
+     */
+    getStatusFontSize(width) {
+        if (width < 400) {
+            return '13px';
+        } else if (width < 500) {
+            return '14px';
+        } else if (width < 700) {
+            return '16px';
+        } else {
+            return '18px';
+        }
     }
 
     /**
@@ -158,19 +230,32 @@ export class GameScene extends Phaser.Scene {
      */
     createUI() {
         const { width, height } = this.scale;
-        
-        // Back button (top-left)
-        const backButton = this.add.rectangle(60, 30, 100, 40, 0x2c3e50)
+
+        // Game status display - positioned higher to make room for back button
+        // Use shorter text on very narrow screens to prevent wrapping/overlap
+        const statusText = this.getStatusText(width, 'SETUP');
+        const fontSize = this.getStatusFontSize(width);
+
+        this.uiElements.statusText = this.add.text(width / 2, 15, statusText, {
+            fontSize: fontSize,
+            fontFamily: 'Arial',
+            fill: GAME_CONSTANTS.COLORS.TEXT,
+            fontWeight: 'bold'
+        }).setOrigin(0.5);
+
+        // Back button (top-left, positioned below status text on narrow screens)
+        const buttonY = width < 450 ? 45 : 35; // Lower on narrow screens to avoid overlap
+        const backButton = this.add.rectangle(55, buttonY, 90, 36, 0x2c3e50)
             .setStrokeStyle(2, 0xe74c3c)
             .setInteractive({ useHandCursor: true });
-            
-        const backText = this.add.text(60, 30, 'BACK', {
-            fontSize: '16px',
+
+        const backText = this.add.text(55, buttonY, 'BACK', {
+            fontSize: '15px',
             fontFamily: 'Arial',
             fill: '#ffffff',
             fontWeight: 'bold'
         }).setOrigin(0.5);
-        
+
         // Back button interactions
         backButton.on('pointerover', () => {
             backButton.setFillStyle(0xe74c3c);
@@ -181,7 +266,7 @@ export class GameScene extends Phaser.Scene {
                 duration: 150
             });
         });
-        
+
         backButton.on('pointerout', () => {
             backButton.setFillStyle(0x2c3e50);
             this.tweens.add({
@@ -191,18 +276,10 @@ export class GameScene extends Phaser.Scene {
                 duration: 150
             });
         });
-        
+
         backButton.on('pointerdown', () => {
             this.scene.start('TitleScene');
         });
-        
-        // Game status display
-        this.uiElements.statusText = this.add.text(width / 2, 20, 'SETUP PHASE - Place your ships', {
-            fontSize: '18px',
-            fontFamily: 'Arial',
-            fill: GAME_CONSTANTS.COLORS.TEXT,
-            fontWeight: 'bold'
-        }).setOrigin(0.5);
         
         // Store UI elements for updates
         this.uiElements.backButton = backButton;
@@ -226,30 +303,64 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize
+     * Handle dynamic resize - recreate grids when layout significantly changes
      */
     handleResize(width, height) {
-        // Destroy existing grids and titles
-        if (this.playerGrid) {
-            this.playerGrid.cells.clear(true, true); // Clear and destroy all cells
-            this.playerGrid.graphics.destroy();
-            this.playerGrid.labels.forEach(label => label.destroy());
-            this.playerGrid = null;
-        }
-        if (this.enemyGrid) {
-            this.enemyGrid.cells.clear(true, true); // Clear and destroy all cells
-            this.enemyGrid.graphics.destroy();
-            this.enemyGrid.labels.forEach(label => label.destroy());
-            this.enemyGrid = null;
-        }
-        this.gridTitles.forEach(title => title.destroy());
-        this.gridTitles = [];
+        // Calculate new layout
+        const newLayout = this.calculateLayout(width, height);
 
-        // Recreate the game layout
-        this.createGameLayout();
+        // Detect orientation change
+        const oldOrientation = this.currentLayout ?
+            (this.currentLayout.width > this.currentLayout.height ? 'landscape' : 'portrait') : null;
+        const newOrientation = width > height ? 'landscape' : 'portrait';
+        const orientationChanged = oldOrientation && oldOrientation !== newOrientation;
 
-        // Update UI elements
-        this.uiElements.statusText.setPosition(width / 2, 20);
+        // Detect significant cell size change (>15% change warrants recreation)
+        const cellSizeChanged = this.currentLayout ?
+            Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.15 : true;
+
+        // Recreate grids if: orientation changes, layout mode changes, or cell size changes significantly
+        const layoutChanged = !this.currentLayout ||
+                            this.currentLayout.shouldStack !== newLayout.shouldStack ||
+                            orientationChanged ||
+                            cellSizeChanged;
+
+        if (layoutChanged) {
+            // Destroy existing grids and titles
+            if (this.playerGrid) {
+                this.playerGrid.cells.clear(true, true);
+                this.playerGrid.graphics.destroy();
+                this.playerGrid.labels.forEach(label => label.destroy());
+                this.playerGrid = null;
+            }
+            if (this.enemyGrid) {
+                this.enemyGrid.cells.clear(true, true);
+                this.enemyGrid.graphics.destroy();
+                this.enemyGrid.labels.forEach(label => label.destroy());
+                this.enemyGrid = null;
+            }
+            this.gridTitles.forEach(title => title.destroy());
+            this.gridTitles = [];
+
+            // Recreate the game layout
+            this.createGameLayout();
+        }
+
+        // Always update UI elements positions and text
+        if (this.uiElements.statusText) {
+            const statusText = this.getStatusText(width, this.gameState);
+            const fontSize = this.getStatusFontSize(width);
+            this.uiElements.statusText.setText(statusText);
+            this.uiElements.statusText.setFontSize(fontSize);
+            this.uiElements.statusText.setPosition(width / 2, 15);
+        }
+        const buttonY = width < 450 ? 45 : 35;
+        if (this.uiElements.backButton) {
+            this.uiElements.backButton.setPosition(55, buttonY);
+        }
+        if (this.uiElements.backText) {
+            this.uiElements.backText.setPosition(55, buttonY);
+        }
     }
 
     /**
@@ -257,16 +368,11 @@ export class GameScene extends Phaser.Scene {
      */
     updateGameState(newState) {
         this.gameState = newState;
-        
-        const stateMessages = {
-            'SETUP': 'SETUP PHASE - Place your ships',
-            'PLAYER_TURN': 'YOUR TURN - Choose target',
-            'ENEMY_TURN': 'ENEMY TURN - Wait...',
-            'GAME_OVER': 'GAME OVER'
-        };
-        
+
         if (this.uiElements.statusText) {
-            this.uiElements.statusText.setText(stateMessages[newState] || newState);
+            const { width } = this.scale;
+            const statusText = this.getStatusText(width, newState);
+            this.uiElements.statusText.setText(statusText);
         }
     }
 

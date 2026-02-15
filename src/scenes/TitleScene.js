@@ -16,6 +16,7 @@ export class TitleScene extends Phaser.Scene {
         super({ key: 'TitleScene' });
         this.buttons = [];
         this.animations = [];
+        this.tagline = null;
     }
 
     preload() {
@@ -111,7 +112,7 @@ export class TitleScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Version or tagline
-        this.add.text(width / 2, height * 0.38, 'Navigate • Strategize • Dominate', {
+        this.tagline = this.add.text(width / 2, height * 0.38, 'Navigate • Strategize • Dominate', {
             fontSize: Math.min(width * 0.025, 16) + 'px',
             fontFamily: 'Arial',
             fill: '#a0c4ff',
@@ -284,11 +285,46 @@ export class TitleScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize
+     * Handle dynamic resize - reposition elements without restart
      */
     handleResize(width, height) {
-        // This method can be called from main.js resize handler
-        // Implement responsive layout adjustments here if needed
-        this.scene.restart();
+        // Update title positions
+        const titleObjects = this.children.list.filter(child =>
+            child.type === 'Text' && (child.text === 'BATTLESHIPS' || child.text === '& SUBS')
+        );
+
+        if (titleObjects.length >= 2) {
+            titleObjects[0].setPosition(width / 2, height * 0.25);
+            titleObjects[0].setFontSize(Math.min(width * 0.08, 48) + 'px');
+            titleObjects[1].setPosition(width / 2, height * 0.32);
+            titleObjects[1].setFontSize(Math.min(width * 0.06, 36) + 'px');
+        }
+
+        // Update tagline position and size
+        if (this.tagline) {
+            this.tagline.setPosition(width / 2, height * 0.38);
+            // Scale font size based on width, with narrower screens getting smaller text
+            const fontSize = Math.min(width * 0.025, 16);
+            this.tagline.setFontSize(fontSize + 'px');
+
+            // On very narrow screens, use smaller multiplier to prevent overflow
+            if (width < 400) {
+                this.tagline.setFontSize(Math.min(width * 0.032, 12) + 'px');
+            }
+        }
+
+        // Update button positions
+        const buttonHeight = Math.max(44, height * 0.08);
+        const buttonWidth = Math.min(width * 0.6, 300);
+        const startY = height * 0.55;
+        const spacing = buttonHeight + 20;
+
+        this.buttons.forEach((buttonObj, index) => {
+            const y = startY + (index * spacing);
+            buttonObj.button.setPosition(width / 2, y);
+            buttonObj.button.setSize(buttonWidth, buttonHeight);
+            buttonObj.text.setPosition(width / 2, y);
+            buttonObj.text.setFontSize(Math.min(buttonHeight * 0.4, 20) + 'px');
+        });
     }
 }
