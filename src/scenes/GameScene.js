@@ -177,19 +177,28 @@ export class GameScene extends Phaser.Scene {
      */
     createUI() {
         const { width, height } = this.scale;
-        
-        // Back button (top-left)
-        const backButton = this.add.rectangle(60, 30, 100, 40, 0x2c3e50)
+
+        // Game status display - positioned higher to make room for back button
+        this.uiElements.statusText = this.add.text(width / 2, 15, 'SETUP PHASE - Place your ships', {
+            fontSize: width < 450 ? '14px' : '18px', // Smaller font on narrow screens
+            fontFamily: 'Arial',
+            fill: GAME_CONSTANTS.COLORS.TEXT,
+            fontWeight: 'bold'
+        }).setOrigin(0.5);
+
+        // Back button (top-left, positioned below status text on narrow screens)
+        const buttonY = width < 450 ? 45 : 35; // Lower on narrow screens to avoid overlap
+        const backButton = this.add.rectangle(55, buttonY, 90, 36, 0x2c3e50)
             .setStrokeStyle(2, 0xe74c3c)
             .setInteractive({ useHandCursor: true });
-            
-        const backText = this.add.text(60, 30, 'BACK', {
-            fontSize: '16px',
+
+        const backText = this.add.text(55, buttonY, 'BACK', {
+            fontSize: '15px',
             fontFamily: 'Arial',
             fill: '#ffffff',
             fontWeight: 'bold'
         }).setOrigin(0.5);
-        
+
         // Back button interactions
         backButton.on('pointerover', () => {
             backButton.setFillStyle(0xe74c3c);
@@ -200,7 +209,7 @@ export class GameScene extends Phaser.Scene {
                 duration: 150
             });
         });
-        
+
         backButton.on('pointerout', () => {
             backButton.setFillStyle(0x2c3e50);
             this.tweens.add({
@@ -210,18 +219,10 @@ export class GameScene extends Phaser.Scene {
                 duration: 150
             });
         });
-        
+
         backButton.on('pointerdown', () => {
             this.scene.start('TitleScene');
         });
-        
-        // Game status display
-        this.uiElements.statusText = this.add.text(width / 2, 20, 'SETUP PHASE - Place your ships', {
-            fontSize: '18px',
-            fontFamily: 'Arial',
-            fill: GAME_CONSTANTS.COLORS.TEXT,
-            fontWeight: 'bold'
-        }).setOrigin(0.5);
         
         // Store UI elements for updates
         this.uiElements.backButton = backButton;
@@ -245,7 +246,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize - always recreate grids for proper scaling
+     * Handle dynamic resize - recreate grids when layout significantly changes
      */
     handleResize(width, height) {
         // Calculate new layout
@@ -257,10 +258,15 @@ export class GameScene extends Phaser.Scene {
         const newOrientation = width > height ? 'landscape' : 'portrait';
         const orientationChanged = oldOrientation && oldOrientation !== newOrientation;
 
-        // Always recreate on orientation change or significant layout change
+        // Detect significant cell size change (>15% change warrants recreation)
+        const cellSizeChanged = this.currentLayout ?
+            Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.15 : true;
+
+        // Recreate grids if: orientation changes, layout mode changes, or cell size changes significantly
         const layoutChanged = !this.currentLayout ||
                             this.currentLayout.shouldStack !== newLayout.shouldStack ||
-                            orientationChanged;
+                            orientationChanged ||
+                            cellSizeChanged;
 
         if (layoutChanged) {
             // Destroy existing grids and titles
@@ -285,13 +291,15 @@ export class GameScene extends Phaser.Scene {
 
         // Always update UI elements positions
         if (this.uiElements.statusText) {
-            this.uiElements.statusText.setPosition(width / 2, 20);
+            this.uiElements.statusText.setPosition(width / 2, 15);
+            this.uiElements.statusText.setFontSize(width < 450 ? '14px' : '18px');
         }
+        const buttonY = width < 450 ? 45 : 35;
         if (this.uiElements.backButton) {
-            this.uiElements.backButton.setPosition(60, 30);
+            this.uiElements.backButton.setPosition(55, buttonY);
         }
         if (this.uiElements.backText) {
-            this.uiElements.backText.setPosition(60, 30);
+            this.uiElements.backText.setPosition(55, buttonY);
         }
     }
 
