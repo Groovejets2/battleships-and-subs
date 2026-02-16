@@ -12,7 +12,9 @@
       "Bash(start http://localhost:8080)",
       "Bash(node test-highscores-min-size.js:*)",
       "Bash(node test-highscores-simple.js:*)",
-      "Bash(node test-highscores-v2.js:*)"
+      "Bash(node test-highscores-v2.js:*)",
+      "Bash(git log:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []
