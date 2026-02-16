@@ -292,6 +292,18 @@ src/
   - Semantic versioning
   - Common scenarios and troubleshooting
 
+#### UI Test (v1.0.0)
+- **Location:** `.claude/skills/ui-test/ui-test.md`
+- **Purpose:** Automated UI testing for Phaser games using Playwright/Chromium
+- **Invoke:** "Use the ui-test skill" or reference the skill for testing
+- **Created:** 2026-02-17
+- **Covers:**
+  - Playwright automated browser testing
+  - Canvas-based game testing (coordinate clicking)
+  - Responsive design verification
+  - Screenshot capture and visual regression testing
+  - Test file organization in `tests/ui/` directory
+
 ---
 
 ## Version History
@@ -377,15 +389,20 @@ src/
 
 ---
 
-**Last Updated:** 2026-02-15
-**Project Status:** Week 3 - Responsive Design Fixes Complete, Awaiting User Verification
-**Recent Work:** GameScene rotation and scaling fixes implemented and committed (commit 9c9c503)
-**Next Milestone:** User verification of rotation fixes, then proceed to Week 4 (AI opponent)
-**Skills Added:** gitflow v1.0.0
+**Last Updated:** 2026-02-17
+**Project Status:** Week 3 - All Responsive Design Issues Resolved ✅
+**Recent Work:**
+- SettingsScene resize bug fixed (commit 6df8398)
+- HighScoresScene minimum size constraint fixed (commit bec3e47)
+- All 4 scenes now fully responsive on all screen sizes
+**Next Milestone:** Week 4 - AI opponent implementation
+**Skills Added:** gitflow v1.0.0, ui-test v1.0.0
 **Tools Added:** Playwright for automated visual testing
+**Test Infrastructure:** `tests/ui/` directory, automated responsive testing
 **Documentation Structure:**
 - Workflow: /doc/output/Development-Workflow-Protocol
 - Investigations: /doc/output/Investigation/ (4 analysis documents)
 - Original Specs: /doc/output/Original-Docs/ (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 - Test Plans: /doc/output/Test-Plan/ (Manual testing procedures)
 - Technical Summaries: /doc/output/GameScene-Rotation-Fix-Summary
+- Skills: .claude/skills/gitflow/, .claude/skills/ui-test/

@@ -6,7 +6,13 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(python:*)",
+      "Read(//d/**)",
+      "Bash(start http://localhost:8080)",
+      "Bash(node test-highscores-min-size.js:*)",
+      "Bash(node test-highscores-simple.js:*)",
+      "Bash(node test-highscores-v2.js:*)"
     ],
     "deny": [],
     "ask": []
