@@ -14,7 +14,10 @@
       "Bash(node test-highscores-simple.js:*)",
       "Bash(node test-highscores-v2.js:*)",
       "Bash(git log:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git branch:*)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []
