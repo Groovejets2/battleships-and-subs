@@ -56,13 +56,14 @@ export class HighScoresScene extends Phaser.Scene {
         const w = width !== undefined ? width : this.scale.width;
         const h = height !== undefined ? height : this.scale.height;
 
-        // Clear existing background if it exists
-        if (this.backgroundGraphics) {
-            this.backgroundGraphics.destroy();
+        // Create or reuse background graphics
+        if (!this.backgroundGraphics) {
+            this.backgroundGraphics = this.add.graphics();
+            this.backgroundGraphics.setDepth(-100);
         }
 
-        this.backgroundGraphics = this.add.graphics();
-        this.backgroundGraphics.setDepth(-100); // Keep background behind all elements
+        // Clear and redraw background
+        this.backgroundGraphics.clear();
         this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
         this.backgroundGraphics.fillRect(0, 0, w, h);
     }

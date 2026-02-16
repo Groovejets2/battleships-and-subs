@@ -62,18 +62,18 @@ export class TitleScene extends Phaser.Scene {
         const w = width !== undefined ? width : this.scale.width;
         const h = height !== undefined ? height : this.scale.height;
 
-        // Clear existing background if it exists
-        if (this.backgroundGraphics) {
-            this.backgroundGraphics.destroy();
-        }
+        // Clear existing waves
         this.waves.forEach(wave => wave.destroy());
         this.waves = [];
 
-        // Create gradient background with moving waves effect
-        this.backgroundGraphics = this.add.graphics();
-        this.backgroundGraphics.setDepth(-100); // Keep background behind all other elements
+        // Create or reuse background graphics
+        if (!this.backgroundGraphics) {
+            this.backgroundGraphics = this.add.graphics();
+            this.backgroundGraphics.setDepth(-100);
+        }
 
-        // Main background gradient - use passed dimensions
+        // Clear and redraw background
+        this.backgroundGraphics.clear();
         this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
         this.backgroundGraphics.fillRect(0, 0, w, h);
 
