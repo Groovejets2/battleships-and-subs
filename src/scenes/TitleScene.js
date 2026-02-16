@@ -29,16 +29,22 @@ export class TitleScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-        
+
+        // Clear old references (important when scene is restarted)
+        this.buttons = [];
+        this.waves = [];
+        this.tagline = null;
+        this.backgroundGraphics = null;
+
         // Create animated background
         this.createBackground();
-        
+
         // Create game logo/title
         this.createTitle(width, height);
-        
+
         // Create navigation buttons
         this.createButtons(width, height);
-        
+
         // Add subtle animations
         this.createAnimations();
 
@@ -48,8 +54,14 @@ export class TitleScene extends Phaser.Scene {
 
     /**
      * Create animated naval background
+     * @param {number} width - Optional width override (for resize events)
+     * @param {number} height - Optional height override (for resize events)
      */
-    createBackground() {
+    createBackground(width, height) {
+        // Use passed dimensions if available, otherwise use scale (for initial create)
+        const w = width !== undefined ? width : this.scale.width;
+        const h = height !== undefined ? height : this.scale.height;
+
         // Clear existing background if it exists
         if (this.backgroundGraphics) {
             this.backgroundGraphics.destroy();
@@ -61,20 +73,20 @@ export class TitleScene extends Phaser.Scene {
         this.backgroundGraphics = this.add.graphics();
         this.backgroundGraphics.setDepth(-100); // Keep background behind all other elements
 
-        // Main background gradient
+        // Main background gradient - use passed dimensions
         this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        this.backgroundGraphics.fillRect(0, 0, this.scale.width, this.scale.height);
+        this.backgroundGraphics.fillRect(0, 0, w, h);
 
-        // Animated wave lines
+        // Animated wave lines - use passed dimensions
         for (let i = 0; i < 5; i++) {
             const wave = this.add.graphics();
             wave.setDepth(-99); // Wave lines just above background, but below UI
             wave.lineStyle(2, 0x4a90e2, 0.3);
 
-            const y = (this.scale.height / 6) * (i + 1);
+            const y = (h / 6) * (i + 1);
             wave.beginPath();
 
-            for (let x = 0; x <= this.scale.width; x += 10) {
+            for (let x = 0; x <= w; x += 10) {
                 const waveY = y + Math.sin((x + i * 50) * 0.01) * 10;
                 if (x === 0) wave.moveTo(x, waveY);
                 else wave.lineTo(x, waveY);
@@ -301,8 +313,8 @@ export class TitleScene extends Phaser.Scene {
      * Handle dynamic resize - reposition elements without restart
      */
     handleResize(width, height) {
-        // Recreate background to fill new dimensions
-        this.createBackground();
+        // Recreate background to fill new dimensions (pass dimensions explicitly)
+        this.createBackground(width, height);
 
         // Update title positions
         const titleObjects = this.children.list.filter(child =>

@@ -33,17 +33,22 @@ export class SettingsScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-        
+
+        // Clear old references (important when scene is restarted)
+        this.sliders = [];
+        this.toggles = [];
+        this.backgroundGraphics = null;
+
         // Create background
         this.createBackground();
-        
+
         // Create title
         this.createTitle(width, height);
-        
+
         // Create settings controls
         this.createAudioControls(width, height);
         this.createVisualControls(width, height);
-        
+
         // Create back button
         this.createBackButton(width, height);
 
@@ -53,8 +58,14 @@ export class SettingsScene extends Phaser.Scene {
 
     /**
      * Create gradient background matching title screen
+     * @param {number} width - Optional width override (for resize events)
+     * @param {number} height - Optional height override (for resize events)
      */
-    createBackground() {
+    createBackground(width, height) {
+        // Use passed dimensions if available, otherwise use scale (for initial create)
+        const w = width !== undefined ? width : this.scale.width;
+        const h = height !== undefined ? height : this.scale.height;
+
         // Clear existing background if it exists
         if (this.backgroundGraphics) {
             this.backgroundGraphics.destroy();
@@ -63,7 +74,7 @@ export class SettingsScene extends Phaser.Scene {
         this.backgroundGraphics = this.add.graphics();
         this.backgroundGraphics.setDepth(-100); // Keep background behind all elements
         this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        this.backgroundGraphics.fillRect(0, 0, this.scale.width, this.scale.height);
+        this.backgroundGraphics.fillRect(0, 0, w, h);
     }
 
     /**
@@ -293,8 +304,8 @@ export class SettingsScene extends Phaser.Scene {
      * Handle dynamic resize - reposition elements without restart
      */
     handleResize(width, height) {
-        // Recreate background to fill new dimensions (prevents black screen bug)
-        this.createBackground();
+        // Recreate background to fill new dimensions (pass dimensions explicitly)
+        this.createBackground(width, height);
 
         // Update title position
         const titleText = this.children.list.find(child => child.type === 'Text' && child.text === 'SETTINGS');

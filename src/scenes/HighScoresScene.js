@@ -27,6 +27,9 @@ export class HighScoresScene extends Phaser.Scene {
     create() {
         const { width, height } = this.scale;
 
+        // Clear old references (important when scene is restarted)
+        this.backgroundGraphics = null;
+
         // Create background
         this.createBackground();
 
@@ -45,8 +48,14 @@ export class HighScoresScene extends Phaser.Scene {
 
     /**
      * Create gradient background matching other scenes
+     * @param {number} width - Optional width override (for resize events)
+     * @param {number} height - Optional height override (for resize events)
      */
-    createBackground() {
+    createBackground(width, height) {
+        // Use passed dimensions if available, otherwise use scale (for initial create)
+        const w = width !== undefined ? width : this.scale.width;
+        const h = height !== undefined ? height : this.scale.height;
+
         // Clear existing background if it exists
         if (this.backgroundGraphics) {
             this.backgroundGraphics.destroy();
@@ -55,7 +64,7 @@ export class HighScoresScene extends Phaser.Scene {
         this.backgroundGraphics = this.add.graphics();
         this.backgroundGraphics.setDepth(-100); // Keep background behind all elements
         this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        this.backgroundGraphics.fillRect(0, 0, this.scale.width, this.scale.height);
+        this.backgroundGraphics.fillRect(0, 0, w, h);
     }
 
     /**
@@ -414,8 +423,8 @@ export class HighScoresScene extends Phaser.Scene {
      * Handle dynamic resize - recreate background to prevent black screen
      */
     handleResize(width, height) {
-        // Recreate background to fill new dimensions (prevents black screen bug)
-        this.createBackground();
+        // Recreate background to fill new dimensions (pass dimensions explicitly)
+        this.createBackground(width, height);
 
         // High scores table is complex with many animated elements
         // Scene restart ensures proper layout recalculation and animation replay
