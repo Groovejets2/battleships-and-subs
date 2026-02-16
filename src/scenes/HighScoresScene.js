@@ -104,12 +104,23 @@ export class HighScoresScene extends Phaser.Scene {
         const tableWidth = Math.min(width * 0.85, 550); // Smaller table
 
         // Arcade-style: compact table for 5 scores only
-        // Use smaller rows in landscape mode to fit everything
+        // Dynamic row height scales with screen height for very small screens
         let rowHeight;
         if (isLandscape) {
-            rowHeight = 42; // Compact for landscape
+            // Landscape: very compact, scale with height
+            rowHeight = Math.max(35, Math.min(42, height * 0.055));
         } else {
-            rowHeight = width < 400 ? 50 : 55;
+            // Portrait: scale down on small screens
+            if (height < 550) {
+                // Very small screens: aggressive scaling
+                rowHeight = Math.max(38, height * 0.068);
+            } else if (height < 650) {
+                // Small screens: moderate scaling
+                rowHeight = Math.max(42, height * 0.07);
+            } else {
+                // Normal screens: original fixed sizes
+                rowHeight = width < 400 ? 50 : 55;
+            }
         }
         const tableHeight = (this.maxScores + 1) * rowHeight + 30;
 
@@ -128,8 +139,15 @@ export class HighScoresScene extends Phaser.Scene {
         const medalX = width / 2 + tableWidth / 2 - (width < 400 ? 110 : 140); // Medal before score
         const scoreX = width / 2 + tableWidth / 2 - 25;
 
-        // Column headers with bigger font
-        const headerFontSize = width < 400 ? '15px' : '18px';
+        // Column headers with responsive font sizing
+        let headerFontSize;
+        if (height < 550) {
+            headerFontSize = '13px'; // Very small screens
+        } else if (height < 650) {
+            headerFontSize = '14px'; // Small screens
+        } else {
+            headerFontSize = width < 400 ? '15px' : '18px'; // Normal screens
+        }
         const headerStyle = {
             fontSize: headerFontSize,
             fontFamily: 'Arial',
@@ -159,9 +177,18 @@ export class HighScoresScene extends Phaser.Scene {
             2: 0xCD7F32  // Bronze
         };
 
-        // Bigger font sizes - arcade style
-        const rowFontSize = width < 400 ? '15px' : '18px';
-        const scoreFontSize = width < 400 ? '16px' : '20px'; // Bigger scores!
+        // Responsive font sizes - scale down on very small screens
+        let rowFontSize, scoreFontSize;
+        if (height < 550) {
+            rowFontSize = '13px';
+            scoreFontSize = '14px';
+        } else if (height < 650) {
+            rowFontSize = '14px';
+            scoreFontSize = '16px';
+        } else {
+            rowFontSize = width < 400 ? '15px' : '18px';
+            scoreFontSize = width < 400 ? '16px' : '20px'; // Bigger scores!
+        }
 
         if (this.highScores.length === 0) {
             // No scores yet - show message
@@ -209,7 +236,14 @@ export class HighScoresScene extends Phaser.Scene {
                 // Medal (small colored circle for top 3)
                 let medal = null;
                 if (index < 3) {
-                    const medalSize = width < 400 ? 12 : 16;
+                    let medalSize;
+                    if (height < 550) {
+                        medalSize = 10; // Very small screens
+                    } else if (height < 650) {
+                        medalSize = 12; // Small screens
+                    } else {
+                        medalSize = width < 400 ? 12 : 16; // Normal screens
+                    }
                     medal = this.add.circle(medalX, rowY, medalSize, medalColors[index]);
                 }
 
@@ -284,17 +318,37 @@ export class HighScoresScene extends Phaser.Scene {
         // Match row height calculation from createScoresTable
         let rowHeight;
         if (isLandscape) {
-            rowHeight = 42; // Compact for landscape
+            // Landscape: very compact, scale with height
+            rowHeight = Math.max(35, Math.min(42, height * 0.055));
         } else {
-            rowHeight = width < 400 ? 50 : 55;
+            // Portrait: scale down on small screens
+            if (height < 550) {
+                // Very small screens: aggressive scaling
+                rowHeight = Math.max(38, height * 0.068);
+            } else if (height < 650) {
+                // Small screens: moderate scaling
+                rowHeight = Math.max(42, height * 0.07);
+            } else {
+                // Normal screens: original fixed sizes
+                rowHeight = width < 400 ? 50 : 55;
+            }
         }
 
         const tableHeight = (this.maxScores + 1) * rowHeight + 30;
         const tableBottom = startY + tableHeight;
 
         // Fixed spacing below table (like arcade cabinets!)
-        // Use tighter spacing in landscape mode
-        const spacing = isLandscape ? 15 : (width < 400 ? 25 : 35);
+        // Use tighter spacing on small screens
+        let spacing;
+        if (isLandscape) {
+            spacing = 15;
+        } else if (height < 550) {
+            spacing = 15; // Very tight for very small screens
+        } else if (height < 650) {
+            spacing = 20; // Tight for small screens
+        } else {
+            spacing = width < 400 ? 25 : 35; // Normal spacing
+        }
         const buttonY = tableBottom + spacing + 25; // +25 for half button height
 
         const buttonWidth = Math.min(width * 0.4, 200);
