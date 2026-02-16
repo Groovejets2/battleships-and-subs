@@ -24,7 +24,13 @@ export class SettingsScene extends Phaser.Scene {
         this.sliders = [];
         this.toggles = [];
         this.backgroundGraphics = null;
-        this.isResizing = false; // Flag to prevent resize loops
+
+        // Store all UI element references for repositioning
+        this.titleText = null;
+        this.audioLabels = [];
+        this.visualLabels = [];
+        this.backButton = null;
+        this.backText = null;
     }
 
     preload() {
@@ -46,6 +52,11 @@ export class SettingsScene extends Phaser.Scene {
         // Reset arrays for fresh population
         this.sliders = [];
         this.toggles = [];
+        this.audioLabels = [];
+        this.visualLabels = [];
+        this.titleText = null;
+        this.backButton = null;
+        this.backText = null;
 
         // Create background
         this.createBackground();
@@ -90,7 +101,7 @@ export class SettingsScene extends Phaser.Scene {
      * Create settings title
      */
     createTitle(width, height) {
-        this.add.text(width / 2, height * 0.12, 'SETTINGS', {
+        this.titleText = this.add.text(width / 2, height * 0.12, 'SETTINGS', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -115,14 +126,15 @@ export class SettingsScene extends Phaser.Scene {
 
         audioControls.forEach((control, index) => {
             const y = startY + (index * spacing);
-            
+
             // Label
-            this.add.text(width / 2, y - 20, control.label, {
+            const label = this.add.text(width / 2, y - 20, control.label, {
                 fontSize: '18px',
                 fontFamily: 'Arial',
                 fill: '#ffffff',
                 fontWeight: 'bold'
             }).setOrigin(0.5);
+            this.audioLabels.push(label);
 
             // Slider track
             const track = this.add.rectangle(
@@ -186,14 +198,15 @@ export class SettingsScene extends Phaser.Scene {
 
         visualControls.forEach((control, index) => {
             const y = startY + (index * spacing);
-            
+
             // Label
-            this.add.text(width / 2 - 80, y, control.label, {
+            const label = this.add.text(width / 2 - 80, y, control.label, {
                 fontSize: '18px',
                 fontFamily: 'Arial',
                 fill: '#ffffff',
                 fontWeight: 'bold'
             }).setOrigin(0, 0.5);
+            this.visualLabels.push(label);
 
             // Toggle switch background
             const toggleBg = this.add.rectangle(
@@ -237,18 +250,21 @@ export class SettingsScene extends Phaser.Scene {
         const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 
-        const button = this.add.rectangle(
+        this.backButton = this.add.rectangle(
             width / 2, buttonY, buttonWidth, buttonHeight, 0x2c3e50
         );
-        button.setStrokeStyle(3, 0xe74c3c);
-        button.setInteractive({ useHandCursor: true });
+        this.backButton.setStrokeStyle(3, 0xe74c3c);
+        this.backButton.setInteractive({ useHandCursor: true });
 
-        const text = this.add.text(width / 2, buttonY, 'BACK', {
+        this.backText = this.add.text(width / 2, buttonY, 'BACK', {
             fontSize: '20px',
             fontFamily: 'Arial',
             fill: '#ffffff',
             fontWeight: 'bold'
         }).setOrigin(0.5);
+
+        const button = this.backButton;
+        const text = this.backText;
 
         button.on('pointerover', () => {
             button.setFillStyle(0xe74c3c);
@@ -310,16 +326,111 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize - prevents black screen, doesn't reposition controls
+     * Handle dynamic resize - full responsive repositioning
      */
     handleResize(width, height) {
-        // Recreate background to fill new dimensions (prevents black screen)
+        // Recreate background to fill new dimensions
         this.createBackground(width, height);
 
-        // TODO: Complex repositioning of sliders/toggles
-        // Currently settings controls don't reposition on resize
-        // User should avoid resizing window while on settings screen
-        // Or return to title and revisit settings after resize
-        // Consider adding full responsive repositioning in future if needed
+        // Update title
+        if (this.titleText) {
+            this.titleText.setPosition(width / 2, height * 0.12);
+            this.titleText.setFontSize(Math.min(width * 0.06, 42) + 'px');
+        }
+
+        // Update audio controls
+        const startY = height * 0.25;
+        const spacing = height * 0.12;
+        const sliderWidth = Math.min(width * 0.5, 300);
+
+        this.sliders.forEach((slider, index) => {
+            const y = startY + (index * spacing);
+
+            // Update label
+            if (this.audioLabels[index]) {
+                this.audioLabels[index].setPosition(width / 2, y - 20);
+            }
+
+            // Update slider track
+            slider.track.setPosition(width / 2, y + 10);
+            slider.track.width = sliderWidth;
+
+            // Update slider fill
+            const value = this.settings[slider.key];
+            slider.fill.setPosition(width / 2 - sliderWidth / 2, y + 10);
+            slider.fill.width = sliderWidth * value;
+
+            // Update slider handle
+            slider.handle.setPosition(width / 2 - sliderWidth / 2 + (sliderWidth * value), y + 10);
+
+            // Update value text
+            slider.valueText.setPosition(width / 2, y + 35);
+
+            // Update drag handler with new dimensions
+            slider.handle.removeAllListeners('drag');
+            slider.handle.on('drag', (pointer) => {
+                const minX = width / 2 - sliderWidth / 2;
+                const maxX = width / 2 + sliderWidth / 2;
+                const newX = Phaser.Math.Clamp(pointer.x, minX, maxX);
+
+                slider.handle.x = newX;
+
+                const value = (newX - minX) / sliderWidth;
+                this.settings[slider.key] = value;
+
+                slider.fill.width = sliderWidth * value;
+                slider.valueText.setText(Math.round(value * 100) + '%');
+
+                this.saveSettings();
+            });
+        });
+
+        // Update visual controls
+        const visualStartY = height * 0.65;
+        const visualSpacing = height * 0.08;
+
+        this.toggles.forEach((toggle, index) => {
+            const y = visualStartY + (index * visualSpacing);
+
+            // Update label
+            if (this.visualLabels[index]) {
+                this.visualLabels[index].setPosition(width / 2 - 80, y);
+            }
+
+            // Update toggle background
+            toggle.toggleBg.setPosition(width / 2 + 80, y);
+
+            // Update toggle handle
+            const isOn = this.settings[toggle.key];
+            toggle.toggleHandle.setPosition(width / 2 + 80 + (isOn ? 15 : -15), y);
+
+            // Update toggle interaction with new dimensions
+            toggle.toggleBg.removeAllListeners('pointerdown');
+            toggle.toggleBg.on('pointerdown', () => {
+                this.settings[toggle.key] = !this.settings[toggle.key];
+                const newValue = this.settings[toggle.key];
+
+                toggle.toggleBg.setFillStyle(newValue ? 0x2ecc71 : 0x95a5a6);
+
+                this.tweens.add({
+                    targets: toggle.toggleHandle,
+                    x: width / 2 + 80 + (newValue ? 15 : -15),
+                    duration: 200,
+                    ease: 'Back.easeOut'
+                });
+
+                this.saveSettings();
+            });
+        });
+
+        // Update back button
+        if (this.backButton && this.backText) {
+            const buttonY = height * 0.88;
+            const buttonWidth = Math.min(width * 0.4, 200);
+
+            this.backButton.setPosition(width / 2, buttonY);
+            this.backButton.setSize(buttonWidth, 50);
+            this.backText.setPosition(width / 2, buttonY);
+        }
     }
 }
