@@ -23,6 +23,14 @@ export class SettingsScene extends Phaser.Scene {
         };
         this.sliders = [];
         this.toggles = [];
+        this.backgroundGraphics = null;
+
+        // Store all UI element references for repositioning
+        this.titleText = null;
+        this.audioLabels = [];
+        this.visualLabels = [];
+        this.backButton = null;
+        this.backText = null;
     }
 
     preload() {
@@ -32,38 +40,68 @@ export class SettingsScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-        
+
+        // Clear old references (important when scene is restarted)
+        // Note: Don't set arrays to [] - just clear/destroy old elements
+        // The create methods will populate fresh arrays
+        if (this.backgroundGraphics) {
+            this.backgroundGraphics.destroy();
+            this.backgroundGraphics = null;
+        }
+
+        // Reset arrays for fresh population
+        this.sliders = [];
+        this.toggles = [];
+        this.audioLabels = [];
+        this.visualLabels = [];
+        this.titleText = null;
+        this.backButton = null;
+        this.backText = null;
+
         // Create background
         this.createBackground();
-        
+
         // Create title
         this.createTitle(width, height);
-        
+
         // Create settings controls
         this.createAudioControls(width, height);
         this.createVisualControls(width, height);
-        
+
         // Create back button
         this.createBackButton(width, height);
-        
+
         // Setup input
         this.setupInput();
     }
 
     /**
      * Create gradient background matching title screen
+     * @param {number} width - Optional width override (for resize events)
+     * @param {number} height - Optional height override (for resize events)
      */
-    createBackground() {
-        const graphics = this.add.graphics();
-        graphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        graphics.fillRect(0, 0, this.scale.width, this.scale.height);
+    createBackground(width, height) {
+        // Use passed dimensions if available, otherwise use scale (for initial create)
+        const w = width !== undefined ? width : this.scale.width;
+        const h = height !== undefined ? height : this.scale.height;
+
+        // Don't destroy during resize - just clear and redraw
+        if (!this.backgroundGraphics) {
+            this.backgroundGraphics = this.add.graphics();
+            this.backgroundGraphics.setDepth(-100);
+        }
+
+        // Clear and redraw
+        this.backgroundGraphics.clear();
+        this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
+        this.backgroundGraphics.fillRect(0, 0, w, h);
     }
 
     /**
      * Create settings title
      */
     createTitle(width, height) {
-        this.add.text(width / 2, height * 0.12, 'SETTINGS', {
+        this.titleText = this.add.text(width / 2, height * 0.12, 'SETTINGS', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -88,14 +126,15 @@ export class SettingsScene extends Phaser.Scene {
 
         audioControls.forEach((control, index) => {
             const y = startY + (index * spacing);
-            
+
             // Label
-            this.add.text(width / 2, y - 20, control.label, {
+            const label = this.add.text(width / 2, y - 20, control.label, {
                 fontSize: '18px',
                 fontFamily: 'Arial',
                 fill: '#ffffff',
                 fontWeight: 'bold'
             }).setOrigin(0.5);
+            this.audioLabels.push(label);
 
             // Slider track
             const track = this.add.rectangle(
@@ -159,14 +198,15 @@ export class SettingsScene extends Phaser.Scene {
 
         visualControls.forEach((control, index) => {
             const y = startY + (index * spacing);
-            
+
             // Label
-            this.add.text(width / 2 - 80, y, control.label, {
+            const label = this.add.text(width / 2 - 80, y, control.label, {
                 fontSize: '18px',
                 fontFamily: 'Arial',
                 fill: '#ffffff',
                 fontWeight: 'bold'
             }).setOrigin(0, 0.5);
+            this.visualLabels.push(label);
 
             // Toggle switch background
             const toggleBg = this.add.rectangle(
@@ -210,18 +250,21 @@ export class SettingsScene extends Phaser.Scene {
         const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 
-        const button = this.add.rectangle(
+        this.backButton = this.add.rectangle(
             width / 2, buttonY, buttonWidth, buttonHeight, 0x2c3e50
         );
-        button.setStrokeStyle(3, 0xe74c3c);
-        button.setInteractive({ useHandCursor: true });
+        this.backButton.setStrokeStyle(3, 0xe74c3c);
+        this.backButton.setInteractive({ useHandCursor: true });
 
-        const text = this.add.text(width / 2, buttonY, 'BACK', {
+        this.backText = this.add.text(width / 2, buttonY, 'BACK', {
             fontSize: '20px',
             fontFamily: 'Arial',
             fill: '#ffffff',
             fontWeight: 'bold'
         }).setOrigin(0.5);
+
+        const button = this.backButton;
+        const text = this.backText;
 
         button.on('pointerover', () => {
             button.setFillStyle(0xe74c3c);
@@ -283,17 +326,19 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize - reposition elements without restart
+     * Handle dynamic resize - full responsive repositioning
      */
     handleResize(width, height) {
-        // Update title position
-        const titleText = this.children.list.find(child => child.type === 'Text' && child.text === 'SETTINGS');
-        if (titleText) {
-            titleText.setPosition(width / 2, height * 0.12);
-            titleText.setFontSize(Math.min(width * 0.06, 42) + 'px');
+        // Recreate background to fill new dimensions
+        this.createBackground(width, height);
+
+        // Update title
+        if (this.titleText) {
+            this.titleText.setPosition(width / 2, height * 0.12);
+            this.titleText.setFontSize(Math.min(width * 0.06, 42) + 'px');
         }
 
-        // Update audio controls positions
+        // Update audio controls
         const startY = height * 0.25;
         const spacing = height * 0.12;
         const sliderWidth = Math.min(width * 0.5, 300);
@@ -302,51 +347,90 @@ export class SettingsScene extends Phaser.Scene {
             const y = startY + (index * spacing);
 
             // Update label
-            const labels = this.children.list.filter(child => child.type === 'Text');
-            const label = labels[index * 2 + 1]; // Skip title
-            if (label) {
-                label.setPosition(width / 2, y - 20);
+            if (this.audioLabels[index]) {
+                this.audioLabels[index].setPosition(width / 2, y - 20);
             }
 
-            // Update slider components
+            // Update slider track
             slider.track.setPosition(width / 2, y + 10);
             slider.track.width = sliderWidth;
 
-            slider.fill.setPosition(width / 2 - sliderWidth / 2, y + 10);
-
+            // Update slider fill
             const value = this.settings[slider.key];
+            slider.fill.setPosition(width / 2 - sliderWidth / 2, y + 10);
+            slider.fill.width = sliderWidth * value;
+
+            // Update slider handle
             slider.handle.setPosition(width / 2 - sliderWidth / 2 + (sliderWidth * value), y + 10);
 
+            // Update value text
             slider.valueText.setPosition(width / 2, y + 35);
+
+            // Update drag handler with new dimensions
+            slider.handle.removeAllListeners('drag');
+            slider.handle.on('drag', (pointer) => {
+                const minX = width / 2 - sliderWidth / 2;
+                const maxX = width / 2 + sliderWidth / 2;
+                const newX = Phaser.Math.Clamp(pointer.x, minX, maxX);
+
+                slider.handle.x = newX;
+
+                const value = (newX - minX) / sliderWidth;
+                this.settings[slider.key] = value;
+
+                slider.fill.width = sliderWidth * value;
+                slider.valueText.setText(Math.round(value * 100) + '%');
+
+                this.saveSettings();
+            });
         });
 
-        // Update visual controls positions
+        // Update visual controls
         const visualStartY = height * 0.65;
         const visualSpacing = height * 0.08;
 
         this.toggles.forEach((toggle, index) => {
             const y = visualStartY + (index * visualSpacing);
 
-            const labels = this.children.list.filter(child => child.type === 'Text');
-            const label = labels[6 + index]; // After audio labels
-            if (label) {
-                label.setPosition(width / 2 - 80, y);
+            // Update label
+            if (this.visualLabels[index]) {
+                this.visualLabels[index].setPosition(width / 2 - 80, y);
             }
 
+            // Update toggle background
             toggle.toggleBg.setPosition(width / 2 + 80, y);
+
+            // Update toggle handle
             const isOn = this.settings[toggle.key];
             toggle.toggleHandle.setPosition(width / 2 + 80 + (isOn ? 15 : -15), y);
+
+            // Update toggle interaction with new dimensions
+            toggle.toggleBg.removeAllListeners('pointerdown');
+            toggle.toggleBg.on('pointerdown', () => {
+                this.settings[toggle.key] = !this.settings[toggle.key];
+                const newValue = this.settings[toggle.key];
+
+                toggle.toggleBg.setFillStyle(newValue ? 0x2ecc71 : 0x95a5a6);
+
+                this.tweens.add({
+                    targets: toggle.toggleHandle,
+                    x: width / 2 + 80 + (newValue ? 15 : -15),
+                    duration: 200,
+                    ease: 'Back.easeOut'
+                });
+
+                this.saveSettings();
+            });
         });
 
         // Update back button
-        const backButton = this.children.list.find(child => child.type === 'Rectangle' && child.fillColor === 0x2c3e50);
-        const backText = this.children.list.find(child => child.type === 'Text' && child.text === 'BACK');
-        if (backButton && backText) {
+        if (this.backButton && this.backText) {
             const buttonY = height * 0.88;
             const buttonWidth = Math.min(width * 0.4, 200);
-            backButton.setPosition(width / 2, buttonY);
-            backButton.setSize(buttonWidth, 50);
-            backText.setPosition(width / 2, buttonY);
+
+            this.backButton.setPosition(width / 2, buttonY);
+            this.backButton.setSize(buttonWidth, 50);
+            this.backText.setPosition(width / 2, buttonY);
         }
     }
 }

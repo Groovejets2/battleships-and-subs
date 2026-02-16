@@ -12,8 +12,9 @@ This file serves as a reference index for AI assistants working on this project.
 1. This Claude.md file (always)
 2. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
 3. `.claude/skills/gitflow/gitflow.md` (git operations)
-4. `/doc/output/Investigation/` (analysis and investigation reports)
-5. `/doc/output/Original-Docs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
+4. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
+5. `/doc/output/analysis/` (technical analysis and investigation reports)
+6. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 
 ---
 
@@ -35,14 +36,27 @@ See Development-Workflow-Protocol document for complete handoff procedures and t
 **CRITICAL RULE:** ALL documentation MUST be placed in `/doc/output` folder or subfolders. Never create documentation in project root.
 
 **Folder Structure:**
-- `/doc/output/` - Workflow and protocol documents
-- `/doc/output/Investigation/` - Analysis and investigation reports (Kerry's work)
-- `/doc/output/Original-Docs/` - Core project specification documents (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
-- `/doc/output/Test-Plan/` - Testing documentation and manual test plans
+- `/doc/output/` - Workflow, protocol, and design philosophy documents
+- `/doc/output/project-specs/` - Core project specifications (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
+- `/doc/output/analysis/` - Technical analysis and investigation reports
+- `/doc/output/sessions/` - Session state snapshots and breakthrough summaries
+- `/doc/output/testing/` - Testing documentation and manual test plans
+
+**Design Standards:**
+- `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` - Comprehensive arcade UI/UX design philosophy
+  - Old-school arcade cabinet aesthetic
+  - Top 5 / Limited display philosophy
+  - White text philosophy and color palette
+  - Big fonts and touch-friendly sizing
+  - Fixed spacing and content-relative positioning
+  - Arcade-style animations and timing standards
+  - Scene-specific guidelines (HighScoresScene, TitleScene, GameScene, SettingsScene)
+
+See `/doc/README.md` for complete documentation structure guide.
 
 Three formal project documents:
 
-#### 1. **GAME_RULES.md** (~25 pages) - `/doc/output/Original-Docs/GAME_RULES.md`
+#### 1. **GAME_RULES.md** (~25 pages) - `/doc/output/project-specs/GAME_RULES.md`
 - Complete game rules and mechanics
 - Fleet composition (5 ships with specifications)
 - Placement rules (10×10 grid, 1-square spacing including diagonals)
@@ -54,7 +68,7 @@ Three formal project documents:
 - Settings, audio, and customization options
 - Technical requirements and platform support
 
-#### 2. **REQUIREMENTS.md** (~40 pages) - `/doc/output/Original-Docs/REQUIREMENTS.md`
+#### 2. **REQUIREMENTS.md** (~40 pages) - `/doc/output/project-specs/REQUIREMENTS.md`
 - Complete technical requirements specification
 - Functional Requirements (FR) organized into 11 categories:
   - Game Initialization, Title Screen, Ship Placement, Combat Phase
@@ -68,7 +82,7 @@ Three formal project documents:
 - Deployment and maintenance procedures
 - All requirements prioritized (P0=Critical, P1=High, P2=Nice to Have)
 
-#### 3. **DELIVERY_PLAN.md** (~50 pages) - `/doc/output/Original-Docs/DELIVERY_PLAN.md`
+#### 3. **DELIVERY_PLAN.md** (~50 pages) - `/doc/output/project-specs/DELIVERY_PLAN.md`
 - Comprehensive 10-week project delivery plan
 - Three-phase approach:
   - **Phase 1 (Weeks 1-4):** Core Gameplay - MVP with basic AI
@@ -278,6 +292,18 @@ src/
   - Semantic versioning
   - Common scenarios and troubleshooting
 
+#### UI Test (v1.0.0)
+- **Location:** `.claude/skills/ui-test/ui-test.md`
+- **Purpose:** Automated UI testing for Phaser games using Playwright/Chromium
+- **Invoke:** "Use the ui-test skill" or reference the skill for testing
+- **Created:** 2026-02-17
+- **Covers:**
+  - Playwright automated browser testing
+  - Canvas-based game testing (coordinate clicking)
+  - Responsive design verification
+  - Screenshot capture and visual regression testing
+  - Test file organization in `tests/ui/` directory
+
 ---
 
 ## Version History
@@ -363,15 +389,20 @@ src/
 
 ---
 
-**Last Updated:** 2026-02-15
-**Project Status:** Week 3 - Responsive Design Fixes Complete, Awaiting User Verification
-**Recent Work:** GameScene rotation and scaling fixes implemented and committed (commit 9c9c503)
-**Next Milestone:** User verification of rotation fixes, then proceed to Week 4 (AI opponent)
-**Skills Added:** gitflow v1.0.0
+**Last Updated:** 2026-02-17
+**Project Status:** Week 3 - All Responsive Design Issues Resolved ✅
+**Recent Work:**
+- SettingsScene resize bug fixed (commit 6df8398)
+- HighScoresScene minimum size constraint fixed (commit bec3e47)
+- All 4 scenes now fully responsive on all screen sizes
+**Next Milestone:** Week 4 - AI opponent implementation
+**Skills Added:** gitflow v1.0.0, ui-test v1.0.0
 **Tools Added:** Playwright for automated visual testing
+**Test Infrastructure:** `tests/ui/` directory, automated responsive testing
 **Documentation Structure:**
 - Workflow: /doc/output/Development-Workflow-Protocol
 - Investigations: /doc/output/Investigation/ (4 analysis documents)
 - Original Specs: /doc/output/Original-Docs/ (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 - Test Plans: /doc/output/Test-Plan/ (Manual testing procedures)
 - Technical Summaries: /doc/output/GameScene-Rotation-Fix-Summary
+- Skills: .claude/skills/gitflow/, .claude/skills/ui-test/
