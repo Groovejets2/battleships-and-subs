@@ -15,7 +15,8 @@ export class HighScoresScene extends Phaser.Scene {
     constructor() {
         super({ key: 'HighScoresScene' });
         this.highScores = [];
-        this.maxScores = 10;
+        this.maxScores = 5; // Old-school arcade style - top 5 only
+        this.backgroundGraphics = null;
     }
 
     preload() {
@@ -25,40 +26,58 @@ export class HighScoresScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
-        
+
+        // Clear old references (important when scene is restarted)
+        this.backgroundGraphics = null;
+
         // Create background
         this.createBackground();
-        
+
         // Create title
         this.createTitle(width, height);
-        
+
         // Create scores table
         this.createScoresTable(width, height);
-        
+
         // Create back button
         this.createBackButton(width, height);
-        
-        // Create clear scores button (optional)
-        this.createClearButton(width, height);
-        
+
         // Setup input
         this.setupInput();
     }
 
     /**
      * Create gradient background matching other scenes
+     * @param {number} width - Optional width override (for resize events)
+     * @param {number} height - Optional height override (for resize events)
      */
-    createBackground() {
-        const graphics = this.add.graphics();
-        graphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        graphics.fillRect(0, 0, this.scale.width, this.scale.height);
+    createBackground(width, height) {
+        // Use passed dimensions if available, otherwise use scale (for initial create)
+        const w = width !== undefined ? width : this.scale.width;
+        const h = height !== undefined ? height : this.scale.height;
+
+        // Create or reuse background graphics
+        if (!this.backgroundGraphics) {
+            this.backgroundGraphics = this.add.graphics();
+            this.backgroundGraphics.setDepth(-100);
+        }
+
+        // Clear and redraw background
+        this.backgroundGraphics.clear();
+        this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
+        this.backgroundGraphics.fillRect(0, 0, w, h);
     }
 
     /**
      * Create high scores title
      */
     createTitle(width, height) {
-        this.add.text(width / 2, height * 0.08, 'HIGH SCORES', {
+        // Detect landscape mode (short screens)
+        const isLandscape = width > height;
+        const titleY = isLandscape ? height * 0.05 : height * 0.08;
+        const subtitleY = isLandscape ? height * 0.10 : height * 0.13;
+
+        this.add.text(width / 2, titleY, 'HIGH SCORES', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -67,7 +86,7 @@ export class HighScoresScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Subtitle
-        this.add.text(width / 2, height * 0.13, 'Top Commanders', {
+        this.add.text(width / 2, subtitleY, 'Top Commanders', {
             fontSize: '16px',
             fontFamily: 'Arial',
             fill: '#a0c4ff',
@@ -76,24 +95,36 @@ export class HighScoresScene extends Phaser.Scene {
     }
 
     /**
-     * Create scores table with headers and data
+     * Create arcade-style scores table - top 5 only
      */
     createScoresTable(width, height) {
-        const startY = height * 0.22;
-        const tableWidth = Math.min(width * 0.85, 600);
+        // Detect landscape mode (short screens)
+        const isLandscape = width > height;
+        const startY = isLandscape ? height * 0.16 : height * 0.22;
+        const tableWidth = Math.min(width * 0.85, 550); // Smaller table
 
-        // Calculate available height for table (leave space for buttons at bottom)
-        const buttonAreaHeight = 100; // Space for BACK/CLEAR buttons at bottom
-        const availableHeight = height - startY - buttonAreaHeight;
-
-        // Adjust row height to fit available space, with min/max limits
-        const maxRowHeight = 45;
-        const minRowHeight = 35;
-        const calculatedRowHeight = availableHeight / (this.maxScores + 1.5); // +1.5 for header and padding
-        const rowHeight = Math.max(minRowHeight, Math.min(maxRowHeight, calculatedRowHeight));
+        // Arcade-style: compact table for 5 scores only
+        // Dynamic row height scales with screen height for very small screens
+        let rowHeight;
+        if (isLandscape) {
+            // Landscape: very compact, scale with height
+            rowHeight = Math.max(35, Math.min(42, height * 0.055));
+        } else {
+            // Portrait: scale down on small screens
+            if (height < 550) {
+                // Very small screens: aggressive scaling
+                rowHeight = Math.max(38, height * 0.068);
+            } else if (height < 650) {
+                // Small screens: moderate scaling
+                rowHeight = Math.max(42, height * 0.07);
+            } else {
+                // Normal screens: original fixed sizes
+                rowHeight = width < 400 ? 50 : 55;
+            }
+        }
+        const tableHeight = (this.maxScores + 1) * rowHeight + 30;
 
         // Table background
-        const tableHeight = (this.maxScores + 1) * rowHeight + 20;
         const tableBg = this.add.rectangle(
             width / 2, startY + tableHeight / 2,
             tableWidth, tableHeight,
@@ -101,111 +132,235 @@ export class HighScoresScene extends Phaser.Scene {
         );
         tableBg.setStrokeStyle(2, 0x3498db);
 
-        // Column headers
-        const headerY = startY + 15;
+        // 4-column layout: RANK, NAME, MEDAL, SCORE
+        const leftMargin = width / 2 - tableWidth / 2 + 25;
+        const rankX = leftMargin;
+        const nameX = leftMargin + (width < 400 ? 45 : 60);
+        const medalX = width / 2 + tableWidth / 2 - (width < 400 ? 110 : 140); // Medal before score
+        const scoreX = width / 2 + tableWidth / 2 - 25;
+
+        // Column headers with responsive font sizing
+        let headerFontSize;
+        if (height < 550) {
+            headerFontSize = '13px'; // Very small screens
+        } else if (height < 650) {
+            headerFontSize = '14px'; // Small screens
+        } else {
+            headerFontSize = width < 400 ? '15px' : '18px'; // Normal screens
+        }
         const headerStyle = {
-            fontSize: '16px',
+            fontSize: headerFontSize,
             fontFamily: 'Arial',
             fill: '#3498db',
             fontWeight: 'bold'
         };
 
-        this.add.text(width / 2 - tableWidth / 2 + 40, headerY, 'RANK', headerStyle).setOrigin(0, 0.5);
-        this.add.text(width / 2 - tableWidth / 2 + 120, headerY, 'NAME', headerStyle).setOrigin(0, 0.5);
-        this.add.text(width / 2 + tableWidth / 2 - 150, headerY, 'SCORE', headerStyle).setOrigin(1, 0.5);
-        this.add.text(width / 2 + tableWidth / 2 - 40, headerY, 'DATE', headerStyle).setOrigin(1, 0.5);
+        this.add.text(rankX, startY + 15, 'RANK', headerStyle).setOrigin(0, 0.5);
+        this.add.text(nameX, startY + 15, 'NAME', headerStyle).setOrigin(0, 0.5);
+        this.add.text(scoreX, startY + 15, 'SCORE', headerStyle).setOrigin(1, 0.5);
 
         // Header divider
+        const headerY = startY + 15;
         const divider = this.add.graphics();
         divider.lineStyle(1, 0x3498db, 0.5);
         divider.lineBetween(
-            width / 2 - tableWidth / 2 + 20,
-            headerY + 20,
-            width / 2 + tableWidth / 2 - 20,
-            headerY + 20
+            leftMargin - 10,
+            headerY + 25,
+            scoreX + 10,
+            headerY + 25
         );
 
-        // Score rows
-        const rowStyle = {
-            fontSize: '14px',
-            fontFamily: 'Arial',
-            fill: '#ffffff'
+        // Medal colors for top 3 positions
+        const medalColors = {
+            0: 0xFFD700, // Gold
+            1: 0xC0C0C0, // Silver
+            2: 0xCD7F32  // Bronze
         };
+
+        // Responsive font sizes - scale down on very small screens
+        let rowFontSize, scoreFontSize;
+        if (height < 550) {
+            rowFontSize = '13px';
+            scoreFontSize = '14px';
+        } else if (height < 650) {
+            rowFontSize = '14px';
+            scoreFontSize = '16px';
+        } else {
+            rowFontSize = width < 400 ? '15px' : '18px';
+            scoreFontSize = width < 400 ? '16px' : '20px'; // Bigger scores!
+        }
 
         if (this.highScores.length === 0) {
             // No scores yet - show message
             this.add.text(width / 2, startY + tableHeight / 2, 'No scores yet!\nBe the first to play!', {
-                fontSize: '18px',
+                fontSize: '20px',
                 fontFamily: 'Arial',
                 fill: '#a0c4ff',
                 align: 'center'
             }).setOrigin(0.5);
         } else {
-            // Display scores
+            // Display scores with fly-in animation (arcade style!)
             this.highScores.forEach((score, index) => {
-                const rowY = headerY + 40 + (index * rowHeight);
-                
-                // Rank with medal for top 3
-                let rankText = (index + 1).toString();
-                let rankColor = '#ffffff';
-                if (index === 0) { rankText = '🥇'; }
-                else if (index === 1) { rankText = '🥈'; }
-                else if (index === 2) { rankText = '🥉'; }
-                
+                const rowY = headerY + 55 + (index * rowHeight);
+
+                // All text is WHITE (no colored rank numbers)
+                const rowStyle = {
+                    fontSize: rowFontSize,
+                    fontFamily: 'Arial',
+                    fill: '#ffffff',
+                    fontWeight: 'normal'
+                };
+
                 // Alternate row background
                 if (index % 2 === 0) {
                     const rowBg = this.add.rectangle(
                         width / 2, rowY,
-                        tableWidth - 40, rowHeight - 5,
+                        tableWidth - 30, rowHeight - 8,
                         0x0f3460, 0.3
                     );
                 }
 
-                // Rank
-                this.add.text(width / 2 - tableWidth / 2 + 40, rowY, rankText, {
+                // Rank number (white text)
+                const rankText = this.add.text(rankX, rowY, (index + 1).toString(), {
                     ...rowStyle,
-                    fontSize: index < 3 ? '20px' : '14px'
+                    fontSize: rowFontSize
                 }).setOrigin(0, 0.5);
 
-                // Name
-                this.add.text(
-                    width / 2 - tableWidth / 2 + 120, rowY,
+                // Name (white text)
+                const nameText = this.add.text(
+                    nameX, rowY,
                     score.name || 'Player',
                     rowStyle
                 ).setOrigin(0, 0.5);
 
-                // Score
-                this.add.text(
-                    width / 2 + tableWidth / 2 - 150, rowY,
+                // Medal (small colored circle for top 3)
+                let medal = null;
+                if (index < 3) {
+                    let medalSize;
+                    if (height < 550) {
+                        medalSize = 10; // Very small screens
+                    } else if (height < 650) {
+                        medalSize = 12; // Small screens
+                    } else {
+                        medalSize = width < 400 ? 12 : 16; // Normal screens
+                    }
+                    medal = this.add.circle(medalX, rowY, medalSize, medalColors[index]);
+                }
+
+                // Score (white text, bigger font)
+                const scoreText = this.add.text(
+                    scoreX, rowY,
                     score.score.toLocaleString(),
-                    { ...rowStyle, fontWeight: 'bold', fill: '#2ecc71' }
+                    {
+                        fontSize: scoreFontSize,
+                        fontFamily: 'Arial',
+                        fill: '#ffffff',
+                        fontWeight: 'bold'
+                    }
                 ).setOrigin(1, 0.5);
 
-                // Date
-                this.add.text(
-                    width / 2 + tableWidth / 2 - 40, rowY,
-                    this.formatDate(score.date),
-                    { ...rowStyle, fontSize: '12px', fill: '#95a5a6' }
-                ).setOrigin(1, 0.5);
+                // Arcade-style fly-in animation (left to right!)
+                const animDelay = 500 + (index * 150); // Stagger each row
+                const animDuration = 400;
+
+                // Start all elements off-screen to the left
+                rankText.setX(rankText.x - width);
+                nameText.setX(nameText.x - width);
+                if (medal) medal.setX(medal.x - width);
+                scoreText.setX(scoreText.x - width);
+
+                // Animate flying in from left
+                this.tweens.add({
+                    targets: rankText,
+                    x: rankX,
+                    delay: animDelay,
+                    duration: animDuration,
+                    ease: 'Back.easeOut'
+                });
+
+                this.tweens.add({
+                    targets: nameText,
+                    x: nameX,
+                    delay: animDelay + 50,
+                    duration: animDuration,
+                    ease: 'Back.easeOut'
+                });
+
+                if (medal) {
+                    this.tweens.add({
+                        targets: medal,
+                        x: medalX,
+                        delay: animDelay + 100,
+                        duration: animDuration,
+                        ease: 'Back.easeOut'
+                    });
+                }
+
+                this.tweens.add({
+                    targets: scoreText,
+                    x: scoreX,
+                    delay: animDelay + 150,
+                    duration: animDuration,
+                    ease: 'Back.easeOut'
+                });
             });
         }
     }
 
     /**
-     * Create back button
+     * Create back button (fixed distance below table - arcade style!)
      */
     createBackButton(width, height) {
-        const buttonY = height * 0.90;
-        const buttonWidth = Math.min(width * 0.35, 180);
+        // Detect landscape mode (short screens)
+        const isLandscape = width > height;
+        const startY = isLandscape ? height * 0.16 : height * 0.22;
+
+        // Match row height calculation from createScoresTable
+        let rowHeight;
+        if (isLandscape) {
+            // Landscape: very compact, scale with height
+            rowHeight = Math.max(35, Math.min(42, height * 0.055));
+        } else {
+            // Portrait: scale down on small screens
+            if (height < 550) {
+                // Very small screens: aggressive scaling
+                rowHeight = Math.max(38, height * 0.068);
+            } else if (height < 650) {
+                // Small screens: moderate scaling
+                rowHeight = Math.max(42, height * 0.07);
+            } else {
+                // Normal screens: original fixed sizes
+                rowHeight = width < 400 ? 50 : 55;
+            }
+        }
+
+        const tableHeight = (this.maxScores + 1) * rowHeight + 30;
+        const tableBottom = startY + tableHeight;
+
+        // Fixed spacing below table (like arcade cabinets!)
+        // Use tighter spacing on small screens
+        let spacing;
+        if (isLandscape) {
+            spacing = 15;
+        } else if (height < 550) {
+            spacing = 15; // Very tight for very small screens
+        } else if (height < 650) {
+            spacing = 20; // Tight for small screens
+        } else {
+            spacing = width < 400 ? 25 : 35; // Normal spacing
+        }
+        const buttonY = tableBottom + spacing + 25; // +25 for half button height
+
+        const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 
         const button = this.add.rectangle(
-            width / 2 - 110, buttonY, buttonWidth, buttonHeight, 0x2c3e50
+            width / 2, buttonY, buttonWidth, buttonHeight, 0x2c3e50
         );
         button.setStrokeStyle(3, 0xe74c3c);
         button.setInteractive({ useHandCursor: true });
 
-        const text = this.add.text(width / 2 - 110, buttonY, 'BACK', {
+        const text = this.add.text(width / 2, buttonY, 'BACK', {
             fontSize: '18px',
             fontFamily: 'Arial',
             fill: '#ffffff',
@@ -234,56 +389,6 @@ export class HighScoresScene extends Phaser.Scene {
 
         button.on('pointerdown', () => {
             this.scene.start('TitleScene');
-        });
-    }
-
-    /**
-     * Create clear scores button
-     */
-    createClearButton(width, height) {
-        const buttonY = height * 0.90;
-        const buttonWidth = Math.min(width * 0.35, 180);
-        const buttonHeight = 50;
-
-        const button = this.add.rectangle(
-            width / 2 + 110, buttonY, buttonWidth, buttonHeight, 0x2c3e50
-        );
-        button.setStrokeStyle(3, 0xf39c12);
-        button.setInteractive({ useHandCursor: true });
-
-        const text = this.add.text(width / 2 + 110, buttonY, 'CLEAR', {
-            fontSize: '18px',
-            fontFamily: 'Arial',
-            fill: '#ffffff',
-            fontWeight: 'bold'
-        }).setOrigin(0.5);
-
-        button.on('pointerover', () => {
-            button.setFillStyle(0xf39c12);
-            this.tweens.add({
-                targets: [button, text],
-                scaleX: 1.05,
-                scaleY: 1.05,
-                duration: 150
-            });
-        });
-
-        button.on('pointerout', () => {
-            button.setFillStyle(0x2c3e50);
-            this.tweens.add({
-                targets: [button, text],
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150
-            });
-        });
-
-        button.on('pointerdown', () => {
-            // Confirm before clearing
-            if (confirm('Clear all high scores? This cannot be undone.')) {
-                this.clearHighScores();
-                this.scene.restart();
-            }
         });
     }
 
@@ -370,11 +475,14 @@ export class HighScoresScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize - restart scene for proper table recreation
+     * Handle dynamic resize - recreate background to prevent black screen
      */
     handleResize(width, height) {
-        // High scores table is complex with many elements
-        // Scene restart ensures proper layout recalculation
+        // Recreate background to fill new dimensions (pass dimensions explicitly)
+        this.createBackground(width, height);
+
+        // High scores table is complex with many animated elements
+        // Scene restart ensures proper layout recalculation and animation replay
         // Settings and scores are persisted in localStorage, so no data loss
         this.scene.restart();
     }
