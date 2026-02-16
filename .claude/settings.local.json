@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "Bash(centimeter below the scores table. No matter the size of the screen.\"\n\nVerified across all viewports - perfect fixed spacing maintained.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(python -m http.server:*)",
+      "Bash(cat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
