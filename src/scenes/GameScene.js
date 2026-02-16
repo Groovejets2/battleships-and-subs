@@ -31,9 +31,6 @@ export class GameScene extends Phaser.Scene {
         this.createGameLayout();
         this.createUI();
         this.setupInput();
-
-        // Register resize listener to handle window drag/resize
-        this.scale.on('resize', this.handleResize, this);
         // Removed: this.createGrids();
     }
 
@@ -382,13 +379,5 @@ export class GameScene extends Phaser.Scene {
     update() {
         // Game logic updates here
         // This is where AI turns, animations, etc. would be handled
-    }
-
-    /**
-     * Cleanup on scene shutdown
-     */
-    shutdown() {
-        // Remove resize listener to prevent memory leaks
-        this.scale.off('resize', this.handleResize, this);
     }
 }

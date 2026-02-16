@@ -49,9 +49,6 @@ export class SettingsScene extends Phaser.Scene {
 
         // Setup input
         this.setupInput();
-
-        // Register resize listener to handle window drag/resize
-        this.scale.on('resize', this.handleResize, this);
     }
 
     /**
@@ -361,13 +358,5 @@ export class SettingsScene extends Phaser.Scene {
             backButton.setSize(buttonWidth, 50);
             backText.setPosition(width / 2, buttonY);
         }
-    }
-
-    /**
-     * Cleanup on scene shutdown
-     */
-    shutdown() {
-        // Remove resize listener to prevent memory leaks
-        this.scale.off('resize', this.handleResize, this);
     }
 }

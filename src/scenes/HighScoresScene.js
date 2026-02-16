@@ -41,9 +41,6 @@ export class HighScoresScene extends Phaser.Scene {
 
         // Setup input
         this.setupInput();
-
-        // Register resize listener to handle window drag/resize
-        this.scale.on('resize', this.handleResize, this);
     }
 
     /**
@@ -424,13 +421,5 @@ export class HighScoresScene extends Phaser.Scene {
         // Scene restart ensures proper layout recalculation and animation replay
         // Settings and scores are persisted in localStorage, so no data loss
         this.scene.restart();
-    }
-
-    /**
-     * Cleanup on scene shutdown
-     */
-    shutdown() {
-        // Remove resize listener to prevent memory leaks
-        this.scale.off('resize', this.handleResize, this);
     }
 }
