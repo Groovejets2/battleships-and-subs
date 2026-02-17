@@ -181,9 +181,11 @@ export class GameScene extends Phaser.Scene {
         this.playerGrid = createGrid(this, layout.playerX, layout.playerY, GRID_SIZE, layout.cellSize, 'PLAYER');
         this.enemyGrid  = createGrid(this, layout.enemyX,  layout.enemyY,  GRID_SIZE, layout.cellSize, 'ENEMY');
 
-        // Grid titles
+        // Grid titles - use adaptive titleH from layout to avoid overlap with top UI
+        const titleH    = layout.titleH || 20;
+        const titleSize = Math.max(10, Math.min(titleH - 2, width * 0.028));
         const titleStyle = {
-            font: `bold ${Math.min(20, width * 0.028)}px Arial`,
+            font: `bold ${titleSize}px Arial`,
             fill: COLORS.TEXT
         };
 
@@ -191,13 +193,13 @@ export class GameScene extends Phaser.Scene {
 
         const playerTitle = this.add.text(
             layout.playerX + gridWidth / 2,
-            layout.playerY - 28,
+            layout.playerY - titleH + 1,   // Sits just above the grid, within the reserved titleH space
             'YOUR FLEET', titleStyle
         ).setOrigin(0.5);
 
         const enemyTitle = this.add.text(
             layout.enemyX + gridWidth / 2,
-            layout.enemyY - 28,
+            layout.enemyY - titleH + 1,
             'ENEMY WATERS', titleStyle
         ).setOrigin(0.5);
 
@@ -209,6 +211,8 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Calculate responsive layout positions.
+     * Stacked (portrait mobile): reserves space for top/bottom UI, adaptive spacing,
+     * min cell size 16px so two grids always fit even at 375x500.
      * @param {number} width
      * @param {number} height
      * @returns {object}
@@ -217,49 +221,78 @@ export class GameScene extends Phaser.Scene {
         const { GRID_SIZE, CELL_SIZE, GRID_SPACING, LABEL_SPACE, TITLE_SPACE, MARGIN } = GAME_CONSTANTS;
 
         const isPortrait = height > width;
-        const shouldStack = isPortrait && width < 600;
+        const shouldStack = isPortrait;  // All portrait orientations stack grids vertically
 
-        const stackedTitleSpace = 35;
-        const stackedMargin = 10;
-        const stackedGridSpacing = 20;
+        let cellSize, playerX, playerY, enemyX, enemyY, titleH, labelSpace, gridSpacing;
 
-        let cellSize;
         if (shouldStack) {
-            const verticalPadding = 60 + 2 * stackedTitleSpace + stackedGridSpacing + 2 * LABEL_SPACE + stackedMargin;
-            const maxCell = (height - verticalPadding) / (GRID_SIZE * 2);
-            cellSize = Math.max(20, Math.min(CELL_SIZE, maxCell));
+            // Fixed pixel reserves for non-grid UI elements
+            const TOP_UI    = 58;  // status text (y=15) + back button (y=45) + 13px gap
+            const BOTTOM_UI = 24;  // ship status bar at bottom
+            const available = height - TOP_UI - BOTTOM_UI;
+
+            // Adaptive spacing so grids scale down gracefully on tiny screens
+            // and look spacious on larger portrait screens (e.g. tablet)
+            if (available < 380) {
+                titleH     = 13;
+                gridSpacing = 8;
+                labelSpace  = 18;
+            } else if (available < 460) {
+                titleH     = 15;
+                gridSpacing = 12;
+                labelSpace  = 22;
+            } else if (available < 700) {
+                titleH     = 18;
+                gridSpacing = 18;
+                labelSpace  = 28;
+            } else {
+                // Large portrait (e.g. tablet 768×1024) — roomier spacing
+                titleH     = 24;
+                gridSpacing = 30;
+                labelSpace  = 35;
+            }
+
+            // Solve for cellSize so both grids fit in available height:
+            // 2*(cellSize*GRID_SIZE + labelSpace) + gridSpacing + 2*titleH = available
+            const fixedH   = 2 * labelSpace + gridSpacing + 2 * titleH;
+            const maxCellH = (available - fixedH) / (GRID_SIZE * 2);
+            const maxCellW = (width - 24) / GRID_SIZE;  // 12px margin each side
+
+            cellSize = Math.max(16, Math.min(CELL_SIZE, maxCellH, maxCellW));
+
+            const gridWidth = GRID_SIZE * cellSize;
+            const centerX   = (width - gridWidth) / 2;
+
+            playerX = centerX;
+            playerY = TOP_UI + titleH;   // Grid starts after top UI reserve + title height
+            enemyX  = centerX;
+            enemyY  = playerY + gridWidth + labelSpace + gridSpacing + titleH;
+
+            return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack,
+                     width, height, titleH, labelSpace };
         } else {
+            // Side-by-side (landscape / wide portrait tablet)
             const maxCell = Math.min(
                 (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
                 (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
             );
-            cellSize = Math.max(20, Math.min(CELL_SIZE, maxCell));
-        }
+            cellSize   = Math.max(20, Math.min(CELL_SIZE, maxCell));
+            titleH     = 20;
+            labelSpace = LABEL_SPACE;
 
-        const gridWidth = GRID_SIZE * cellSize;
-        let playerX, playerY, enemyX, enemyY;
-
-        if (shouldStack) {
-            const totalH = gridWidth * 2 + LABEL_SPACE * 2 + stackedGridSpacing + 2 * stackedTitleSpace;
-            const startY = Math.max(stackedMargin, (height - totalH) / 2);
-            const centerX = (width - gridWidth) / 2;
-
-            playerX = centerX;
-            playerY = startY + stackedTitleSpace;
-            enemyX  = centerX;
-            enemyY  = playerY + gridWidth + LABEL_SPACE + stackedGridSpacing + stackedTitleSpace;
-        } else {
-            const totalW = gridWidth * 2 + GRID_SPACING;
-            const startX = Math.max(MARGIN, (width - totalW) / 2);
-            const centerY = Math.max(MARGIN, (height - gridWidth - TITLE_SPACE) / 2);
+            const gridWidth = GRID_SIZE * cellSize;
+            const totalW    = gridWidth * 2 + GRID_SPACING;
+            const startX    = Math.max(MARGIN, (width - totalW) / 2);
+            const centerY   = Math.max(MARGIN, (height - gridWidth - TITLE_SPACE) / 2);
 
             playerX = startX;
             playerY = centerY + TITLE_SPACE;
             enemyX  = startX + gridWidth + GRID_SPACING;
             enemyY  = centerY + TITLE_SPACE;
-        }
 
-        return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack, width, height };
+            return { playerX, playerY, enemyX, enemyY, cellSize, shouldStack,
+                     width, height, titleH, labelSpace };
+        }
     }
 
     // ─── UI ─────────────────────────────────────────────────────────────────────
