@@ -106,13 +106,69 @@ All sprites can be **drawn programmatically** with Phaser Graphics (no image fil
 
 ---
 
+### Week 5 additions (Settings overhaul)
+
+Current `SettingsScene` has sliders with percentage text — not arcade-appropriate.
+
+| # | Task | Notes |
+|---|------|-------|
+| 5C | **Remove percentage text** | Delete the `70%`, `80%`, `60%` text objects below each slider — they're cluttery and non-arcade |
+| 5D | **Rationalise settings content** | Review what to keep vs remove. Classic arcade settings: Sound ON/OFF, Volume (notches 1-8), SFX ON/OFF, Music ON/OFF, Difficulty (Easy/Normal/Hard/Expert), Visual FX ON/OFF. Consider removing: separate Master/SFX/Music sliders (merge to simpler controls). Add: Difficulty selector (currently missing from Settings, set via separate flow). |
+| 5E | **Rebuild settings screen layout** | Arcade aesthetic: white labels, toggle switches (styled as arcade buttons), volume shown as pip-dots or bar segments not a slider %, BACK button with torpedo styling. Align with Arcade-Design-Philosophy doc. |
+
+**Current SettingsScene controls (for review):**
+- Master Volume slider (0-100%) ← candidate to simplify
+- Sound Effects volume slider ← merge into single toggle + volume?
+- Music volume slider ← keep, but no % label
+- Visual Effects toggle ← keep
+- Animations toggle ← keep
+- **Missing:** Difficulty selector ← add here
+
+---
+
+## Week 9: Gameplay Tuning — Addictiveness Sessions
+
+**Goal:** Play-test the game repeatedly and tweak parameters until the game feels compelling, fast-paced, and "one more game"-inducing. This is separate from bug-fixing QA.
+
+| # | Task | Notes |
+|---|------|-------|
+| 9A | **Pacing review** | Is the game too slow? Too fast? AI too easy or brutally hard? Adjust AI delay (currently 700ms), bonus turn duration, number of ships. |
+| 9B | **Score balance tuning** | Does the score feel rewarding? Tweak hit points, sunk bonuses, accuracy multiplier, efficiency thresholds. High score should feel achievable but difficult to max. |
+| 9C | **AI difficulty calibration** | Play 20+ games on each difficulty. Easy should lose ~80% of time. Normal ~50%. Hard ~20%. Adjust targeting algorithms if needed. |
+| 9D | **Session length review** | Target: 5-10 minutes per game. If games drag (>15 min), consider map tweaks or AI aggressiveness increase. |
+| 9E | **"One more game" hooks** | - Score tantalizingly close to high score → near-miss psychology<br>- Show "You were X hits away from accuracy bonus!" on defeat screen<br>- Fast restart: ENTER key immediately restarts, no delay<br>- Near-sink moment: "The enemy has only 1 ship left!" announcement |
+| 9F | **Difficulty progression feel** | Does unlocking Hard feel earned? Consider showing "Unlock Hard mode" at a score threshold rather than always available. |
+| 9G | **Mobile touch feel** | Tap response must feel instant. Test latency on actual phone. Combat lock (prevents double-tap) must not feel laggy. |
+| 9H | **Documentation of tuning decisions** | Record before/after values for any parameter changed. Rationale required for each change. |
+
+---
+
+## Week 10: Launch & Marketing
+
+| # | Task | Notes |
+|---|------|-------|
+| 10A | **Production deployment** | GitHub Pages + custom domain (if applicable), Netlify fallback |
+| 10B | **App store submission** | PWA wrapping for iOS/Android app stores via PWABuilder or Capacitor |
+| 10C | **Social media launch** | Twitter/X, Reddit (r/webgames, r/gamedev, r/indiegaming), LinkedIn, Facebook groups |
+| 10D | **Game directories** | Submit to: itch.io, Newgrounds, GameJolt, CrazyGames, Poki, HTML5Games.com |
+| 10E | **Gaming communities** | Post on: r/battleship, r/boardgames, board game forums, naval history communities |
+| 10F | **Press / influencer outreach** | Short press kit (screenshots, description, trailer GIF), reach out to indie game YouTubers / TikTok gaming channels |
+| 10G | **SEO & discoverability** | Add meta tags, Open Graph, game description, keywords. Consider a short promo trailer video. |
+| 10H | **Monetisation options** | Consider: donation link (Ko-fi/Patreon), optional "buy premium themes" IAP if PWA, no ads on first launch |
+
+---
+
 ## Questions / Decisions Needed
 
 1. **Torpedo buttons:** Full torpedo silhouette or just rounded-pill shape (simpler)?
 2. **Ship sprites:** Programmatic Phaser Graphics or actual PNG sprite assets?
 3. **Game state save:** Auto-save silently, or show "Game saved" toast when BACK pressed?
 4. **Load animation:** Always show on fresh game start, or only on first visit?
+5. **Settings:** Single volume toggle (ON/OFF) or segmented volume bar (1-8 notches)?
+6. **Settings:** Add difficulty selector here or keep in a pre-game flow?
+7. **Marketing:** Monetise (donations/IAP) or fully free?
 
 ---
 **Document created:** 2026-02-17
+**Last updated:** 2026-02-17 (settings + marketing tasks added)
 **Status:** Backlog — ready for Week 5 sprint planning
