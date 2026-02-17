@@ -112,6 +112,25 @@ Before proceeding to the next phase, ALL of the following must be true:
 
 ---
 
+## Team & AI-First Mandate
+
+**Project Manager:** Jon (JH) — vision, priorities, approvals, play testing, feedback
+**Lead Developer:** Kerry McGregor (Claude Sonnet 4.5) — all coding, testing, git, documentation
+**Architectural Consultant:** Tony Stark (Claude Opus 4.5) — deep analysis, strategic decisions
+
+### AI-First Rule
+
+> AI is the default and preferred solution for every problem on this project. Manual human effort is a last resort.
+
+- All code is written by AI (Kerry McGregor)
+- All tests and automated tasks are run by AI
+- All documentation is authored by AI
+- All git operations are performed by AI
+- When any new problem arises: **first ask "can AI solve this?"**
+- Jon's role: Product Manager — not code author
+
+---
+
 ## What We Are NOT Building
 
 To enforce YAGNI and keep scope manageable:

@@ -10,18 +10,31 @@ This file serves as a reference index for AI assistants working on this project.
 
 **CRITICAL:** Both Kerry McGregor (Sonnet 4.5) and Tony Stark (Opus 4.5) MUST read:
 1. This Claude.md file (always)
-2. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
-3. `.claude/skills/gitflow/gitflow.md` (git operations)
-4. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
-5. `/doc/output/analysis/` (technical analysis and investigation reports)
-6. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
+2. `/doc/output/Project-Vision_JH_v1.0_2026-02-17.md` ← **READ THIS FIRST** (mission, pillars, graphics strategy)
+3. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
+4. `.claude/skills/gitflow/gitflow.md` (git operations)
+5. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
+6. `/doc/output/analysis/` (technical analysis and investigation reports)
+7. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 
 ---
 
-## Model Roles
+## Team Roles
 
-**Kerry McGregor (Sonnet 4.5):** Primary development agent - coding, docs, git, testing, implementation
-**Tony Stark (Opus 4.5):** Architectural consultant - deep analysis, root cause investigation, strategic decisions
+**Jon (JH) — Project Manager:** Vision, priorities, approvals, play testing, feedback. Does NOT write code.
+**Kerry McGregor (Sonnet 4.5) — Lead Developer:** All coding, docs, git, testing, implementation.
+**Tony Stark (Opus 4.5) — Architectural Consultant:** Deep analysis, root cause investigation, strategic decisions.
+
+### AI-First Mandate (CORE PROJECT RULE)
+
+AI is the default and preferred solution for every problem. Manual human effort is the last resort.
+
+- All code is written by Kerry McGregor (AI)
+- All testing and automated tasks are managed by Kerry McGregor (AI)
+- All documentation is authored and maintained by Kerry McGregor (AI)
+- All git operations are performed by Kerry McGregor (AI)
+- When any new problem arises: **ask "can AI solve this?" first**
+- Jon reviews, approves, and provides direction — he does not write code
 
 See Development-Workflow-Protocol document for complete handoff procedures and token management.
 
