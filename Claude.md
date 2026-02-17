@@ -6,15 +6,29 @@ This file serves as a reference index for AI assistants working on this project.
 
 ---
 
+## RESUME INSTRUCTIONS — START HERE
+
+**If Jon says "Read the CLAUDE.md" — do the following in order:**
+
+1. Read this file (done)
+2. Read the latest session state: `doc/output/sessions/Session-State_Sonnet-4.5_v1.4.1-planning_2026-02-17.md`
+3. Run `git status` and `git log --oneline -3` to confirm clean state
+4. Report to Jon: current branch, HEAD commit, and first pending task
+5. Ask: "Ready to begin — shall I start [first pending task]?"
+
+**DO NOT start coding until Jon confirms.**
+
+---
+
 ## REQUIRED READING (All AI Agents)
 
 **CRITICAL:** Both Kerry McGregor (Sonnet 4.5) and Tony Stark (Opus 4.5) MUST read:
 1. This Claude.md file (always)
-2. `/doc/output/Project-Vision_JH_v1.0_2026-02-17.md` ← **READ THIS FIRST** (mission, pillars, graphics strategy)
-3. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
-4. `.claude/skills/gitflow/gitflow.md` (git operations)
-5. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
-6. `/doc/output/analysis/` (technical analysis and investigation reports)
+2. `doc/output/sessions/Session-State_Sonnet-4.5_v1.4.1-planning_2026-02-17.md` ← **LATEST SESSION STATE**
+3. `/doc/output/Project-Vision_JH_v1.0_2026-02-17.md` (mission, pillars, graphics strategy, AI-first mandate)
+4. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
+5. `.claude/skills/gitflow/gitflow.md` (git operations)
+6. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
 7. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 
 ---
