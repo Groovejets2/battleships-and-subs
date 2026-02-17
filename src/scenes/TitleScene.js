@@ -166,7 +166,9 @@ export class TitleScene extends Phaser.Scene {
     }
 
     /**
-     * Create touch-friendly navigation buttons
+     * Create touch-friendly navigation buttons.
+     * Button group is centred in the space below the tagline, with capped height
+     * so they don't become oversized on tablet/large portrait screens.
      */
     createButtons(width, height) {
         const buttonConfig = [
@@ -175,10 +177,11 @@ export class TitleScene extends Phaser.Scene {
             { text: 'HIGH SCORES', key: 'scores', color: '#e74c3c' }
         ];
 
-        const buttonWidth = Math.min(width * 0.6, 300);
-        const buttonHeight = Math.max(44, height * 0.08); // Minimum 44px for touch
-        const startY = height * 0.55;
-        const spacing = buttonHeight + 20;
+        const buttonWidth  = Math.min(Math.max(width * 0.6, 200), 400);
+        // Cap height at 56px so buttons aren't oversized on large portrait screens
+        const buttonHeight = Math.max(44, Math.min(56, height * 0.08));
+        const spacing      = buttonHeight + 16;
+        const startY       = height * 0.55;
 
         buttonConfig.forEach((config, index) => {
             const y = startY + (index * spacing);

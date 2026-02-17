@@ -389,23 +389,34 @@ src/
 
 ---
 
-**Last Updated:** 2026-02-17 (Session End: Timeline Review Complete)
-**Project Status:** 🎉 v1.3.0 RELEASED TO PRODUCTION
+**Last Updated:** 2026-02-17 (Session End: Week 4 AI Opponent Complete)
+**Project Status:** 🎉 v1.4.0 RELEASED TO PRODUCTION
 **Branch Status:**
-- main: ca09072 (tagged v1.3.0) - PRODUCTION
-- develop: 408cbfc - LATEST DEVELOPMENT
-- feature/week3: Merged and preserved
+- main: 1a64982 (tagged v1.4.0) - PRODUCTION
+- develop: 451db24 - LATEST DEVELOPMENT
 
-**Week 3 Completion Summary:**
-✅ All 4 scenes fully responsive (375×500 minimum to desktop)
-✅ SettingsScene: Complete resize repositioning (commit 6df8398)
-✅ HighScoresScene: Dynamic scaling 38px-50px rows (commit bec3e47)
-✅ TitleScene: Background and layout fixes
-✅ GameScene: Grid and interaction updates
-✅ UI Test skill v1.0.0 created and documented
-✅ Test automation framework established (Playwright)
-✅ Complete gitflow process executed successfully
-✅ Code assessment: Grade A- (85/100)
+**Week 4 Completion Summary:**
+✅ AIManager.js: AI fleet placement + Easy/Normal/Hard targeting algorithms
+✅ TurnManager.js: Turn state machine, score tracking, win/loss detection
+✅ GameScene.js: Full combat loop with hit/miss/sunk visual feedback
+✅ GameOverScene.js: Victory and defeat screens with score save
+✅ main.js: GameOverScene registered
+✅ UI Tests: All PASS at 4 screen sizes (375×500 to 1280×720)
+✅ Complete gitflow: feature → develop → release/v1.4.0 → main → tag
+
+**Key Technical Decisions (Week 4):**
+- Auto-place player fleet (ship placement UI is Week 5)
+- Settings difficulty (0=EASY, 1=NORMAL, 2=HARD) maps to AIManager
+- MISS = turn switches, HIT = bonus turn (same player continues)
+- Score saved to localStorage 'battleships_highscores' (top 5)
+- Visual state arrays persist across screen resize (playerCellStates, enemyCellStates)
+- AI uses --theirs strategy for settings.local.json in all future merges
+
+**Week 5 Priorities (Next):**
+- Ship placement UI (drag-and-drop or click-to-place)
+- Special abilities (Nuclear Sub dive/torpedo, Cruiser depth charge, Attack Sub silent running)
+- Audio system integration
+- UI polish and animations
 
 **Release v1.3.0 Details:**
 - Complete responsive design for all scenes

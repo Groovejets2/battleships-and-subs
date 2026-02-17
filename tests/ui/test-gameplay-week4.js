@@ -76,12 +76,12 @@ async function testGameplayAtSize(browser, testSize) {
         const isPortrait = height > width;
         let attackX, attackY;
 
-        if (isPortrait && width < 600) {
-            // Stacked: enemy grid is in bottom half
+        if (isPortrait) {
+            // Stacked: enemy grid is in bottom half of screen
             attackX = width / 2;
             attackY = height * 0.72;  // Enemy grid area
         } else {
-            // Side by side: enemy grid is on right half
+            // Side by side (landscape): enemy grid is on right half
             attackX = width * 0.75;
             attackY = height * 0.45;
         }
@@ -97,7 +97,7 @@ async function testGameplayAtSize(browser, testSize) {
         await takeScreenshot(page, `${name}-03-after-ai-turn`);
 
         // 5. Make a few more attacks in different grid areas
-        const attackPositions = isPortrait && width < 600
+        const attackPositions = isPortrait
             ? [
                 { x: width * 0.35, y: height * 0.68 },
                 { x: width * 0.65, y: height * 0.76 },
