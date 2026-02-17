@@ -106,6 +106,16 @@ All sprites can be **drawn programmatically** with Phaser Graphics (no image fil
 
 ---
 
+### Week 5 additions (Navigation UX review)
+
+| # | Task | Notes |
+|---|------|-------|
+| 5F | **Screen navigation button audit** | Review ALL BACK / navigation buttons across every scene (TitleScene, GameScene, SettingsScene, HighScoresScene, GameOverScene). Examine: hit target size (min 44px), position consistency, visual state (hover/press/disabled), graphic style. Currently rectangles — candidate for torpedo/sub shape. |
+| 5G | **Navigation mechanics rethink** | Decide: should BACK always go to TitleScene, or be context-aware (e.g. GameScene BACK → "paused" state, not immediate exit)? Map the full navigation graph and identify any dead ends or inconsistencies. |
+| 5H | **Cross-scene design consistency** | All scenes must share the same button style, font, colour palette, and spacing. Currently TitleScene and GameScene buttons look different. Establish a shared ButtonFactory utility or at minimum shared constants. |
+
+---
+
 ### Week 5 additions (Settings overhaul)
 
 Current `SettingsScene` has sliders with percentage text — not arcade-appropriate.
@@ -123,6 +133,34 @@ Current `SettingsScene` has sliders with percentage text — not arcade-appropri
 - Visual Effects toggle ← keep
 - Animations toggle ← keep
 - **Missing:** Difficulty selector ← add here
+
+---
+
+## Week 7 additions (Graphics Overhaul — expanded scope)
+
+Week 7 is now the **full graphics overhaul week** (moved from Week 6 to give it proper space).
+
+| # | Task | Notes |
+|---|------|-------|
+| 7A | **Arcade metal piping framework** | Draw a persistent decorative frame across ALL scenes: industrial metal pipes, riveted panels, bolted corner pieces in the style of classic arcade cabinets (think Sonic/Mario arcade bezel). Rendered as Phaser Graphics on a fixed depth layer so it appears over the background but under game content. Pipes: horizontal top bar, vertical side bars, corner connectors. Colour: dark gunmetal grey with brass/copper accents and rivets. |
+| 7B | **Bubble / periscope background animation** | Replace the current wave-line TitleScene animation with: rising bubbles (random size, speed, opacity) drifting upward like underwater depth. Add submarine periscope silhouette breaking the surface in background. Optionally apply to all scenes for consistency. |
+| 7C | **Menu screen redesign** | Full naval themed title screen: underwater horizon scene, ocean surface with ship silhouette, depth indicators, sonar ping animation. "BATTLESHIPS & SUBS" title rendered like it's stencilled on a submarine hull. Replace current wave lines with immersive depth scene. |
+| 7D | **All-screen visual polish pass** | After all graphics are implemented, do a full visual polish pass: check consistency of colours, fonts, spacing, pipe thickness, button styles across all 5 scenes. Nothing should look like placeholder or unfinished. |
+| 7E | **Slick mechanics polish** | Audit every interaction for smoothness: no jank on clicks, no visual stutter on scene transition, no lingering old graphics after resize. Every click must give instant visual feedback. Principle: if it feels sticky or ugly, fix it. |
+
+---
+
+## Week 10: Code Quality Review
+
+| # | Task | Notes |
+|---|------|-------|
+| 10A | **SOLID principles audit** | Review all classes: Single Responsibility (each class does one thing), Open/Closed (extend without modifying), Liskov (substitutable), Interface Segregation (no bloated interfaces), Dependency Inversion (depend on abstractions). Document violations and refactor. |
+| 10B | **KISS audit** | Flag any function >30 lines, any class >200 lines, any logic that could be simplified. Target: a junior dev can read and understand any function in <2 minutes. |
+| 10C | **DRY audit** | Find duplicated code patterns across scenes (especially button creation, grid rendering, UI layout). Extract to shared utilities. Candidate: ButtonFactory, UIHelpers. |
+| 10D | **YAGNI audit** | Remove any code that was written "just in case" but serves no current feature. Check: unused event handlers, stale TODO comments, dead branches. |
+| 10E | **SLAP audit** | Check Single Level of Abstraction per function. `create()` should call named methods, not contain raw logic. Every function should do things at the same level of abstraction. |
+| 10F | **Documentation completeness** | Every public method must have JSDoc. Every file must have `@fileoverview`. Review all existing docs for accuracy (code may have changed since docs were written). |
+| 10G | **End-of-phase documentation review** | At the end of each Phase (Phase 2 and Phase 3): review GAME_RULES.md, REQUIREMENTS.md, DELIVERY_PLAN.md. Update to reflect actual implementation, note deviations, capture learnings. |
 
 ---
 
