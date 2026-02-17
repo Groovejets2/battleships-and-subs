@@ -199,7 +199,7 @@ Week 7 is now the **full graphics overhaul week** (moved from Week 6 to give it 
 ## Questions / Decisions Needed
 
 1. **Torpedo buttons:** Full torpedo silhouette or just rounded-pill shape (simpler)?
-2. **Ship sprites:** Programmatic Phaser Graphics or actual PNG sprite assets?
+2. ~~**Ship sprites:** Programmatic Phaser Graphics or actual PNG sprite assets?~~ **DECIDED — see below**
 3. **Game state save:** Auto-save silently, or show "Game saved" toast when BACK pressed?
 4. **Load animation:** Always show on fresh game start, or only on first visit?
 5. **Settings:** Single volume toggle (ON/OFF) or segmented volume bar (1-8 notches)?
@@ -207,6 +207,83 @@ Week 7 is now the **full graphics overhaul week** (moved from Week 6 to give it 
 7. **Marketing:** Monetise (donations/IAP) or fully free?
 
 ---
+
+## Decisions Made (2026-02-17, Session 2)
+
+### Graphics Asset Strategy — DECIDED
+No manual artwork. Hybrid approach:
+
+| Asset Type | Approach | Tool |
+|-----------|----------|------|
+| Ship sprites (top-down) | Kenney.nl CC0 first; AI-generated if style mismatch | kenney.nl / Midjourney / Adobe Firefly |
+| Combat effects (explosions, splashes, ripples) | Programmatic Phaser Graphics | Code |
+| Background art (ocean, silhouettes, sky) | AI-generated PNG | Midjourney / Adobe Firefly |
+| UI chrome (pipes, rivets, buttons, borders) | Programmatic Phaser Graphics | Code |
+| Icons (medals, rank badges, ability icons) | Kenney.nl CC0 first | kenney.nl |
+
+**Art Day plan (Week 7):**
+1. Audit kenney.nl naval/top-down packs (1-2 hrs) — free, CC0, immediately usable
+2. If suitable: download, prep, integrate into Phaser
+3. If not suitable: generate ship sprites via AI tool, clean up, export as 128×128 or 256×256 PNG
+4. All assets must be consistent in style and resolution
+
+### Addictiveness Innovations — DECIDED (3 mechanics selected)
+Inspired by Space Invaders Extreme: add earned power mechanics that make every game feel different and reward skill.
+
+| Mechanic | Trigger | Effect |
+|---------|---------|--------|
+| **Sonar Ping** | Once per game (pre-charged) | Reveals ship/no-ship in a 3×3 zone — no exact positions |
+| **Depth Charge Row Nuke** | Earned by sinking 2 enemy ships consecutively | Player selects any row — all 10 cells attacked simultaneously |
+| **Chain Bonus** | 3+ consecutive hits in a row | Score multiplier activates + visual combo flash |
+
+These ADD to the existing special abilities (Nuclear Sub radar, Cruiser sonar, Attack Sub stealth) — they are player-earned power mechanics, not ship abilities.
+Implementation target: **Week 5**.
+
+---
+
+## Week 0 / Pre-Sprint Planning (NEW — do before Week 5 coding)
+
+| # | Task | Notes |
+|---|------|-------|
+| 0A | **Project Vision document** | Create `/doc/output/Project-Vision.md` — mission statement, 3 core pillars, graphics strategy, addictiveness mechanics summary. Required reading for all agents. Add reference in CLAUDE.md. |
+| 0B | **Sprites/graphics workflow research** | Before Week 7 coding begins: (1) Audit kenney.nl for top-down naval ships and UI icons, (2) Evaluate style fit with current game aesthetic, (3) Document decision + links in `/doc/output/Graphics-Strategy.md`. If Kenney doesn't fit: identify AI tool workflow (Midjourney/Firefly). |
+
+---
+
+## Week 5 additions (UX Polish — Session 2)
+
+| # | Task | Notes |
+|---|------|-------|
+| 5I | **Slow down combat text animations** | Hit/miss floating text currently fades too fast — player misses what it said. Increase hold time before fade. Add explicit floating "HIT!" and "MISS" text (currently only sunk announcements show). Sunk announcement: hold ~1.8s, fade ~1.8s. HIT/MISS: hold ~0.9s, fade ~1.4s. |
+| 5J | **Unify header title text across all scenes** | GameScene, SettingsScene, and HighScoresScene headers must use identical font family, weight, size formula, and stroke style. Currently SettingsScene and HighScoresScene match; GameScene has no scene header. Add a minimal scene header to GameScene (small, non-intrusive) or ensure status text matches the style. |
+| 5K | **TitleScene title styling upgrade** | Make "BATTLESHIPS & SUBS" look like a premium arcade game title: larger max font size (64px), heavier stroke (6px), glow shadow. Keep exact text and tagline "Navigate • Strategise • Dominate" (note British spelling "Strategise"). Add subtle decorative separator lines flanking the tagline. |
+| 5L | **Addictiveness innovation mechanics** | Implement Sonar Ping, Depth Charge Row Nuke, and Chain Bonus (see Decisions Made above). UI: show earned mechanic as a button/icon when available. Integrate scoring: Row Nuke hits worth standard hit points, Chain Bonus multiplies score for duration. |
+
+---
+
+## Week 6A addition (Grid Visual Fix)
+
+| # | Task | Notes |
+|---|------|-------|
+| 6A-7 | **Fix boring/plain game grids** | Current grids are flat coloured cells — looks like a spreadsheet. Options: (1) Ocean texture overlay on empty enemy cells — dark blue gradient with subtle wave pattern, (2) Depth shading — player grid green-tinted, enemy grid blue-tinted with depth effect, (3) Styled coordinate labels (A-J / 1-10) — larger, bolder, matches naval aesthetic. Priority: implement at same time as ship sprites (6A-5) so everything looks cohesive. |
+
+---
+
+## Revised Full Phase Schedule (updated 2026-02-17)
+
+| Phase | Week | Sprint | Key Deliverables |
+|-------|------|--------|-----------------|
+| Pre-Sprint | 0 | Planning & Vision | Project Vision doc, graphics research, Kenney.nl audit |
+| Phase 2 | 5 | UX Polish + Abilities | HIT/MISS text, header unification, title styling, settings overhaul, nav audit, game state save, exit confirm, ship placement, countdown timer, special abilities, addictiveness mechanics (Sonar Ping, Row Nuke, Chain Bonus) |
+| Phase 2 | 6A | Graphics | Fix boring grids, torpedo buttons, menu splash art, load animation, high score graphics, ship/sub sprites (Kenney or AI), combat markers |
+| Phase 2 | 6B | Audio | Military/warship UI sounds (sonar ping, radar, depth charge, radio crackle), SFX, background music, Web Audio API |
+| Phase 2 | 7 | Full Graphics Overhaul | Arcade metal piping (all scenes), bubble/periscope animation, menu redesign, all-screen polish pass, slick mechanics audit |
+| Phase 3 | 8 | Statistics + QA | Career stats, enhanced leaderboard, player name, in-game accuracy, unit tests >60%, cross-browser/device testing |
+| Phase 3 | 9 | Gameplay Tuning | Pacing, score balance, AI calibration, addictiveness hooks, mobile touch feel |
+| Phase 3 | 10 | Code Quality + Phase Review | SOLID/KISS/DRY/YAGNI/SLAP audit, documentation review (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN) |
+| Phase 3 | 11 | Deploy + Marketing | Production deploy, app store submission, itch.io, Reddit, social media, press kit |
+
+---
 **Document created:** 2026-02-17
-**Last updated:** 2026-02-17 (settings + marketing tasks added)
-**Status:** Backlog — ready for Week 5 sprint planning
+**Last updated:** 2026-02-17 (Session 2 — addictiveness mechanics, graphics strategy, UX polish tasks, revised schedule)
+**Status:** Backlog — ready for Week 0 pre-sprint and then Week 5
