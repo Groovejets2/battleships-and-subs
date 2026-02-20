@@ -101,10 +101,12 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Create settings title
+     * Create settings title (fixed position following arcade design principles)
      */
     createTitle(width, height) {
-        this.titleText = this.add.text(width / 2, height * 0.05, 'SETTINGS', {
+        // Fixed y position (40px from top on all screens)
+        const titleY = 40;
+        this.titleText = this.add.text(width / 2, titleY, 'SETTINGS', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -115,10 +117,12 @@ export class SettingsScene extends Phaser.Scene {
 
     /**
      * Create arcade-style pip-dot volume controls (0-8 levels)
+     * Uses fixed spacing from title (arcade design principle)
      */
     createAudioControls(width, height) {
-        const startY = height * 0.20;
-        const spacing = height * 0.11;
+        // Fixed positioning: title at y=40 (font~42px) + gap of 60px = start at 100
+        const startY = 100;
+        const spacing = 70;  // Fixed 70px between each volume control
         const MAX_LEVEL = 8;
         const dotSize = Math.min(12, width * 0.015);
         const dotSpacing = dotSize * 2.5;
@@ -192,9 +196,12 @@ export class SettingsScene extends Phaser.Scene {
 
     /**
      * Create visual toggles and difficulty selector
+     * Uses fixed spacing from audio controls (arcade design principle)
      */
     createVisualControls(width, height) {
-        const startY = height * 0.55;
+        // Fixed positioning: audio controls end at y=100 + (2 * 70) = 240
+        // Add 50px gap = start difficulty section at 290
+        const startY = 290;
 
         // Difficulty selector section
         this.add.text(width / 2, startY, 'DIFFICULTY', {
@@ -248,8 +255,9 @@ export class SettingsScene extends Phaser.Scene {
         });
 
         // Visual toggle switches (below difficulty)
-        const toggleStartY = startY + 95;
-        const toggleSpacing = height * 0.08;
+        // Fixed spacing: difficulty at y=290, buttons height=40, gap=35px
+        const toggleStartY = startY + 40 + 35;  // = 365
+        const toggleSpacing = 60;  // Fixed 60px between toggles
 
         const visualControls = [
             { label: 'Visual Effects', key: 'visualEffects', value: this.settings.visualEffects },
@@ -320,10 +328,13 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Create back button
+     * Create back button (fixed spacing from last element - arcade design principle)
      */
     createBackButton(width, height) {
-        const buttonY = height * 0.88;
+        // Fixed positioning: last toggle at y=425 (365 + 60), add gap of 50px = 475
+        // But use max(calculated, height - 80) to keep button on screen for short viewports
+        const calculatedY = 475;
+        const buttonY = Math.min(calculatedY, height - 80);
         const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 

@@ -236,10 +236,15 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Create scene title header
+     * Positioned at fixed y=70 to avoid overlap with top UI (status text at y=15, back button at y=45)
      */
     createSceneTitle() {
         const { width, height } = this.scale;
-        this.sceneTitle = this.add.text(width / 2, height * 0.05, 'COMBAT', {
+        // Fixed position: below back button (y=45, height=30) with 10px gap = y=70
+        // This ensures no overlap with status text (y=15) or back button (y=30-60)
+        const titleY = Math.min(70, height * 0.12); // Use percentage fallback for very short screens
+
+        this.sceneTitle = this.add.text(width / 2, titleY, 'COMBAT', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -266,8 +271,9 @@ export class GameScene extends Phaser.Scene {
 
         if (shouldStack) {
             // Fixed pixel reserves for non-grid UI elements
-            const TOP_UI    = 58;  // status text (y=15) + back button (y=45) + 13px gap
-            const BOTTOM_UI = 24;  // ship status bar at bottom
+            // TOP_UI: status text (y=15) + back button (y=45, h=30) + title (y=70, h~42) + gap
+            const TOP_UI    = 120;  // Increased to account for COMBAT title at y=70 (42px font + 8px gap = 120)
+            const BOTTOM_UI = 24;   // ship status bar at bottom
             const available = height - TOP_UI - BOTTOM_UI;
 
             // Adaptive spacing so grids scale down gracefully on tiny screens
@@ -1611,17 +1617,15 @@ export class GameScene extends Phaser.Scene {
             this.gridTitles.forEach(t => t.destroy());
             this.gridTitles = [];
 
-            // Destroy and recreate scene title
-            if (this.sceneTitle) {
-                this.sceneTitle.destroy();
-                this.sceneTitle = null;
-            }
-
             this.createGameLayout();
-            this.createSceneTitle();
             this.applyGridStates();
+        }
 
-            // Restore combat lock state (don't allow clicks during AI turn after resize)
+        // Update scene title position
+        if (this.sceneTitle) {
+            const titleY = Math.min(70, height * 0.12);
+            this.sceneTitle.setPosition(width / 2, titleY);
+            this.sceneTitle.setFontSize(Math.min(width * 0.06, 42) + 'px');
         }
 
         // Update UI positions
