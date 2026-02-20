@@ -144,6 +144,35 @@ Three formal project documents:
 
 - Auto-pause when token usage reaches threshold
 
+## CRITICAL: Automatic Documentation Maintenance (PRIORITY RULE)
+
+**ALWAYS update project documentation automatically as tasks complete. NEVER wait to be asked.**
+
+After completing ANY task, phase, or significant milestone:
+
+1. **Update session state document** (`/doc/output/sessions/Session-State_*.md`):
+   - Mark completed tasks with ✅
+   - Update current status and next pending tasks
+   - Update git state (branch, HEAD commit)
+   - Add brief summary of what was implemented
+
+2. **Update CLAUDE.md**:
+   - Update "Last Updated" date at bottom
+   - Update "Project Status" section
+   - Update "Recent Work" section
+
+3. **Update DELIVERY_PLAN.md** (if phase/week completed):
+   - Mark completed sprint items
+   - Update overall project percentage
+
+4. **Create summary document** (if major feature/phase completed):
+   - Technical summary in `/doc/output/`
+   - Include implementation details, decisions made, known issues
+
+**Timing:** Update documentation IMMEDIATELY after pushing code, before continuing to next task.
+
+**This is NOT optional.** Keeping documentation current is a core responsibility.
+
 ---
 
 ## Design Decisions Log
