@@ -148,4 +148,44 @@ export class Ship {
     occupiesCoordinate(row, col) {
         return this.segments.some(s => s.row === row && s.col === col);
     }
+
+    /**
+     * Serialize ship state to plain object for save/load
+     * @returns {object} Serialized ship state
+     */
+    serialize() {
+        return {
+            type: this.type,
+            name: this.name,
+            length: this.length,
+            color: this.color,
+            isPlaced: this.isPlaced,
+            orientation: this.orientation,
+            startRow: this.startRow,
+            startCol: this.startCol,
+            segments: this.segments.map(s => ({ ...s })), // Deep copy
+            isSunk: this.isSunk,
+            hits: this.hits,
+            abilities: JSON.parse(JSON.stringify(this.abilities)) // Deep copy
+        };
+    }
+
+    /**
+     * Restore ship state from serialized object
+     * @param {object} data - Serialized ship state
+     */
+    deserialize(data) {
+        this.type = data.type;
+        this.name = data.name;
+        this.length = data.length;
+        this.color = data.color;
+        this.isPlaced = data.isPlaced;
+        this.orientation = data.orientation;
+        this.startRow = data.startRow;
+        this.startCol = data.startCol;
+        this.segments = data.segments.map(s => ({ ...s })); // Deep copy
+        this.isSunk = data.isSunk;
+        this.hits = data.hits;
+        this.abilities = JSON.parse(JSON.stringify(data.abilities)); // Deep copy
+    }
 }

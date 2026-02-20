@@ -15,14 +15,16 @@ export class SettingsScene extends Phaser.Scene {
     constructor() {
         super({ key: 'SettingsScene' });
         this.settings = {
-            masterVolume: 0.7,
-            sfxVolume: 0.8,
-            musicVolume: 0.6,
+            masterVolume: 5,    // Changed to 0-8 scale (arcade 8-notch)
+            sfxVolume: 6,       // Changed to 0-8 scale
+            musicVolume: 4,     // Changed to 0-8 scale
             visualEffects: true,
-            animations: true
+            animations: true,
+            difficulty: 'NORMAL' // NEW: Easy/Normal/Hard
         };
-        this.sliders = [];
+        this.volumeControls = []; // Changed from sliders to pip-dot controls
         this.toggles = [];
+        this.difficultyButtons = []; // NEW
         this.backgroundGraphics = null;
 
         // Store all UI element references for repositioning
@@ -50,8 +52,9 @@ export class SettingsScene extends Phaser.Scene {
         }
 
         // Reset arrays for fresh population
-        this.sliders = [];
+        this.volumeControls = [];
         this.toggles = [];
+        this.difficultyButtons = [];
         this.audioLabels = [];
         this.visualLabels = [];
         this.titleText = null;
@@ -98,98 +101,163 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Create settings title
+     * Create settings title (fixed position following arcade design principles)
      */
     createTitle(width, height) {
-        this.titleText = this.add.text(width / 2, height * 0.12, 'SETTINGS', {
+        // Fixed y position (40px from top on all screens)
+        const titleY = 40;
+        this.titleText = this.add.text(width / 2, titleY, 'SETTINGS', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
-            stroke: '#1e3c72',
+            stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5);
     }
 
     /**
-     * Create audio control sliders
+     * Create arcade-style pip-dot volume controls (0-8 levels)
+     * Uses fixed spacing from title (arcade design principle)
      */
     createAudioControls(width, height) {
-        const startY = height * 0.25;
-        const spacing = height * 0.12;
-        const sliderWidth = Math.min(width * 0.5, 300);
+        // Fixed positioning: title at y=40 (font~42px) + gap of 60px = start at 100
+        const startY = 100;
+        const spacing = 70;  // Fixed 70px between each volume control
+        const MAX_LEVEL = 8;
+        const dotSize = Math.min(12, width * 0.015);
+        const dotSpacing = dotSize * 2.5;
 
         const audioControls = [
-            { label: 'Master Volume', key: 'masterVolume', value: this.settings.masterVolume },
-            { label: 'Sound Effects', key: 'sfxVolume', value: this.settings.sfxVolume },
-            { label: 'Music', key: 'musicVolume', value: this.settings.musicVolume }
+            { label: 'MASTER', key: 'masterVolume', value: this.settings.masterVolume },
+            { label: 'SFX', key: 'sfxVolume', value: this.settings.sfxVolume },
+            { label: 'MUSIC', key: 'musicVolume', value: this.settings.musicVolume }
         ];
 
         audioControls.forEach((control, index) => {
             const y = startY + (index * spacing);
 
             // Label
-            const label = this.add.text(width / 2, y - 20, control.label, {
-                fontSize: '18px',
-                fontFamily: 'Arial',
+            const label = this.add.text(width / 2, y - 24, control.label, {
+                fontSize: '16px',
+                fontFamily: 'Arial Black',
                 fill: '#ffffff',
                 fontWeight: 'bold'
             }).setOrigin(0.5);
             this.audioLabels.push(label);
 
-            // Slider track
-            const track = this.add.rectangle(
-                width / 2, y + 10, sliderWidth, 8, 0x2c3e50
-            );
+            // Create 9 pip-dots (0-8 levels)
+            const totalWidth = MAX_LEVEL * dotSpacing;
+            const startX = width / 2 - totalWidth / 2;
+            const dots = [];
 
-            // Slider fill (represents current value)
-            const fill = this.add.rectangle(
-                width / 2 - sliderWidth / 2, y + 10,
-                sliderWidth * control.value, 8, 0x3498db
-            ).setOrigin(0, 0.5);
+            for (let i = 0; i <= MAX_LEVEL; i++) {
+                const dotX = startX + (i * dotSpacing);
+                const isFilled = i <= control.value;
 
-            // Slider handle
-            const handle = this.add.circle(
-                width / 2 - sliderWidth / 2 + (sliderWidth * control.value),
-                y + 10, 12, 0xffffff
-            );
-            handle.setStrokeStyle(2, 0x3498db);
-            handle.setInteractive({ draggable: true, useHandCursor: true });
+                const dot = this.add.circle(
+                    dotX, y,
+                    dotSize,
+                    isFilled ? 0x3498db : 0x2c3e50
+                );
+                dot.setStrokeStyle(2, isFilled ? 0x5dade2 : 0x1a1a2e);
+                dot.setInteractive({ useHandCursor: true });
 
-            // Value display
-            const valueText = this.add.text(
-                width / 2, y + 35,
-                Math.round(control.value * 100) + '%',
-                { fontSize: '14px', fill: '#a0c4ff' }
-            ).setOrigin(0.5);
+                // Click on dot to set level
+                dot.on('pointerdown', () => {
+                    this.setVolumeLevel(control.key, i, dots);
+                });
 
-            // Handle dragging
-            handle.on('drag', (pointer) => {
-                const minX = width / 2 - sliderWidth / 2;
-                const maxX = width / 2 + sliderWidth / 2;
-                const newX = Phaser.Math.Clamp(pointer.x, minX, maxX);
-                
-                handle.x = newX;
-                
-                const value = (newX - minX) / sliderWidth;
-                this.settings[control.key] = value;
-                
-                fill.width = sliderWidth * value;
-                valueText.setText(Math.round(value * 100) + '%');
-                
-                this.saveSettings();
-            });
+                dots.push(dot);
+            }
 
             // Store references
-            this.sliders.push({ track, fill, handle, valueText, key: control.key });
+            this.volumeControls.push({ key: control.key, dots, label });
         });
     }
 
     /**
-     * Create visual toggle controls
+     * Set volume level and update pip-dots
+     * @param {string} key - Settings key (masterVolume, sfxVolume, musicVolume)
+     * @param {number} level - New level (0-8)
+     * @param {Array} dots - Array of dot circles
+     */
+    setVolumeLevel(key, level, dots) {
+        this.settings[key] = level;
+
+        // Update dot colors
+        dots.forEach((dot, index) => {
+            const isFilled = index <= level;
+            dot.setFillStyle(isFilled ? 0x3498db : 0x2c3e50);
+            dot.setStrokeStyle(2, isFilled ? 0x5dade2 : 0x1a1a2e);
+        });
+
+        this.saveSettings();
+    }
+
+    /**
+     * Create visual toggles and difficulty selector
+     * Uses fixed spacing from audio controls (arcade design principle)
      */
     createVisualControls(width, height) {
-        const startY = height * 0.65;
-        const spacing = height * 0.08;
+        // Fixed positioning: audio controls end at y=100 + (2 * 70) = 240
+        // Add 50px gap = start difficulty section at 290
+        const startY = 290;
+
+        // Difficulty selector section
+        this.add.text(width / 2, startY, 'DIFFICULTY', {
+            fontSize: '16px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff'
+        }).setOrigin(0.5);
+
+        const difficultyY = startY + 35;
+        const difficulties = ['EASY', 'NORMAL', 'HARD'];
+        const buttonWidth = Math.min(width * 0.22, 90);
+        const buttonHeight = 40;
+        const buttonSpacing = buttonWidth + 12;
+        const totalWidth = (difficulties.length * buttonWidth) + ((difficulties.length - 1) * 12);
+        const startX = width / 2 - totalWidth / 2;
+
+        difficulties.forEach((diff, index) => {
+            const x = startX + (index * buttonSpacing) + (buttonWidth / 2);
+            const isSelected = this.settings.difficulty === diff;
+
+            const button = this.add.rectangle(
+                x, difficultyY, buttonWidth, buttonHeight,
+                isSelected ? 0x2ecc71 : 0x2c3e50
+            );
+            button.setStrokeStyle(3, isSelected ? 0x27ae60 : 0x3498db);
+            button.setInteractive({ useHandCursor: true });
+
+            const text = this.add.text(x, difficultyY, diff, {
+                fontSize: '14px',
+                fontFamily: 'Arial Black',
+                fill: '#ffffff'
+            }).setOrigin(0.5);
+
+            button.on('pointerover', () => {
+                if (this.settings.difficulty !== diff) {
+                    button.setFillStyle(0x34495e);
+                }
+            });
+
+            button.on('pointerout', () => {
+                if (this.settings.difficulty !== diff) {
+                    button.setFillStyle(0x2c3e50);
+                }
+            });
+
+            button.on('pointerdown', () => {
+                this.setDifficulty(diff);
+            });
+
+            this.difficultyButtons.push({ diff, button, text });
+        });
+
+        // Visual toggle switches (below difficulty)
+        // Fixed spacing: difficulty at y=290, buttons height=40, gap=35px
+        const toggleStartY = startY + 40 + 35;  // = 365
+        const toggleSpacing = 60;  // Fixed 60px between toggles
 
         const visualControls = [
             { label: 'Visual Effects', key: 'visualEffects', value: this.settings.visualEffects },
@@ -197,11 +265,11 @@ export class SettingsScene extends Phaser.Scene {
         ];
 
         visualControls.forEach((control, index) => {
-            const y = startY + (index * spacing);
+            const y = toggleStartY + (index * toggleSpacing);
 
             // Label
             const label = this.add.text(width / 2 - 80, y, control.label, {
-                fontSize: '18px',
+                fontSize: '16px',
                 fontFamily: 'Arial',
                 fill: '#ffffff',
                 fontWeight: 'bold'
@@ -210,7 +278,7 @@ export class SettingsScene extends Phaser.Scene {
 
             // Toggle switch background
             const toggleBg = this.add.rectangle(
-                width / 2 + 80, y, 60, 30, 
+                width / 2 + 80, y, 60, 30,
                 control.value ? 0x2ecc71 : 0x95a5a6
             ).setStrokeStyle(2, 0xffffff);
             toggleBg.setInteractive({ useHandCursor: true });
@@ -225,16 +293,16 @@ export class SettingsScene extends Phaser.Scene {
             toggleBg.on('pointerdown', () => {
                 this.settings[control.key] = !this.settings[control.key];
                 const newValue = this.settings[control.key];
-                
+
                 toggleBg.setFillStyle(newValue ? 0x2ecc71 : 0x95a5a6);
-                
+
                 this.tweens.add({
                     targets: toggleHandle,
                     x: width / 2 + 80 + (newValue ? 15 : -15),
                     duration: 200,
                     ease: 'Back.easeOut'
                 });
-                
+
                 this.saveSettings();
             });
 
@@ -243,10 +311,30 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Create back button
+     * Set difficulty level and update button highlights
+     * @param {string} difficulty - EASY, NORMAL, or HARD
+     */
+    setDifficulty(difficulty) {
+        this.settings.difficulty = difficulty;
+
+        // Update all button colors
+        this.difficultyButtons.forEach(({ diff, button }) => {
+            const isSelected = diff === difficulty;
+            button.setFillStyle(isSelected ? 0x2ecc71 : 0x2c3e50);
+            button.setStrokeStyle(3, isSelected ? 0x27ae60 : 0x3498db);
+        });
+
+        this.saveSettings();
+    }
+
+    /**
+     * Create back button (fixed spacing from last element - arcade design principle)
      */
     createBackButton(width, height) {
-        const buttonY = height * 0.88;
+        // Fixed positioning: last toggle at y=425 (365 + 60), add gap of 50px = 475
+        // But use max(calculated, height - 80) to keep button on screen for short viewports
+        const calculatedY = 475;
+        const buttonY = Math.min(calculatedY, height - 80);
         const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 
@@ -326,111 +414,12 @@ export class SettingsScene extends Phaser.Scene {
     }
 
     /**
-     * Handle dynamic resize - full responsive repositioning
+     * Handle dynamic resize - recreate scene with saved settings
      */
     handleResize(width, height) {
-        // Recreate background to fill new dimensions
-        this.createBackground(width, height);
-
-        // Update title
-        if (this.titleText) {
-            this.titleText.setPosition(width / 2, height * 0.12);
-            this.titleText.setFontSize(Math.min(width * 0.06, 42) + 'px');
-        }
-
-        // Update audio controls
-        const startY = height * 0.25;
-        const spacing = height * 0.12;
-        const sliderWidth = Math.min(width * 0.5, 300);
-
-        this.sliders.forEach((slider, index) => {
-            const y = startY + (index * spacing);
-
-            // Update label
-            if (this.audioLabels[index]) {
-                this.audioLabels[index].setPosition(width / 2, y - 20);
-            }
-
-            // Update slider track
-            slider.track.setPosition(width / 2, y + 10);
-            slider.track.width = sliderWidth;
-
-            // Update slider fill
-            const value = this.settings[slider.key];
-            slider.fill.setPosition(width / 2 - sliderWidth / 2, y + 10);
-            slider.fill.width = sliderWidth * value;
-
-            // Update slider handle
-            slider.handle.setPosition(width / 2 - sliderWidth / 2 + (sliderWidth * value), y + 10);
-
-            // Update value text
-            slider.valueText.setPosition(width / 2, y + 35);
-
-            // Update drag handler with new dimensions
-            slider.handle.removeAllListeners('drag');
-            slider.handle.on('drag', (pointer) => {
-                const minX = width / 2 - sliderWidth / 2;
-                const maxX = width / 2 + sliderWidth / 2;
-                const newX = Phaser.Math.Clamp(pointer.x, minX, maxX);
-
-                slider.handle.x = newX;
-
-                const value = (newX - minX) / sliderWidth;
-                this.settings[slider.key] = value;
-
-                slider.fill.width = sliderWidth * value;
-                slider.valueText.setText(Math.round(value * 100) + '%');
-
-                this.saveSettings();
-            });
-        });
-
-        // Update visual controls
-        const visualStartY = height * 0.65;
-        const visualSpacing = height * 0.08;
-
-        this.toggles.forEach((toggle, index) => {
-            const y = visualStartY + (index * visualSpacing);
-
-            // Update label
-            if (this.visualLabels[index]) {
-                this.visualLabels[index].setPosition(width / 2 - 80, y);
-            }
-
-            // Update toggle background
-            toggle.toggleBg.setPosition(width / 2 + 80, y);
-
-            // Update toggle handle
-            const isOn = this.settings[toggle.key];
-            toggle.toggleHandle.setPosition(width / 2 + 80 + (isOn ? 15 : -15), y);
-
-            // Update toggle interaction with new dimensions
-            toggle.toggleBg.removeAllListeners('pointerdown');
-            toggle.toggleBg.on('pointerdown', () => {
-                this.settings[toggle.key] = !this.settings[toggle.key];
-                const newValue = this.settings[toggle.key];
-
-                toggle.toggleBg.setFillStyle(newValue ? 0x2ecc71 : 0x95a5a6);
-
-                this.tweens.add({
-                    targets: toggle.toggleHandle,
-                    x: width / 2 + 80 + (newValue ? 15 : -15),
-                    duration: 200,
-                    ease: 'Back.easeOut'
-                });
-
-                this.saveSettings();
-            });
-        });
-
-        // Update back button
-        if (this.backButton && this.backText) {
-            const buttonY = height * 0.88;
-            const buttonWidth = Math.min(width * 0.4, 200);
-
-            this.backButton.setPosition(width / 2, buttonY);
-            this.backButton.setSize(buttonWidth, 50);
-            this.backText.setPosition(width / 2, buttonY);
-        }
+        // Pip-dot controls and difficulty buttons are complex with many interactive elements
+        // Scene restart ensures proper layout recalculation and interaction setup
+        // Settings are persisted in localStorage, so no data loss
+        this.scene.restart();
     }
 }

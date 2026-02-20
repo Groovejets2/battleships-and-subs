@@ -261,4 +261,26 @@ export class AIManager {
         this.activeHits = [];
         this.attackedSquares = [];
     }
+
+    /**
+     * Serialize AI manager state to plain object for save/load
+     * @returns {object} Serialized AI manager state
+     */
+    serialize() {
+        return {
+            difficulty: this.difficulty,
+            activeHits: this.activeHits.map(h => ({ ...h })),       // Deep copy
+            attackedSquares: this.attackedSquares.map(s => ({ ...s })) // Deep copy
+        };
+    }
+
+    /**
+     * Restore AI manager state from serialized object
+     * @param {object} data - Serialized AI manager state
+     */
+    deserialize(data) {
+        this.difficulty = data.difficulty;
+        this.activeHits = data.activeHits.map(h => ({ ...h }));       // Deep copy
+        this.attackedSquares = data.attackedSquares.map(s => ({ ...s })); // Deep copy
+    }
 }

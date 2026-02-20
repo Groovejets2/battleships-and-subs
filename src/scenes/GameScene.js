@@ -65,15 +65,36 @@ export class GameScene extends Phaser.Scene {
 
         // Combat lock (prevent double-clicks during AI turn)
         this.combatLocked = false;
+
+        // Special attack mode tracking
+        this.attackMode = 'NORMAL'; // 'NORMAL', 'SONAR', 'NUKE'
+        this.abilityButtons = null; // {sonarBtn, sonarText, nukeBtn, nukeText}
     }
 
     create() {
+        // Check for saved game state
+        const savedState = this.loadGameState();
+        if (savedState && !savedState.gameOver) {
+            this.showResumeDialog(savedState);
+            return; // Wait for user choice before proceeding
+        }
+
+        // Start new game
+        this.startNewGame();
+    }
+
+    /**
+     * Start a new game (clean state)
+     */
+    startNewGame() {
         this.initCellStates();
         this.setupFleets();
         this.createGameLayout();
+        this.createSceneTitle();
         this.createUI();
         this.applyGridStates();
         this.setupInput();
+        this.setupBeforeUnload();
         this.updateStatusDisplay('PLAYER_TURN');
 
         console.log('GameScene: Combat ready. Player goes first.');
@@ -151,13 +172,17 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Read difficulty setting from localStorage (falls back to NORMAL).
-     * @returns {string}
+     * @returns {string} 'EASY', 'NORMAL', or 'HARD'
      */
     getDifficulty() {
         try {
-            const settings = JSON.parse(localStorage.getItem('battleships_settings') || '{}');
-            const diffMap = { 0: 'EASY', 1: 'NORMAL', 2: 'HARD' };
-            return diffMap[settings.difficulty] || 'NORMAL';
+            const settings = JSON.parse(localStorage.getItem('battleshipsSettings') || '{}');
+            const difficulty = settings.difficulty || 'NORMAL';
+            // Validate difficulty value
+            if (['EASY', 'NORMAL', 'HARD'].includes(difficulty)) {
+                return difficulty;
+            }
+            return 'NORMAL';
         } catch {
             return 'NORMAL';
         }
@@ -210,6 +235,25 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
+     * Create scene title header
+     * Positioned at fixed y=70 to avoid overlap with top UI (status text at y=15, back button at y=45)
+     */
+    createSceneTitle() {
+        const { width, height } = this.scale;
+        // Fixed position: below back button (y=45, height=30) with 10px gap = y=70
+        // This ensures no overlap with status text (y=15) or back button (y=30-60)
+        const titleY = Math.min(70, height * 0.12); // Use percentage fallback for very short screens
+
+        this.sceneTitle = this.add.text(width / 2, titleY, 'COMBAT', {
+            fontSize: Math.min(width * 0.06, 42) + 'px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(10);
+    }
+
+    /**
      * Calculate responsive layout positions.
      * Stacked (portrait mobile): reserves space for top/bottom UI, adaptive spacing,
      * min cell size 16px so two grids always fit even at 375x500.
@@ -227,8 +271,9 @@ export class GameScene extends Phaser.Scene {
 
         if (shouldStack) {
             // Fixed pixel reserves for non-grid UI elements
-            const TOP_UI    = 58;  // status text (y=15) + back button (y=45) + 13px gap
-            const BOTTOM_UI = 24;  // ship status bar at bottom
+            // TOP_UI: status text (y=15) + back button (y=45, h=30) + title (y=70, h~42) + gap
+            const TOP_UI    = 120;  // Increased to account for COMBAT title at y=70 (42px font + 8px gap = 120)
+            const BOTTOM_UI = 24;   // ship status bar at bottom
             const available = height - TOP_UI - BOTTOM_UI;
 
             // Adaptive spacing so grids scale down gracefully on tiny screens
@@ -276,7 +321,8 @@ export class GameScene extends Phaser.Scene {
                 (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
                 (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
             );
-            cellSize   = Math.max(20, Math.min(CELL_SIZE, maxCell));
+            // Allow larger cells on big screens (use MAX_CELL_SIZE instead of CELL_SIZE)
+            cellSize   = Math.max(20, Math.min(GAME_CONSTANTS.MAX_CELL_SIZE, maxCell));
             titleH     = 20;
             labelSpace = LABEL_SPACE;
 
@@ -323,7 +369,7 @@ export class GameScene extends Phaser.Scene {
 
         backBtn.on('pointerover', () => backBtn.setFillStyle(0xe74c3c));
         backBtn.on('pointerout',  () => backBtn.setFillStyle(0x2c3e50));
-        backBtn.on('pointerdown', () => this.scene.start('TitleScene'));
+        backBtn.on('pointerdown', () => this.handleExitAttempt());
 
         this.uiElements.backButton = backBtn;
         this.uiElements.backText   = backText;
@@ -336,8 +382,137 @@ export class GameScene extends Phaser.Scene {
             fontWeight: 'bold'
         }).setOrigin(1, 0.5);
 
+        // Ability buttons (center between grids)
+        this.createAbilityButtons();
+
         // Ship status panel (below grids)
         this.createShipStatusPanel();
+    }
+
+    /**
+     * Create special ability buttons (Sonar Ping + Row Nuke)
+     */
+    createAbilityButtons() {
+        const { width, height } = this.scale;
+
+        // Position buttons based on layout to avoid overlap with grids
+        let centerY;
+        if (this.currentLayout.shouldStack) {
+            // Stacked layout (portrait): Position between the two grids
+            const playerBottom = this.currentLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize) + this.currentLayout.labelSpace;
+            const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
+            centerY = (playerBottom + enemyTop) / 2;
+        } else {
+            // Side-by-side layout (landscape): Position in vertical center
+            centerY = height / 2;
+        }
+
+        const buttonWidth = Math.min(width * 0.18, 100);
+        const buttonHeight = 44;
+        const spacing = 12;
+
+        // Sonar Ping button (top)
+        const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
+        const sonarBtn = this.add.rectangle(
+            width / 2, sonarY, buttonWidth, buttonHeight, 0x2c3e50
+        );
+        sonarBtn.setStrokeStyle(3, 0x00ffff);
+        sonarBtn.setInteractive({ useHandCursor: true });
+
+        const sonarText = this.add.text(width / 2, sonarY, 'SONAR\nPING', {
+            fontSize: '12px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        sonarBtn.on('pointerover', () => {
+            if (this.turnManager.sonarPingAvailable && this.attackMode === 'NORMAL') {
+                sonarBtn.setFillStyle(0x00ffff);
+            }
+        });
+
+        sonarBtn.on('pointerout', () => {
+            if (this.attackMode !== 'SONAR') {
+                sonarBtn.setFillStyle(0x2c3e50);
+            }
+        });
+
+        sonarBtn.on('pointerdown', () => {
+            if (this.turnManager.sonarPingAvailable && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
+                this.enterSonarMode();
+            }
+        });
+
+        // Row Nuke button (bottom)
+        const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
+        const nukeBtn = this.add.rectangle(
+            width / 2, nukeY, buttonWidth, buttonHeight, 0x2c3e50
+        );
+        nukeBtn.setStrokeStyle(3, 0xff00ff);
+        nukeBtn.setInteractive({ useHandCursor: true });
+
+        const nukeText = this.add.text(width / 2, nukeY, 'ROW\nNUKE', {
+            fontSize: '12px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        nukeBtn.on('pointerover', () => {
+            if (this.turnManager.rowNukeCharges > 0 && this.attackMode === 'NORMAL') {
+                nukeBtn.setFillStyle(0xff00ff);
+            }
+        });
+
+        nukeBtn.on('pointerout', () => {
+            if (this.attackMode !== 'NUKE') {
+                nukeBtn.setFillStyle(0x2c3e50);
+            }
+        });
+
+        nukeBtn.on('pointerdown', () => {
+            if (this.turnManager.rowNukeCharges > 0 && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
+                this.enterNukeMode();
+            }
+        });
+
+        // Store references
+        this.abilityButtons = { sonarBtn, sonarText, nukeBtn, nukeText };
+
+        // Initial state update
+        this.updateAbilityButtons();
+    }
+
+    /**
+     * Update ability button states (enabled/disabled based on availability)
+     */
+    updateAbilityButtons() {
+        if (!this.abilityButtons) return;
+
+        const { sonarBtn, sonarText, nukeBtn, nukeText } = this.abilityButtons;
+
+        // Sonar Ping state
+        if (this.turnManager.sonarPingAvailable) {
+            sonarBtn.setAlpha(1.0);
+            sonarText.setAlpha(1.0);
+            sonarText.setText('SONAR\nPING');
+        } else {
+            sonarBtn.setAlpha(0.3);
+            sonarText.setAlpha(0.3);
+            sonarText.setText('SONAR\nUSED');
+        }
+
+        // Row Nuke state
+        if (this.turnManager.rowNukeCharges > 0) {
+            nukeBtn.setAlpha(1.0);
+            nukeText.setAlpha(1.0);
+            nukeText.setText(`ROW\nNUKE x${this.turnManager.rowNukeCharges}`);
+        } else {
+            nukeBtn.setAlpha(0.3);
+            nukeText.setAlpha(0.3);
+            nukeText.setText('ROW\nNUKE x0');
+        }
     }
 
     /**
@@ -426,13 +601,17 @@ export class GameScene extends Phaser.Scene {
         const messages = {
             PLAYER_TURN: short ? 'YOUR TURN' : 'YOUR TURN - Choose target',
             ENEMY_TURN:  short ? 'ENEMY...' : 'ENEMY TURN - Thinking...',
-            GAME_OVER:   'GAME OVER'
+            GAME_OVER:   'GAME OVER',
+            SONAR_MODE:  short ? 'SONAR' : 'SONAR PING - Select 3×3 zone',
+            NUKE_MODE:   short ? 'NUKE' : 'ROW NUKE - Select target row'
         };
 
         const colors = {
             PLAYER_TURN: '#ffff00',
             ENEMY_TURN:  '#ff8800',
-            GAME_OVER:   '#ff0000'
+            GAME_OVER:   '#ff0000',
+            SONAR_MODE:  '#00ffff',
+            NUKE_MODE:   '#ff00ff'
         };
 
         this.uiElements.statusText
@@ -493,10 +672,21 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Handle a player attack on the enemy fleet.
+     * Routes to appropriate handler based on attackMode.
      * @param {number} row
      * @param {number} col
      */
     handlePlayerAttack(row, col) {
+        // Route based on current attack mode
+        if (this.attackMode === 'SONAR') {
+            this.executeSonarPing(row, col);
+            return;
+        } else if (this.attackMode === 'NUKE') {
+            this.executeRowNuke(row, col);
+            return;
+        }
+
+        // Normal attack
         if (!this.canPlayerAttack(row, col)) return;
 
         this.combatLocked = true;
@@ -507,13 +697,28 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
-        // Record in turn manager
-        const { bonusTurn } = this.turnManager.processPlayerAttack(row, col, attackResult);
+        // Record in turn manager (now returns chainBonus and rowNukeEarned)
+        const { bonusTurn, chainBonus, rowNukeEarned } = this.turnManager.processPlayerAttack(row, col, attackResult);
 
         // Update visual state
         const newState = attackResult.sunk ? CELL.SUNK : (attackResult.hit ? CELL.HIT : CELL.MISS);
         this.enemyCellStates[row][col] = newState;
         this.refreshEnemyCellByState(row, col, newState);
+
+        // Show floating combat text (HIT/MISS)
+        const cellCenterX = this.currentLayout.enemyX + col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        const cellCenterY = this.currentLayout.enemyY + row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        if (attackResult.hit) {
+            this.showCombatText('HIT!', '#ff4444', cellCenterX, cellCenterY);
+        } else {
+            this.showCombatText('MISS', '#ffffff', cellCenterX, cellCenterY);
+        }
+
+        // Show chain bonus if active
+        if (chainBonus > 0) {
+            const multiplier = this.turnManager.getChainMultiplier();
+            this.showChainBonus(multiplier, chainBonus);
+        }
 
         // Announce if sunk
         if (attackResult.sunk && attackResult.ship) {
@@ -525,7 +730,13 @@ export class GameScene extends Phaser.Scene {
             });
         }
 
+        // Announce Row Nuke unlock
+        if (rowNukeEarned) {
+            this.showRowNukeEarned();
+        }
+
         this.updateShipStatus();
+        this.updateAbilityButtons(); // Update ability button states
 
         // Check victory
         if (this.enemyFleet.isFleetDestroyed()) {
@@ -579,6 +790,15 @@ export class GameScene extends Phaser.Scene {
         this.playerCellStates[target.row][target.col] = newState;
         this.refreshPlayerCellByState(target.row, target.col, newState);
 
+        // Show floating combat text (HIT/MISS)
+        const cellCenterX = this.currentLayout.playerX + target.col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        const cellCenterY = this.currentLayout.playerY + target.row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        if (attackResult.hit) {
+            this.showCombatText('HIT!', '#ff4444', cellCenterX, cellCenterY);
+        } else {
+            this.showCombatText('MISS', '#ffffff', cellCenterX, cellCenterY);
+        }
+
         // Announce if sunk
         if (attackResult.sunk && attackResult.ship) {
             this.showSunkAnnouncement(`Enemy sank your ${attackResult.ship.name}!`, false);
@@ -602,6 +822,203 @@ export class GameScene extends Phaser.Scene {
             this.updateStatusDisplay('PLAYER_TURN');
             this.combatLocked = false;
         }
+    }
+
+    // ─── Special Attacks ────────────────────────────────────────────────────────
+
+    /**
+     * Enter Sonar Ping mode (player clicks button to activate)
+     */
+    enterSonarMode() {
+        this.attackMode = 'SONAR';
+        this.abilityButtons.sonarBtn.setFillStyle(0x00ffff); // Highlight active
+        this.updateStatusDisplay('SONAR_MODE');
+        console.log('GameScene: SONAR PING mode activated - click 3×3 zone');
+    }
+
+    /**
+     * Execute Sonar Ping on clicked cell (reveals 3×3 zone)
+     * @param {number} centerRow - Center of 3×3 zone
+     * @param {number} centerCol - Center of 3×3 zone
+     */
+    executeSonarPing(centerRow, centerCol) {
+        console.log(`GameScene: Sonar ping at (${centerRow}, ${centerCol})`);
+
+        // Mark sonar as used
+        this.turnManager.sonarPingAvailable = false;
+        this.attackMode = 'NORMAL';
+        this.abilityButtons.sonarBtn.setFillStyle(0x2c3e50); // Reset button
+        this.updateAbilityButtons();
+        this.updateStatusDisplay('PLAYER_TURN');
+
+        // Reveal 3×3 grid centered on clicked cell
+        const reveals = [];
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                const r = centerRow + dr;
+                const c = centerCol + dc;
+
+                if (r >= 0 && r < 10 && c >= 0 && c < 10) {
+                    const ship = this.enemyFleet.getShipAt(r, c);
+                    reveals.push({ row: r, col: c, hasShip: ship !== null });
+                }
+            }
+        }
+
+        // Visual feedback - show sonar overlay
+        this.showSonarOverlay(reveals);
+    }
+
+    /**
+     * Show sonar ping visual overlay (reveals ship/no-ship in 3×3)
+     * @param {Array} reveals - Array of {row, col, hasShip}
+     */
+    showSonarOverlay(reveals) {
+        const { width, height } = this.scale;
+        const cellSize = this.currentLayout.cellSize;
+
+        reveals.forEach(({ row, col, hasShip }, index) => {
+            const x = this.currentLayout.enemyX + col * cellSize + cellSize / 2;
+            const y = this.currentLayout.enemyY + row * cellSize + cellSize / 2;
+
+            // Create sonar pulse circle
+            const circle = this.add.circle(x, y, cellSize * 0.4, hasShip ? 0xff0000 : 0x00ffff, 0.5);
+            circle.setDepth(99);
+
+            // Fade in + fade out
+            circle.setAlpha(0);
+            this.tweens.add({
+                targets: circle,
+                alpha: 0.7,
+                duration: 400,
+                delay: index * 50,
+                yoyo: true,
+                onComplete: () => circle.destroy()
+            });
+        });
+
+        // Show announcement
+        const text = this.add.text(width / 2, height / 2 - 60, 'SONAR PING!', {
+            fontSize: '24px',
+            fontFamily: 'Arial Black',
+            fill: '#00ffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(100);
+
+        this.time.delayedCall(1500, () => {
+            this.tweens.add({
+                targets: text,
+                alpha: 0,
+                duration: 600,
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
+     * Enter Row Nuke mode (player clicks button to activate)
+     */
+    enterNukeMode() {
+        this.attackMode = 'NUKE';
+        this.abilityButtons.nukeBtn.setFillStyle(0xff00ff); // Highlight active
+        this.updateStatusDisplay('NUKE_MODE');
+        console.log('GameScene: ROW NUKE mode activated - click any cell in target row');
+    }
+
+    /**
+     * Execute Row Nuke on clicked row (attacks entire row)
+     * @param {number} row - Target row (0-9)
+     * @param {number} col - Clicked column (ignored, just for row detection)
+     */
+    executeRowNuke(row, col) {
+        console.log(`GameScene: Row Nuke fired at row ${row}`);
+
+        // Consume one nuke charge
+        this.turnManager.rowNukeCharges--;
+        this.attackMode = 'NORMAL';
+        this.abilityButtons.nukeBtn.setFillStyle(0x2c3e50); // Reset button
+        this.updateAbilityButtons();
+        this.updateStatusDisplay('PLAYER_TURN');
+        this.combatLocked = true;
+
+        // Attack all 10 cells in the row
+        let totalHits = 0;
+        let totalSinks = 0;
+        const attackedCells = [];
+
+        for (let c = 0; c < 10; c++) {
+            const attackResult = this.enemyFleet.receiveAttack(row, c);
+
+            if (!attackResult.duplicate && attackResult.hit) {
+                totalHits++;
+                if (attackResult.sunk) totalSinks++;
+            }
+
+            const newState = attackResult.sunk ? CELL.SUNK : (attackResult.hit ? CELL.HIT : CELL.MISS);
+            this.enemyCellStates[row][c] = newState;
+            attackedCells.push({ col: c, state: newState, attackResult });
+        }
+
+        // Visual effects - sequential explosions
+        attackedCells.forEach(({ col, state, attackResult }, index) => {
+            this.time.delayedCall(index * 100, () => {
+                this.refreshEnemyCellByState(row, col, state);
+
+                // Show mini explosion
+                const x = this.currentLayout.enemyX + col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+                const y = this.currentLayout.enemyY + row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+
+                const explosion = this.add.circle(x, y, this.currentLayout.cellSize * 0.6, 0xff00ff, 0.8);
+                explosion.setDepth(100);
+                this.tweens.add({
+                    targets: explosion,
+                    scaleX: 1.5,
+                    scaleY: 1.5,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Power2',
+                    onComplete: () => explosion.destroy()
+                });
+            });
+        });
+
+        // Show results after all explosions
+        this.time.delayedCall(1200, () => {
+            const { width, height } = this.scale;
+            const text = this.add.text(width / 2, height / 2 - 60, `ROW NUKE!\n${totalHits} HITS, ${totalSinks} SUNK`, {
+                fontSize: '24px',
+                fontFamily: 'Arial Black',
+                fill: '#ff00ff',
+                stroke: '#000000',
+                strokeThickness: 4,
+                align: 'center'
+            }).setOrigin(0.5).setDepth(100);
+
+            this.time.delayedCall(1500, () => {
+                this.tweens.add({
+                    targets: text,
+                    alpha: 0,
+                    duration: 600,
+                    onComplete: () => text.destroy()
+                });
+            });
+
+            // Update game state
+            this.updateShipStatus();
+
+            // Check victory
+            if (this.enemyFleet.isFleetDestroyed()) {
+                this.turnManager.setGameOver('PLAYER');
+                this.time.delayedCall(800, () => this.endGame('PLAYER'));
+                return;
+            }
+
+            // Switch to AI turn (nuke ends player turn)
+            this.turnManager.switchToEnemy();
+            this.updateStatusDisplay('ENEMY_TURN');
+            this.time.delayedCall(700, () => this.executeAITurn());
+        });
     }
 
     // ─── Visual Feedback ────────────────────────────────────────────────────────
@@ -735,6 +1152,36 @@ export class GameScene extends Phaser.Scene {
     // ─── Announcements ──────────────────────────────────────────────────────────
 
     /**
+     * Show floating combat text (HIT/MISS) over attacked grid cell.
+     * @param {string} message - "HIT!" or "MISS"
+     * @param {string} color - Text color (#ff4444 for HIT, #ffffff for MISS)
+     * @param {number} centerX - Grid cell center X coordinate
+     * @param {number} centerY - Grid cell center Y coordinate
+     */
+    showCombatText(message, color, centerX, centerY) {
+        const text = this.add.text(centerX, centerY, message, {
+            fontSize: Math.min(18, this.scale.width * 0.03) + 'px',
+            fontFamily: 'Arial Black',
+            fill: color,
+            fontWeight: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setDepth(101);
+
+        // Hold for 900ms, then fade and float up over 1400ms
+        this.time.delayedCall(900, () => {
+            this.tweens.add({
+                targets: text,
+                y: centerY - 40,
+                alpha: 0,
+                duration: 1400,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
      * Show a temporary "ship sunk" announcement.
      * @param {string} message
      * @param {boolean} isPlayerScoring - True = player sank enemy ship (use green)
@@ -752,13 +1199,104 @@ export class GameScene extends Phaser.Scene {
             strokeThickness: 3
         }).setOrigin(0.5).setDepth(100);
 
+        // Hold for 1800ms, then fade and float up over 1800ms
+        this.time.delayedCall(1800, () => {
+            this.tweens.add({
+                targets: text,
+                y: height / 2 - 80,
+                alpha: 0,
+                duration: 1800,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
+     * Show chain bonus combo text (COMBO x2/x3/x4!)
+     * @param {number} multiplier - Chain multiplier (2, 3, or 4)
+     * @param {number} bonus - Bonus points awarded
+     */
+    showChainBonus(multiplier, bonus) {
+        const { width, height } = this.scale;
+
+        const text = this.add.text(width / 2, height / 2 + 40, `COMBO x${multiplier}! +${bonus}`, {
+            fontSize: Math.min(28, width * 0.045) + 'px',
+            fontFamily: 'Arial Black',
+            fill: '#ffff00', // Bright yellow for combo
+            fontWeight: 'bold',
+            stroke: '#ff8800',
+            strokeThickness: 4,
+            shadow: {
+                offsetX: 0,
+                offsetY: 0,
+                color: '#ffaa00',
+                blur: 12,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(101);
+
+        // Pulse animation + fade out
         this.tweens.add({
             targets: text,
-            y: height / 2 - 80,
-            alpha: 0,
-            duration: 2000,
-            ease: 'Power2',
-            onComplete: () => text.destroy()
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 300,
+            yoyo: true,
+            repeat: 1
+        });
+
+        this.time.delayedCall(1000, () => {
+            this.tweens.add({
+                targets: text,
+                alpha: 0,
+                duration: 600,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
+     * Show "ROW NUKE EARNED!" announcement
+     */
+    showRowNukeEarned() {
+        const { width, height } = this.scale;
+
+        const text = this.add.text(width / 2, height / 2, 'ROW NUKE EARNED!', {
+            fontSize: Math.min(32, width * 0.05) + 'px',
+            fontFamily: 'Arial Black',
+            fill: '#ff00ff', // Magenta for special unlock
+            fontWeight: 'bold',
+            stroke: '#000000',
+            strokeThickness: 5,
+            shadow: {
+                offsetX: 0,
+                offsetY: 0,
+                color: '#ff00ff',
+                blur: 16,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(102);
+
+        // Flash animation
+        this.tweens.add({
+            targets: text,
+            alpha: 0.3,
+            duration: 200,
+            yoyo: true,
+            repeat: 4
+        });
+
+        this.time.delayedCall(2000, () => {
+            this.tweens.add({
+                targets: text,
+                alpha: 0,
+                y: height / 2 - 50,
+                duration: 800,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
         });
     }
 
@@ -799,7 +1337,247 @@ export class GameScene extends Phaser.Scene {
      */
     setupInput() {
         this.input.keyboard.on('keydown-ESC', () => {
-            this.scene.start('TitleScene');
+            this.handleExitAttempt();
+        });
+    }
+
+    /**
+     * Set up beforeunload handler to save game state when tab closes
+     */
+    setupBeforeUnload() {
+        this.beforeUnloadHandler = () => {
+            if (!this.turnManager.gameOver) {
+                this.saveGameState();
+            }
+        };
+        window.addEventListener('beforeunload', this.beforeUnloadHandler);
+    }
+
+    // ─── Save / Load ────────────────────────────────────────────────────────────
+
+    /**
+     * Handle exit attempt (BACK button or ESC key)
+     */
+    handleExitAttempt() {
+        if (this.turnManager.gameOver) {
+            // Game is over, exit immediately
+            this.cleanupAndExit();
+            return;
+        }
+
+        // Game in progress - show confirmation
+        this.showConfirmationDialog(
+            'Exit to main menu?\\nYour progress will be saved.',
+            () => {
+                this.saveGameState();
+                this.cleanupAndExit();
+            },
+            () => {
+                // User cancelled - do nothing
+            }
+        );
+    }
+
+    /**
+     * Clean up event listeners and exit to title
+     */
+    cleanupAndExit() {
+        if (this.beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            this.beforeUnloadHandler = null;
+        }
+        this.scene.start('TitleScene');
+    }
+
+    /**
+     * Save current game state to localStorage
+     */
+    saveGameState() {
+        try {
+            const state = {
+                playerCellStates: this.playerCellStates,
+                enemyCellStates: this.enemyCellStates,
+                playerFleet: this.playerFleet.serialize(),
+                enemyFleet: this.enemyFleet.serialize(),
+                turnManager: this.turnManager.serialize(),
+                aiManager: this.aiManager.serialize(),
+                combatLocked: this.combatLocked,
+                gameOver: this.turnManager.gameOver,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('battleshipsGameState', JSON.stringify(state));
+            console.log('Game state saved to localStorage');
+        } catch (error) {
+            console.warn('Failed to save game state:', error);
+        }
+    }
+
+    /**
+     * Load game state from localStorage
+     * @returns {object|null} Saved state or null if none exists
+     */
+    loadGameState() {
+        try {
+            const saved = localStorage.getItem('battleshipsGameState');
+            if (!saved) return null;
+
+            const state = JSON.parse(saved);
+
+            // Check age - discard if older than 7 days
+            const age = Date.now() - (state.timestamp || 0);
+            if (age > 7 * 24 * 60 * 60 * 1000) {
+                this.clearSavedGame();
+                return null;
+            }
+
+            return state;
+        } catch (error) {
+            console.warn('Failed to load game state:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Restore game state from saved data
+     */
+    restoreGameState(savedState) {
+        this.playerCellStates = savedState.playerCellStates;
+        this.enemyCellStates = savedState.enemyCellStates;
+
+        // Restore fleets (will need deserialize methods in FleetManager)
+        this.playerFleet.deserialize(savedState.playerFleet);
+        this.enemyFleet.deserialize(savedState.enemyFleet);
+
+        // Restore managers
+        this.turnManager.deserialize(savedState.turnManager);
+        this.aiManager.deserialize(savedState.aiManager);
+
+        this.combatLocked = savedState.combatLocked;
+
+        // Create layout and apply states
+        this.createGameLayout();
+        this.createSceneTitle();
+        this.createUI();
+        this.applyGridStates();
+        this.setupInput();
+        this.setupBeforeUnload();
+
+        // Update displays
+        this.updateStatusDisplay(this.turnManager.currentTurn === 'PLAYER' ? 'PLAYER_TURN' : 'ENEMY_TURN');
+        this.updateShipStatus();
+        this.uiElements.scoreText.setText(`SCORE: ${this.turnManager.score}`);
+
+        console.log('Game state restored from save');
+    }
+
+    /**
+     * Clear saved game from localStorage
+     */
+    clearSavedGame() {
+        try {
+            localStorage.removeItem('battleshipsGameState');
+            console.log('Saved game cleared');
+        } catch (error) {
+            console.warn('Failed to clear saved game:', error);
+        }
+    }
+
+    /**
+     * Show resume game dialog
+     */
+    showResumeDialog(savedState) {
+        const { width, height } = this.scale;
+
+        this.showConfirmationDialog(
+            'Resume previous game?',
+            () => {
+                // Resume - restore saved state
+                this.restoreGameState(savedState);
+            },
+            () => {
+                // Start new game - clear saved state
+                this.clearSavedGame();
+                this.startNewGame();
+            }
+        );
+    }
+
+    /**
+     * Show a confirmation dialog with Yes/No options
+     * @param {string} message - Dialog message
+     * @param {function} onConfirm - Callback for Yes
+     * @param {function} onCancel - Callback for No
+     */
+    showConfirmationDialog(message, onConfirm, onCancel) {
+        const { width, height } = this.scale;
+
+        // Dim background overlay
+        const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.7)
+            .setOrigin(0, 0)
+            .setDepth(200)
+            .setInteractive();
+
+        // Dialog box
+        const dialogWidth = Math.min(width * 0.8, 400);
+        const dialogHeight = Math.min(height * 0.35, 200);
+        const dialogBox = this.add.rectangle(width / 2, height / 2, dialogWidth, dialogHeight, 0x2c3e50)
+            .setDepth(201)
+            .setStrokeStyle(4, 0x3498db);
+
+        // Message text
+        const messageText = this.add.text(width / 2, height / 2 - 30, message, {
+            fontSize: Math.min(width * 0.04, 18) + 'px',
+            fontFamily: 'Arial',
+            fill: '#ffffff',
+            align: 'center',
+            wordWrap: { width: dialogWidth - 40 }
+        }).setOrigin(0.5).setDepth(202);
+
+        // Yes button
+        const yesBtn = this.add.rectangle(width / 2 - 60, height / 2 + 40, 100, 44, 0x2ecc71)
+            .setDepth(202)
+            .setInteractive({ useHandCursor: true });
+        const yesText = this.add.text(width / 2 - 60, height / 2 + 40, 'YES', {
+            fontSize: '16px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff'
+        }).setOrigin(0.5).setDepth(202);
+
+        // No button
+        const noBtn = this.add.rectangle(width / 2 + 60, height / 2 + 40, 100, 44, 0xe74c3c)
+            .setDepth(202)
+            .setInteractive({ useHandCursor: true });
+        const noText = this.add.text(width / 2 + 60, height / 2 + 40, 'NO', {
+            fontSize: '16px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff'
+        }).setOrigin(0.5).setDepth(202);
+
+        // Button hover effects
+        yesBtn.on('pointerover', () => yesBtn.setFillStyle(0x27ae60));
+        yesBtn.on('pointerout', () => yesBtn.setFillStyle(0x2ecc71));
+        noBtn.on('pointerover', () => noBtn.setFillStyle(0xc0392b));
+        noBtn.on('pointerout', () => noBtn.setFillStyle(0xe74c3c));
+
+        // Button click handlers
+        const cleanup = () => {
+            overlay.destroy();
+            dialogBox.destroy();
+            messageText.destroy();
+            yesBtn.destroy();
+            yesText.destroy();
+            noBtn.destroy();
+            noText.destroy();
+        };
+
+        yesBtn.on('pointerdown', () => {
+            cleanup();
+            if (onConfirm) onConfirm();
+        });
+
+        noBtn.on('pointerdown', () => {
+            cleanup();
+            if (onCancel) onCancel();
         });
     }
 
@@ -841,8 +1619,13 @@ export class GameScene extends Phaser.Scene {
 
             this.createGameLayout();
             this.applyGridStates();
+        }
 
-            // Restore combat lock state (don't allow clicks during AI turn after resize)
+        // Update scene title position
+        if (this.sceneTitle) {
+            const titleY = Math.min(70, height * 0.12);
+            this.sceneTitle.setPosition(width / 2, titleY);
+            this.sceneTitle.setFontSize(Math.min(width * 0.06, 42) + 'px');
         }
 
         // Update UI positions
@@ -867,6 +1650,30 @@ export class GameScene extends Phaser.Scene {
         }
         if (this.uiElements.enemyShipStatus) {
             this.uiElements.enemyShipStatus.setPosition(width * 0.75, statusY);
+        }
+
+        // Reposition ability buttons based on new layout
+        if (this.abilityButtons) {
+            let centerY;
+            if (newLayout.shouldStack) {
+                // Stacked layout: Position between grids
+                const playerBottom = newLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize) + newLayout.labelSpace;
+                const enemyTop = newLayout.enemyY - newLayout.titleH;
+                centerY = (playerBottom + enemyTop) / 2;
+            } else {
+                // Side-by-side: Vertical center
+                centerY = height / 2;
+            }
+
+            const buttonHeight = 44;
+            const spacing = 12;
+            const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
+            const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
+
+            this.abilityButtons.sonarBtn.setPosition(width / 2, sonarY);
+            this.abilityButtons.sonarText.setPosition(width / 2, sonarY);
+            this.abilityButtons.nukeBtn.setPosition(width / 2, nukeY);
+            this.abilityButtons.nukeText.setPosition(width / 2, nukeY);
         }
 
         this.currentLayout = newLayout;

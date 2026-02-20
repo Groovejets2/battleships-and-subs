@@ -1,0 +1,35 @@
+# Asset Credits — Battleships & Subs
+
+## Ship Sprites
+
+**Sea Warfare Set**
+- Artist: hashashin
+- Source: https://opengameart.org/content/sea-warfare-set-ships-and-more
+- License: CC0 (Public Domain)
+- Date: 2022
+- Files: /assets/ships/
+  - Battleship/ShipBattleshipHull.png + WeaponBattleshipStandardGun.png
+  - Carrier/ShipCarrierHull.png
+  - Cruiser/ShipCruiserHull.png + WeaponCruiserStandardSTSM.png
+  - Destroyer/ShipDestroyerHull.png + WeaponDestroyerStandardGun.png
+  - Submarine/ShipSubMarineHull.png + WeaponSubmarineStandard.png
+  - PatrolBoat/ShipPatrolHull.png
+  - Rescue Ship/ShipRescue.png
+  - Plane/PlaneF-35Lightning2.png + Missile.png
+
+## Fonts
+
+- Arial / Arial Black (system fonts, no attribution required)
+
+## Audio
+
+(To be added in Week 6B)
+
+## UI Icons
+
+(To be added in Week 6A — Kenney.nl asset audit)
+
+---
+
+**All CC0 assets used in this project are public domain and do not legally require attribution.**
+**Attribution provided here as best practice and respect for creators.**

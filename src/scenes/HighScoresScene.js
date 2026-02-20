@@ -72,21 +72,16 @@ export class HighScoresScene extends Phaser.Scene {
      * Create high scores title
      */
     createTitle(width, height) {
-        // Detect landscape mode (short screens)
-        const isLandscape = width > height;
-        const titleY = isLandscape ? height * 0.05 : height * 0.08;
-        const subtitleY = isLandscape ? height * 0.10 : height * 0.13;
-
-        this.add.text(width / 2, titleY, 'HIGH SCORES', {
+        this.add.text(width / 2, height * 0.05, 'HIGH SCORES', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
-            stroke: '#1e3c72',
+            stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5);
 
         // Subtitle
-        this.add.text(width / 2, subtitleY, 'Top Commanders', {
+        this.add.text(width / 2, height * 0.10, 'Top Commanders', {
             fontSize: '16px',
             fontFamily: 'Arial',
             fill: '#a0c4ff',
