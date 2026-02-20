@@ -236,13 +236,27 @@ src/
 **Next (HIGH PRIORITY - Layout Fixes Required):**
 
 1. **FIX CRITICAL: Settings + GameScene Layout Broken** ⚠️
-   - [ ] Week 5 changes (ability buttons, pip-dots) have broken layouts
-   - [ ] **SettingsScene:** Elements overlapping, screen crowded
-   - [ ] **GameScene:** Bottom grid pushed half off screen by new ability buttons
-   - [ ] Need to reposition all UI elements with proper spacing
-   - [ ] Test across all viewports after fix (mobile, tablet, desktop)
-   - **User reported:** "many screens overlap or push the bottom grid half off screen"
+
+   **User Feedback (2026-02-20):**
+   - **Large screens:** Grid too small - not using available space well
+   - **Small screens:** Grids + buttons + text don't fit
+   - **Layout ideas to explore:**
+     - Option A: Grids on right, buttons on left
+     - Option B: Text down left side, buttons on bottom
+     - Research what other battleship games do for mobile layouts
+
+   **Tasks:**
+   - [ ] Research mobile battleship game layouts (screenshots, UX patterns)
+   - [ ] Design adaptive layout: large screens (maximize grid), small screens (vertical/side layout)
+   - [ ] **GameScene large screens:** Increase grid size to use available space
+   - [ ] **GameScene small screens:** Reorganize: grids/buttons/text to fit without overlap
+   - [ ] **SettingsScene:** Elements overlapping, needs spacing adjustment
+   - [ ] Test across all viewports after fix (mobile, tablet, desktop, ultrawide)
    - **Priority:** CRITICAL - blocks manual testing and gameplay
+
+   **Additional Task:**
+   - [ ] Find free battleship + submarine artwork (similar to game theme)
+   - [ ] Replace placeholder graphics
 
 2. ~~**Investigate and fix Playwright test infrastructure:**~~ ✅ COMPLETE
    - ✅ Tests were Node.js scripts, not Playwright Test framework
