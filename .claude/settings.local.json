@@ -17,7 +17,12 @@
       "Bash(git checkout:*)",
       "Bash(git merge:*)",
       "Bash(git branch:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "WebSearch",
+      "WebFetch(domain:kenney.nl)",
+      "WebFetch(domain:opengameart.org)",
+      "WebFetch(domain:craftpix.net)",
+      "Bash(unzip:*)"
     ],
     "deny": [],
     "ask": []
