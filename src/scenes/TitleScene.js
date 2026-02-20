@@ -113,16 +113,16 @@ export class TitleScene extends Phaser.Scene {
     createTitle(width, height) {
         // Main title
         const title = this.add.text(width / 2, height * 0.25, 'BATTLESHIPS', {
-            fontSize: Math.min(width * 0.08, 48) + 'px',
+            fontSize: Math.min(width * 0.08, 64) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
             stroke: '#1e3c72',
-            strokeThickness: 4,
+            strokeThickness: 6,
             shadow: {
-                offsetX: 3,
-                offsetY: 3,
-                color: '#000000',
-                blur: 10,
+                offsetX: 0,
+                offsetY: 0,
+                color: '#4a90e2',
+                blur: 8,
                 fill: true
             }
         }).setOrigin(0.5);
@@ -137,12 +137,28 @@ export class TitleScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         // Version or tagline
-        this.tagline = this.add.text(width / 2, height * 0.38, 'Navigate • Strategize • Dominate', {
+        this.tagline = this.add.text(width / 2, height * 0.38, 'Navigate • Strategise • Dominate', {
             fontSize: Math.min(width * 0.025, 16) + 'px',
             fontFamily: 'Arial',
             fill: '#a0c4ff',
             fontStyle: 'italic'
         }).setOrigin(0.5);
+
+        // Decorative separator lines flanking the tagline
+        const lineLength = Math.min(width * 0.15, 80);
+        const lineY = height * 0.38;
+        const lineLeftX = width / 2 - Math.min(width * 0.25, 120);
+        const lineRightX = width / 2 + Math.min(width * 0.25, 120);
+
+        const leftLine = this.add.graphics();
+        leftLine.lineStyle(2, 0xa0c4ff, 0.6);
+        leftLine.lineBetween(lineLeftX - lineLength, lineY, lineLeftX, lineY);
+        leftLine.strokePath();
+
+        const rightLine = this.add.graphics();
+        rightLine.lineStyle(2, 0xa0c4ff, 0.6);
+        rightLine.lineBetween(lineRightX, lineY, lineRightX + lineLength, lineY);
+        rightLine.strokePath();
 
         // Animate title entrance
         title.setAlpha(0);
@@ -326,7 +342,7 @@ export class TitleScene extends Phaser.Scene {
 
         if (titleObjects.length >= 2) {
             titleObjects[0].setPosition(width / 2, height * 0.25);
-            titleObjects[0].setFontSize(Math.min(width * 0.08, 48) + 'px');
+            titleObjects[0].setFontSize(Math.min(width * 0.08, 64) + 'px');
             titleObjects[1].setPosition(width / 2, height * 0.32);
             titleObjects[1].setFontSize(Math.min(width * 0.06, 36) + 'px');
         }

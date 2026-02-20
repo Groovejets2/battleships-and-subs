@@ -2,10 +2,10 @@
 
 **Project Name:** Battleships & Subs
 **Version:** 1.0.0
-**Document Version:** 1.0
-**Last Updated:** 2025-10-27
-**Project Manager:** [TBD]
-**Lead Developer:** [TBD]
+**Document Version:** 2.0
+**Last Updated:** 2026-02-17
+**Product Owner:** JH
+**Lead Agent:** Kerry McGregor (Claude Sonnet 4.5)
 
 ---
 
@@ -33,28 +33,26 @@
 
 **Battleships & Subs** is a modern web-based naval strategy game implementing the classic Battleship gameplay with enhanced features including special ship abilities, responsive design, and AI opponents. The project follows an iterative delivery approach with three major phases.
 
-### Current Status
+### Current Status (updated 2026-02-17)
 
-**Phase Completed:** Foundation (Week 1-2)
-- ✅ Project structure established
-- ✅ Grid system implemented
-- ✅ Ship model created
-- ✅ Placement validation complete
-- ✅ Scene management operational
-- ✅ Responsive design foundation
+**Phase 1: COMPLETE ✅** (Weeks 1-4 — released as v1.4.1)
+- ✅ Project structure, grid, ship model, placement validation
+- ✅ Full combat loop with hit/miss/sunk detection
+- ✅ AI opponent (Easy/Normal/Hard targeting)
+- ✅ Turn management + score calculation
+- ✅ Victory/defeat screens (GameOverScene)
+- ✅ Fully responsive layout (portrait + landscape, 375×500 to 1280×720)
+- ✅ High scores leaderboard with arcade fly-in animation
 
-**Current Phase:** Core Gameplay (Week 3-4)
-- 🔄 Combat system development
-- 🔄 AI opponent implementation
-- ⏳ Game loop completion
+**Current Status:** Pre-Sprint planning complete — ready for Phase 2 (Week 5)
 
-**Estimated Completion:** 8-10 weeks from project start
+**Revised Completion:** 11 weeks total (expanded scope)
 
 ### Key Deliverables
 
-1. **Phase 1 (Weeks 1-4):** MVP - Playable game with basic AI
-2. **Phase 2 (Weeks 5-7):** Enhanced features - Special abilities, audio, polish
-3. **Phase 3 (Weeks 8-10):** Production release - Testing, optimization, deployment
+1. **Phase 1 (Weeks 1-4):** ✅ MVP — fully playable game with AI opponent, v1.4.1 released
+2. **Phase 2 (Weeks 5-7):** Enhanced features — UX polish, abilities, audio, full graphics overhaul
+3. **Phase 3 (Weeks 8-11):** Production release — statistics, QA, tuning, code quality, deployment + marketing
 
 ---
 
@@ -373,356 +371,523 @@ main (production)
 
 ## Phase 2: Enhanced Features (Weeks 5-7)
 
-**Objective:** Polish gameplay and add enhanced features
+**Objective:** UX polish, special abilities, addictiveness mechanics, complete audio system, full graphics overhaul
+**Vision reference:** See `/doc/output/Project-Vision_JH_v1.0_2026-02-17.md`
 
 ---
 
-### Week 5: Special Abilities & Difficulty Levels
+### Pre-Sprint Week 0: Planning & Vision ✅ COMPLETE
 
-**Sprint 2.1 - Enhanced Combat**
+**Goals:** Lock vision, decisions, and graphics strategy before coding begins
 
-**Goals:**
-- Special ship abilities
-- Multiple AI difficulties
-- Enhanced combat options
-
-**Tasks:**
-- [ ] Design ability UI components
-- [ ] Implement ability cooldown system
-- [ ] Add Nuclear Sub abilities:
-  - [ ] Dive (defensive)
-  - [ ] Torpedo Strike (3-square linear)
-- [ ] Add Cruiser ability:
-  - [ ] Depth Charge (3x3 area)
-- [ ] Add Attack Sub abilities:
-  - [ ] Torpedo (2-square linear)
-  - [ ] Silent Running (stealth)
-- [ ] Create ability targeting UI
-- [ ] Implement ability animations
-- [ ] Add Easy AI difficulty (random targeting)
-- [ ] Add Hard AI difficulty (probability-based)
-- [ ] Create difficulty selection UI
-- [ ] Test all abilities
-- [ ] Balance ability cooldowns
-
-**Deliverables:**
-- All special abilities functional
-- 3 AI difficulty levels (Easy, Normal, Hard)
-- Ability UI and animations
-- Balanced gameplay
-
-**Acceptance Criteria:**
-- All abilities work as designed
-- Cooldowns enforced correctly
-- AI difficulties noticeably different
-- Abilities add strategic depth
+**Tasks Completed:**
+- ✅ Create Project Vision document (mission, 3 pillars, graphics strategy)
+- ✅ Lock graphics asset strategy (Kenney.nl → AI-generated → programmatic, no manual art)
+- ✅ Select addictiveness innovation mechanics (Sonar Ping, Row Nuke, Chain Bonus)
+- ✅ Update all project documents to reflect revised 11-week scope
+- [ ] Sprites/graphics workflow research — audit kenney.nl naval packs (before Week 7 coding)
 
 ---
 
-### Week 6: Audio & Visual Effects
+### Week 5: UX Polish + Special Abilities + Addictiveness Mechanics
 
-**Sprint 2.2 - Polish & Feedback**
+**Sprint 2.1 — Enhanced UX & Combat**
 
 **Goals:**
-- Complete audio system
-- Enhanced visual effects
-- Particle systems
+- Polish all on-screen text and visual feedback
+- Implement ship special abilities with cooldown UI
+- Implement 3 addictiveness innovation mechanics
+- Overhaul settings screen to arcade standard
+- Add game state persistence and exit confirmation
+- Enhanced ship placement experience
+- Navigation consistency across all scenes
 
 **Tasks:**
-- [ ] Source or create sound effects:
-  - [ ] Button clicks
-  - [ ] Ship placement
-  - [ ] Attack hits (explosion)
-  - [ ] Attack misses (splash)
-  - [ ] Ship sinking (dramatic)
-  - [ ] Ability activations
-  - [ ] Victory/defeat themes
-- [ ] Implement Web Audio API integration
-- [ ] Add background music tracks:
-  - [ ] Menu theme
-  - [ ] Battle theme
-  - [ ] Victory theme
-  - [ ] Defeat theme
-- [ ] Implement audio volume controls (already have UI)
-- [ ] Create particle effects:
-  - [ ] Explosion on hit
-  - [ ] Water splash on miss
-  - [ ] Ship sinking effects
-  - [ ] Ability visual effects
-- [ ] Add screen shake on hits (optional)
-- [ ] Implement smooth scene transitions
-- [ ] Add attack animations
-- [ ] Create loading animations
-- [ ] Polish button animations
+
+**UX Polish:**
+- [ ] Add floating "HIT!" and "MISS" combat text over attacked grid (currently no text shown)
+- [ ] Slow down text fade animations — hold HIT/MISS 0.9 s then fade 1.4 s (was instant)
+- [ ] Slow down sunk announcement — hold 1.8 s then fade 1.8 s (currently 2 s total)
+- [ ] Unify header title text: all scene titles use identical Arial Black, same size formula, same stroke style
+- [ ] Upgrade TitleScene title — larger max (64px), heavier stroke (6px), glow shadow effect
+- [ ] Fix tagline spelling: "Navigate • Strategise • Dominate" (British spelling)
+- [ ] Add decorative separator lines flanking the tagline on TitleScene
+
+**Special Abilities:**
+- [ ] Design and implement ability UI panel (icons, cooldown display, charge bar)
+- [ ] Nuclear Sub — Radar Ping: reveal 3×3 zone around selected cell
+- [ ] Cruiser — Sonar Sweep: reveal a full row or column as ship/no-ship
+- [ ] Attack Sub — Silent Running: next attack undetected (no AI counter)
+- [ ] Ability cooldown system (turns-based recharge)
+- [ ] Ability targeting overlay on enemy grid
+- [ ] Ability activation animations
+
+**Addictiveness Mechanics:**
+- [ ] Sonar Ping — once per game; reveals ship/no-ship in selected 3×3 zone
+- [ ] Depth Charge Row Nuke — earned by sinking 2 ships consecutively; player selects row, all 10 cells attacked
+- [ ] Chain Bonus — 3+ consecutive hits triggers score multiplier + visual combo flash
+- [ ] UI indicators showing when each earned mechanic is available
+- [ ] Big visual + audio payoff when Row Nuke fires (screen flash, dramatic effect)
+
+**Settings Overhaul:**
+- [ ] Remove percentage text labels from all sliders (70%, 80%, 60%)
+- [ ] Replace sliders with arcade-style pip-dot volume bars (8 notches)
+- [ ] Add Difficulty selector (Easy / Normal / Hard) — currently missing from Settings
+- [ ] Merge Master/SFX/Music into cleaner layout
+- [ ] Rebuild layout to arcade aesthetic: white labels, toggle buttons, minimal clutter
+- [ ] BACK button consistent with rest of game navigation style
+
+**Game State & Exit Flow:**
+- [ ] Save game state to localStorage on BACK click and tab-close event
+- [ ] Show "Resume previous game?" overlay on GameScene.create() if saved state found
+- [ ] Restore full state: grid positions, fleet damage, turn manager, score, AI state
+- [ ] Show "Are you sure? Your progress will be lost." dialog when BACK clicked mid-game
+- [ ] Auto-delete saved state on game completion or explicit NO on resume prompt
+
+**Ship Placement:**
+- [ ] Manual ship placement — click to place, R to rotate, drag to reposition
+- [ ] Ghost/preview ship shows valid/invalid placement before confirming
+- [ ] One-click "Auto Place" button for players who prefer random placement
+- [ ] Visual confirmation animation when ship placed
+
+**Turn Countdown Timer:**
+- [ ] Optional pressure timer (configurable in Settings)
+- [ ] Visual countdown bar above enemy grid (30-second default)
+- [ ] Auto-fires random valid move when timer expires
+- [ ] Timer colour shifts red in final 10 seconds
+
+**Navigation Audit:**
+- [ ] Audit all BACK buttons across 5 scenes — hit target size min 44px
+- [ ] Standardise button position, size, and visual style across all scenes
+- [ ] Map full navigation graph — identify and fix any dead ends
+- [ ] Create shared ButtonFactory utility (or shared constants) — DRY principle
+- [ ] Cross-scene font, colour palette, and spacing consistency pass
 
 **Deliverables:**
-- Complete audio system
-- Sound effects for all actions
-- Background music
-- Particle effects
+- Combat text animations (HIT/MISS/SUNK) visible and correctly timed
+- All 3 special abilities functional with cooldown UI
+- All 3 addictiveness mechanics functional (Sonar Ping, Row Nuke, Chain Bonus)
+- Settings screen rebuilt to arcade standard
+- Game state save + resume flow working
+- Manual ship placement with preview
+- Optional turn countdown timer
+- Consistent navigation across all 5 scenes
 
 **Acceptance Criteria:**
-- Audio plays correctly
-- Volume controls work
-- Effects enhance experience
-- No audio lag or crackling
-- Mute functionality works
+- Player can see and read all combat feedback text
+- Special abilities fire correctly and respect cooldowns
+- Sonar Ping reveals zone, Row Nuke attacks full row, Chain Bonus activates on 3 hits
+- Settings screen has no % text, difficulty selector present, arcade-style layout
+- BACK mid-game shows confirmation, state saves and restores correctly
+- Ship placement shows ghost preview, accepts rotation, has auto-place option
 
 ---
 
-### Week 7: Statistics & Progression
+### Week 6A: Graphics Overhaul — Assets & Combat
 
-**Sprint 2.3 - Engagement Features**
+**Sprint 2.2A — Sprite Assets + Combat Visuals**
 
 **Goals:**
-- Enhanced statistics
-- Better high scores
-- Engagement mechanics
+- Replace flat-colour game grids with naval-themed visual style
+- Source or generate ship sprites (Kenney.nl first, AI-generated if needed)
+- Add combat visual animations
+- Replace rectangle menu buttons with torpedo/sub-shaped designs
+- Add visual polish to non-game screens
 
 **Tasks:**
-- [ ] Enhance high scores leaderboard:
-  - [ ] Add difficulty indicator
-  - [ ] Add detailed stats view
-  - [ ] Implement filtering/sorting
-- [ ] Create statistics tracking:
-  - [ ] Total games played
-  - [ ] Win/loss record
-  - [ ] Average accuracy
-  - [ ] Favorite ship (most effective)
-  - [ ] Best score
-  - [ ] Fastest victory
-- [ ] Add career statistics screen
-- [ ] Implement player name persistence
-- [ ] Add accuracy tracking during game
-- [ ] Create turn counter display
-- [ ] Add fleet health indicators
-- [ ] Implement shot efficiency metrics
-- [ ] Create end-game statistics screen
-- [ ] Add game timer (optional)
+
+**Kenney.nl Art Day (do first):**
+- [ ] Audit kenney.nl — search "top-down ships", "naval", "boardgame", "icons"
+- [ ] Evaluate style fit against Project Vision Pillar 1 (arcade-grade aesthetic)
+- [ ] If suitable: download, check CC0 licence, add to /assets/, document sources
+- [ ] If not suitable: generate ship sprites via AI tool (Midjourney/Adobe Firefly), export 128×128 PNG with transparency
+- [ ] Document all asset sources in `/doc/output/Graphics-Strategy.md`
+
+**Game Grid Visual Fix:**
+- [ ] Replace flat empty cells with depth-shaded naval look
+- [ ] Enemy grid: dark ocean blue with subtle wave/depth texture overlay
+- [ ] Player grid: green-tinted with ship-friendly contrast
+- [ ] Styled coordinate labels A-J and 1-10 (larger, bolder, naval font feel)
+- [ ] Hit marker: red explosion burst sprite/animation, leaves red X
+- [ ] Miss marker: white water splash animation, leaves white circle
+- [ ] Sunk overlay: ship segments dim to dark red, X drawn over each
+
+**Ship Sprites on Grid:**
+- [ ] Replace solid colour blocks with drawn sprites (top-down view)
+- [ ] Carrier (5-long): wide hull, bridge superstructure, flight deck markings
+- [ ] Nuclear Sub (3-long): rounded hull, conning tower
+- [ ] Cruiser (3-long): angular hull, gun turret
+- [ ] Attack Sub (2-long): slim hull, periscope
+- [ ] Destroyer (2-long): narrow hull, pointed bow
+- [ ] Colours from SHIP_TYPES config in gameConfig.js
+
+**Combat Animations:**
+- [ ] Bomb/shell animation: projectile descends on enemy cell
+- [ ] Depth charge: circular ripple effect expanding outward
+- [ ] Hit flash: brief red screen flash on impact
+- [ ] Sunk confirmation: ship outline dims, dramatic sound cue
+
+**Menu & Non-Game Screen Graphics:**
+- [ ] Replace TitleScene rectangle buttons with torpedo/sub-shaped Phaser Graphics
+- [ ] Add naval elements to TitleScene: anchor icon, horizon line, ship silhouette
+- [ ] Game load / intro animation: periscope rises → targets → fires → title appears (~3 s, skippable)
+- [ ] High scores screen: medal icons gold/silver/bronze for top 3, naval decorative border, rank titles (Admiral, Captain, etc.)
 
 **Deliverables:**
-- Enhanced leaderboard
-- Statistics tracking system
-- Career stats screen
-- In-game stat displays
+- Ship sprites on game grid (Kenney or AI-generated, not solid blocks)
+- Styled game grids (not plain spreadsheet look)
+- Combat animations for all attack types
+- Torpedo-shaped menu buttons
+- Naval-themed TitleScene
+- Animated game intro sequence
+- Decorated HighScoresScene
 
-**Acceptance Criteria:**
-- All stats tracked accurately
-- Data persists across sessions
-- Stats displayed clearly
-- Leaderboard shows relevant info
+---
+
+### Week 6B: Audio System — Military & Warship Style
+
+**Sprint 2.2B — Complete Audio**
+
+**Goals:**
+- All UI interactions have warship/naval sound feedback
+- Combat has dramatic audio
+- Background music sets the atmosphere
+
+**Tasks:**
+
+**Military UI Sounds (all interactive elements):**
+- [ ] Button hover: sonar ping (short, quiet)
+- [ ] Button click: radar blip / console key press
+- [ ] Scene transition: radio crackle / static burst
+- [ ] Settings toggle: mechanical switch click
+- [ ] Ship placement confirmed: metallic thud
+
+**Combat SFX:**
+- [ ] Player attack (miss): water splash / depth charge splash
+- [ ] Player attack (hit): explosion crack
+- [ ] Player attack (sunk): dramatic sinking sound — hull creak + explosion
+- [ ] Enemy attack (miss): distant splash
+- [ ] Enemy attack (hit): hull impact thud
+- [ ] Enemy attack (sunk): hull breach / siren
+- [ ] Sonar Ping activation: sonar sweep tone
+- [ ] Row Nuke activation: torpedo launch + multiple explosions
+- [ ] Chain Bonus activation: escalating radar beeps + combo chime
+
+**Background Music:**
+- [ ] Menu theme: tension-building naval ambient (submarine depth feel)
+- [ ] Battle theme: urgent military percussion
+- [ ] Victory theme: triumphant naval fanfare
+- [ ] Defeat theme: slow, dramatic retreat signal
+
+**Technical:**
+- [ ] Web Audio API integration via Phaser audio manager
+- [ ] Volume controls wired up to Settings (already have UI, need backend)
+- [ ] SFX and music volume independent
+- [ ] All sounds work on mobile (user gesture unlock handled)
+- [ ] No audio lag on combat actions
+
+**Deliverables:**
+- Military/warship-style sounds on every interactive UI element
+- Full combat sound palette
+- Background music for all scenes
+- Settings volume controls functional
+
+---
+
+### Week 7: Full Graphics Overhaul — Atmosphere & Polish
+
+**Sprint 2.3 — Arcade Aesthetic Completion**
+
+**Goals:**
+- Apply arcade metal piping framework across all 5 scenes
+- Replace wave-line TitleScene background with immersive naval scene
+- Full visual polish pass — nothing looks placeholder
+- All mechanics slick, instant, zero jank
+
+**Tasks:**
+
+**Arcade Metal Piping Framework (all scenes):**
+- [ ] Design pipe framework: horizontal top bar, vertical side bars, corner riveted connectors
+- [ ] Colour: dark gunmetal grey with brass/copper accent rivets
+- [ ] Render on fixed depth layer (above background, below game content)
+- [ ] Apply consistently to: TitleScene, GameScene, SettingsScene, HighScoresScene, GameOverScene
+- [ ] Ensure pipes resize correctly on orientation change
+
+**Menu Screen Redesign:**
+- [ ] Replace wave-line TitleScene background with naval depth scene
+- [ ] Rising bubbles animation (random size, speed, opacity — underwater feel)
+- [ ] Submarine periscope silhouette breaking ocean surface in background
+- [ ] "BATTLESHIPS & SUBS" title stencilled on submarine hull style
+- [ ] Underwater horizon scene with depth indicators
+- [ ] Sonar ping animation radiating from title area
+
+**All-Screen Visual Polish Pass:**
+- [ ] Check every scene against Project Vision Pillar 1 (commercial mobile game standard)
+- [ ] Consistent colour palette, pipe thickness, font sizes across all 5 scenes
+- [ ] No unfinished button styles, no inconsistent spacing, no leftover placeholders
+- [ ] Every interactive element has hover state, press state, and correct cursor
+- [ ] Every scene background fills correctly on resize (no black strips)
+
+**Slick Mechanics Audit:**
+- [ ] Every button click gives instant visual feedback (no delay)
+- [ ] No visual stutter on scene transitions
+- [ ] No lingering graphics after resize or scene restart
+- [ ] Combat lock (double-tap prevention) feels responsive, not laggy
+- [ ] Mobile tap latency under 100ms subjectively
+- [ ] Sunk announcement doesn't overlap with other UI elements
+
+**Deliverables:**
+- Arcade cabinet pipe frame on all 5 scenes
+- Bubble/periscope animated TitleScene background
+- Full visual polish — every screen passes commercial quality bar
+- Zero jank on any interaction across desktop and mobile
 
 **Phase 2 Milestone:** 🎯 **ENHANCED VERSION COMPLETE**
-- Special abilities functional
-- Audio and visual effects
-- Multiple AI difficulties
-- Statistics tracking
-- Polished user experience
+- ✅ All UX polish, special abilities, addictiveness mechanics (Week 5)
+- ✅ Complete graphics overhaul — sprites, grids, combat visuals, menus (Week 6A)
+- ✅ Complete audio system — military sounds, SFX, music (Week 6B)
+- ✅ Arcade-grade atmosphere — pipes, animations, polish (Week 7)
+- **Phase gate:** Play end-to-end on desktop + mobile. Every screen passes commercial quality test. Code review (SOLID/KISS/DRY). Docs updated.
 
 ---
 
-## Phase 3: Production Release (Weeks 8-10)
+## Phase 3: Production Release (Weeks 8-11)
 
-**Objective:** Testing, optimization, and production deployment
+**Objective:** Statistics, QA, gameplay tuning, code quality review, and production deployment + marketing
 
 ---
 
-### Week 8: Testing & Bug Fixes
+### Week 8: Statistics + Quality Assurance
 
-**Sprint 3.1 - Quality Assurance**
+**Sprint 3.1 — Stats, Testing & Bug Fixes**
 
 **Goals:**
-- Comprehensive testing
+- Add career statistics and enhanced leaderboard
+- Expand test coverage
 - Bug identification and fixes
-- Performance optimization
+- Performance optimisation on mobile
 
 **Tasks:**
-- [ ] Unit testing:
-  - [ ] Expand test coverage to >60%
-  - [ ] Test all new features
-  - [ ] Edge case testing
-- [ ] Integration testing:
-  - [ ] Complete game flow testing
-  - [ ] Scene transition testing
-  - [ ] Data persistence testing
-- [ ] Cross-browser testing:
-  - [ ] Chrome (Windows, Mac, Android)
-  - [ ] Firefox (Windows, Mac)
-  - [ ] Safari (Mac, iOS)
-  - [ ] Edge (Windows)
-  - [ ] Mobile browsers (iOS, Android)
-- [ ] Device testing:
-  - [ ] Desktop (various resolutions)
-  - [ ] Tablet (iPad, Android)
-  - [ ] Mobile (iPhone, Android phones)
-  - [ ] Landscape and portrait
-- [ ] Performance testing:
-  - [ ] Frame rate monitoring
-  - [ ] Memory usage profiling
-  - [ ] Load time measurement
-  - [ ] Battery impact testing (mobile)
-- [ ] Accessibility testing:
-  - [ ] Color contrast check
-  - [ ] Keyboard navigation
-  - [ ] Screen reader compatibility (basic)
-- [ ] Bug fixing:
-  - [ ] Critical bugs: Immediate fix
-  - [ ] Major bugs: Fix this week
-  - [ ] Minor bugs: Prioritize and schedule
-- [ ] Performance optimization:
-  - [ ] Optimize asset loading
-  - [ ] Reduce memory footprint
-  - [ ] Improve frame rate
-  - [ ] Optimize mobile performance
+
+**Statistics & Leaderboard:**
+- [ ] Career statistics tracking: total games, win/loss record, average accuracy, best score, fastest win
+- [ ] Career statistics screen (accessible from TitleScene or HighScoresScene)
+- [ ] Player name entry and persistence (localStorage)
+- [ ] Enhanced leaderboard: show difficulty, accuracy, date alongside score
+- [ ] In-game accuracy tracker display (live %, shots fired / hits)
+- [ ] In-game turn counter display
+- [ ] "You were X hits away from accuracy bonus!" on defeat screen
+- [ ] "Enemy has only 1 ship left!" tension announcement
+
+**Testing:**
+- [ ] Unit testing: expand coverage to >60% (Jest)
+- [ ] Integration testing: full game flow, scene transitions, data persistence
+- [ ] Cross-browser: Chrome, Firefox, Safari, Edge (desktop + mobile)
+- [ ] Device testing: desktop 1280×720, tablet 768×1024, mobile 375×667, 375×500
+- [ ] Portrait and landscape tested on all sizes
+- [ ] Performance: 60fps target, load <3s, memory <100MB
+- [ ] Battery impact test on actual mobile device
+
+**Bug Fixes:**
+- [ ] Critical bugs: immediate fix
+- [ ] Major bugs: fix this week
+- [ ] Minor bugs: log and prioritise
 
 **Deliverables:**
-- Complete test report
-- Bug tracking list
-- Performance metrics
-- Optimized codebase
+- Career stats screen + enhanced leaderboard
+- Player name persistence
+- Test report with coverage metrics
+- All critical bugs resolved
 
 **Acceptance Criteria:**
-- All critical bugs fixed
-- < 5 known minor bugs
-- Performance targets met
-- Works on all target browsers/devices
+- Stats tracked accurately across sessions
+- All critical bugs fixed, <5 minor known bugs
+- Performance targets met on all test devices
 
 ---
 
-### Week 9: Documentation & Finalization
+### Week 9: Gameplay Tuning — Addictiveness Sessions
 
-**Sprint 3.2 - Production Preparation**
+**Sprint 3.2 — Play Testing & Parameter Tuning**
 
-**Goals:**
-- Complete documentation
-- Final polish
-- Deployment preparation
+**Goal:** Play-test the game repeatedly until it feels compelling, fast-paced, and "one more game"-inducing. This is separate from bug-fixing.
 
 **Tasks:**
-- [ ] Complete documentation:
-  - [x] Game Rules document
-  - [x] Requirements specification
-  - [x] Delivery plan
-  - [ ] User guide / How to Play
-  - [ ] Developer documentation
-  - [ ] API documentation (JSDoc)
-  - [ ] Deployment guide
-  - [ ] Troubleshooting guide
-- [ ] Code cleanup:
-  - [ ] Remove debug code
-  - [ ] Remove console.logs
-  - [ ] Clean up commented code
-  - [ ] Standardize formatting
-  - [ ] Final code review
-- [ ] Asset finalization:
-  - [ ] Optimize images
-  - [ ] Compress audio files
-  - [ ] Add missing assets
-  - [ ] Create favicon
-  - [ ] Add app icons (PWA future)
-- [ ] UI polish:
-  - [ ] Fix alignment issues
-  - [ ] Standardize spacing
-  - [ ] Final animation tweaks
-  - [ ] Color scheme review
-  - [ ] Typography consistency
-- [ ] Accessibility improvements:
-  - [ ] Add ARIA labels
-  - [ ] Improve keyboard navigation
-  - [ ] Add alt text for images
-  - [ ] Test with accessibility tools
-- [ ] SEO and metadata:
-  - [ ] Add meta tags
-  - [ ] Create description
-  - [ ] Add Open Graph tags
-  - [ ] Create screenshots for sharing
-- [ ] Legal compliance:
-  - [ ] Add license information
-  - [ ] Credit third-party assets
-  - [ ] Privacy policy (if needed)
-  - [ ] Terms of use (if needed)
+
+**Pacing & Length:**
+- [ ] Target session length: 5-10 minutes per game
+- [ ] If games drag (>15 min): increase AI aggressiveness or reduce ships
+- [ ] AI delay currently 700ms — adjust up or down based on feel
+- [ ] Review bonus-turn duration — does a long hit streak feel fun or dragged?
+
+**Score Balance:**
+- [ ] Verify hit points (10/hit), sunk bonuses, accuracy multiplier feel rewarding
+- [ ] High score should be achievable but difficult to max
+- [ ] Chain Bonus multiplier — calibrate so it feels significant but not game-breaking
+- [ ] Row Nuke scoring — calibrate so earned hits feel proportionally rewarding
+
+**AI Calibration:**
+- [ ] Play 20+ games on each difficulty
+- [ ] Easy: player wins ~80% of time
+- [ ] Normal: player wins ~50% of time
+- [ ] Hard: player wins ~20% of time
+- [ ] Adjust targeting algorithms if calibration off
+
+**"One More Game" Hooks:**
+- [ ] Defeat screen: "You were X hits away from accuracy bonus!"
+- [ ] Fast restart: ENTER key immediately restarts, no delay
+- [ ] Near-sink moment: "The enemy has only 1 ship left!" live announcement
+- [ ] Score close to high score: show gap on defeat screen
+- [ ] Consider: difficulty unlock at score threshold (Hard unlocked after first Normal win)
+
+**Mobile Touch Feel:**
+- [ ] Tap response feels instant on actual phone
+- [ ] Combat lock (prevents double-tap) not laggy
+- [ ] Countdown timer countdown bar updates smoothly
+
+**Documentation:**
+- [ ] Record before/after values for every parameter changed
+- [ ] Rationale required for each change
 
 **Deliverables:**
-- Complete documentation set
-- Polished, production-ready code
-- Optimized assets
-- Deployment-ready package
-
-**Acceptance Criteria:**
-- All documentation complete
-- Code clean and well-commented
-- No known critical or major bugs
-- Assets optimized
-- Ready for production deployment
+- Tuned AI difficulty calibration
+- Balanced scoring
+- Fast restart and near-miss hooks implemented
+- Documented tuning decisions
 
 ---
 
-### Week 10: Deployment & Launch
+### Week 10: Code Quality + Documentation Review
 
-**Sprint 3.3 - Go Live**
+**Sprint 3.3 — Phase 3 Quality Gate**
+
+> "A junior developer must be able to read any function in under 2 minutes." — Project Vision, Pillar 3
 
 **Goals:**
-- Production deployment
-- Launch activities
-- Post-launch monitoring
+- Formal SOLID / KISS / DRY / YAGNI / SLAP audit across all source files
+- Fix every violation found — no exceptions
+- Update all three formal project specifications to reflect what was actually built
+- Sign off Phase 3 gate before deploy
 
-**Tasks:**
-- [ ] Deployment preparation:
-  - [ ] Choose hosting platform (GitHub Pages, Netlify, etc.)
-  - [ ] Configure deployment
-  - [ ] Set up custom domain (if applicable)
-  - [ ] Configure HTTPS
-  - [ ] Test deployment process
-- [ ] Pre-launch checklist:
-  - [ ] Final testing on production URL
-  - [ ] Verify all links work
-  - [ ] Check asset loading
-  - [ ] Confirm analytics setup (if used)
-  - [ ] Test on multiple devices
-- [ ] Production deployment:
-  - [ ] Deploy to production
-  - [ ] Verify deployment successful
-  - [ ] Monitor for errors
-  - [ ] Performance check on live site
-- [ ] Launch activities:
-  - [ ] Announce on social media (if applicable)
-  - [ ] Submit to game directories (optional)
-  - [ ] Post on relevant forums (optional)
-  - [ ] Create demo video (optional)
-  - [ ] Write blog post (optional)
-- [ ] Post-launch monitoring:
-  - [ ] Monitor for error reports
-  - [ ] Track user feedback
-  - [ ] Monitor performance metrics
-  - [ ] Watch for browser compatibility issues
-- [ ] Immediate hotfixes:
-  - [ ] Fix any critical launch issues
-  - [ ] Deploy patches as needed
-  - [ ] Communicate fixes to users
-- [ ] Launch retrospective:
-  - [ ] Team review meeting
-  - [ ] Document lessons learned
-  - [ ] Celebrate success! 🎉
-  - [ ] Plan next phase
+**SOLID / KISS / DRY / YAGNI / SLAP Audit:**
+- [ ] Review every class: single responsibility? No class >200 lines without documented justification
+- [ ] No function >30 lines — break down any violators
+- [ ] `create()` and `update()` in every scene: do they only call named methods? No raw logic in lifecycle hooks
+- [ ] Check for copy-paste duplication — extract to ButtonFactory, UIHelpers, shared constants as needed
+- [ ] Remove any dead code, commented-out blocks, "just in case" features (YAGNI)
+- [ ] Check dependency directions: scenes should not depend on each other directly
+- [ ] Verify all managers (AIManager, TurnManager, FleetManager) are independently testable
+- [ ] JSDoc: every public method has `@param` and `@returns` annotations
+- [ ] Remove all `console.log` debug statements from production code
+- [ ] No hardcoded magic numbers — move to `gameConfig.js` constants
+
+**Documentation Review:**
+- [ ] **GAME_RULES.md** — update to reflect all v1.0 mechanics actually implemented:
+  - Special abilities (Nuclear Sub, Cruiser, Attack Sub) — final cooldown values
+  - Addictiveness mechanics (Sonar Ping, Row Nuke, Chain Bonus) — final trigger rules
+  - Turn countdown timer — final duration and penalty
+  - Ship placement — final placement rules and auto-place behaviour
+- [ ] **REQUIREMENTS.md** — verify every implemented FR is marked complete; remove any FRs deferred to v2.0; add any new requirements discovered during development
+- [ ] **DELIVERY_PLAN.md** — update phase completion status, actual vs planned dates, lessons learned
+- [ ] **CLAUDE.md** — verify required reading list is current; update architecture summary
+- [ ] **Session-State snapshot** — create final v1.0 session state document
+
+**Phase 3 Quality Gate Checklist (ALL must pass before Week 11):**
+- [ ] Full end-to-end play test on desktop (1280x720) — complete game, victory and defeat
+- [ ] Full end-to-end play test on mobile portrait (375x667) — complete game
+- [ ] Full end-to-end play test on tablet portrait (768x1024) — complete game
+- [ ] Every screen passes the "commercial mobile game" visual audit (Pillar 1)
+- [ ] All Playwright automated tests pass
+- [ ] No console errors on any screen
+- [ ] SOLID/KISS/DRY/YAGNI/SLAP audit complete — all violations resolved
+- [ ] All documentation updated and consistent with shipped code
 
 **Deliverables:**
-- Live production site
-- Deployment documentation
-- Launch announcement materials
-- Post-launch report
+- Audited, clean codebase ready for public release
+- Updated GAME_RULES.md, REQUIREMENTS.md, DELIVERY_PLAN.md
+- Phase 3 gate sign-off
+- v1.0.0 release candidate tagged on `main`
 
 **Acceptance Criteria:**
-- Site live and accessible
-- No critical errors
-- Performance acceptable
-- User feedback positive
-- Team satisfied with launch
+- Zero code review violations remaining
+- All three formal spec docs consistent with actual game
+- All Playwright tests green
+- Full play test passed on 3 form factors
 
-**Phase 3 Milestone:** 🎯 **VERSION 1.0 LAUNCHED**
-- Production-ready application
-- Deployed and accessible
-- Documented and tested
-- Ready for public use
+---
+
+### Week 11: Deployment + Marketing
+
+**Sprint 3.4 — Ship It**
+
+**Goals:**
+- Deploy v1.0.0 to production
+- Publish to game directories
+- Community announcement
+- Monetisation decision made
+
+**Production Deployment:**
+- [ ] Choose hosting platform: GitHub Pages (free, static) or Netlify (custom domain, CI/CD)
+- [ ] Configure deployment pipeline (push to `main` = auto-deploy)
+- [ ] Set up custom domain if available
+- [ ] Verify HTTPS working
+- [ ] Final smoke test on live production URL
+- [ ] Confirm all assets load correctly (no 404s)
+- [ ] Performance check: first load <3s on 4G mobile
+
+**Game Directories (Priority Order):**
+- [ ] **itch.io** — primary launch platform; create game page, screenshots, description, tags
+- [ ] **Newgrounds** — secondary; strong arcade game community, good for nostalgia-themed games
+- [ ] **GameJolt** — tertiary if bandwidth allows
+- [ ] Each listing needs: 5+ screenshots, 60-second gameplay description, genre/tag selection
+
+**Community Announcement:**
+- [ ] **Reddit r/webgames** — post with gameplay GIF/screenshot, link to play
+- [ ] **Reddit r/gamedev** — dev log post: "I built a modern arcade Battleships with earned power mechanics"
+- [ ] **Reddit r/indiegaming** — cross-post if permitted
+- [ ] Twitter/X: post with gameplay video clip, hashtags (#gamedev #indiegame #arcade #battleships)
+- [ ] Optional: YouTube short (30-60s gameplay clip)
+
+**Press Kit:**
+- [ ] Game title, tagline, and 1-paragraph description (for journalists / content creators)
+- [ ] 5-10 high-quality gameplay screenshots
+- [ ] Logo / banner (programmatic or AI-generated)
+- [ ] Tech stack summary ("built with Phaser 3, pure JavaScript, no server required")
+- [ ] Contact link (itch.io page or GitHub repo)
+- [ ] Save to `/doc/output/press-kit/`
+
+**Monetisation Decision:**
+- [ ] Review options:
+  - **Free (open source)** — maximum reach, community goodwill, GitHub repo public
+  - **Ko-fi / "pay what you want"** — itch.io supports this natively, zero friction
+  - **Optional donation link** — least friction, no paywalls
+  - **In-app purchases (v2.0)** — deferred, requires backend
+- [ ] Make decision and implement on itch.io listing
+- [ ] Document decision in DELIVERY_PLAN.md
+
+**Post-Launch Monitoring:**
+- [ ] Monitor itch.io comments and ratings for first 7 days
+- [ ] Watch for bug reports — hotfix within 24h for game-breaking issues
+- [ ] Collect feedback for v1.1 / v2.0 backlog
+
+**Deliverables:**
+- Live production URL
+- itch.io game page (published)
+- Reddit announcement posts
+- Press kit saved to `/doc/output/press-kit/`
+- Monetisation decision documented
+
+**Acceptance Criteria:**
+- Game accessible on live URL with no critical errors
+- itch.io page published and discoverable
+- At least 2 community posts made
+- Press kit assets created
+
+**Phase 3 Milestone:** **VERSION 1.0 LAUNCHED**
+- Production-ready arcade game live and accessible to the public
+- Deployed on itch.io and GitHub Pages
+- Community announcement made
+- Ready for v1.1 iteration based on player feedback
 
 ---
 
@@ -1563,12 +1728,23 @@ See Section 10 - Code Review Process
 
 ### Project Team
 
-| Role | Name | Email | Availability |
-|------|------|-------|--------------|
-| Project Manager | [TBD] | [email] | [hours/week] |
-| Lead Developer | [TBD] | [email] | [hours/week] |
-| UI/UX Designer | [TBD] | [email] | [hours/week] |
-| QA Tester | [TBD] | [email] | [weeks 8-10] |
+| Role | Name | Responsibility |
+|------|------|----------------|
+| Project Manager | Jon (JH) | Vision, priorities, approval, final decisions |
+| Lead Developer | Kerry McGregor (Claude Sonnet 4.5) | All coding, testing, git, documentation, implementation |
+| Architectural Consultant | Tony Stark (Claude Opus 4.5) | Deep analysis, root cause investigation, strategic decisions |
+
+### AI-First Development Mandate
+
+**All development on this project is AI-led by default.** This is a core project principle, not a preference.
+
+- **All coding** is performed by Kerry McGregor (AI Lead Developer) — no human code authoring
+- **All testing and automated tasks** are managed and executed by Kerry McGregor
+- **All planning documents** are authored and maintained by Kerry McGregor
+- **All git operations** (commits, branches, releases) are performed by Kerry McGregor
+- **AI tools are the first-choice solution** for every problem — only use human manual effort if an AI solution absolutely cannot be found
+- **Jon's role is Product Manager:** vision, approval, priority decisions, play testing, feedback — not writing code
+- When a new problem arises: first ask "can AI solve this?" before any other approach
 
 ### External Resources
 

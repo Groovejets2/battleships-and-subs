@@ -6,22 +6,49 @@ This file serves as a reference index for AI assistants working on this project.
 
 ---
 
+## RESUME INSTRUCTIONS — START HERE
+
+**If Jon says "Read the CLAUDE.md" — do the following in order:**
+
+1. Read this file (done)
+2. Read the latest session state: `doc/output/sessions/Session-State_Sonnet-4.5_v1.4.1-planning_2026-02-17.md`
+3. Run `git status` and `git log --oneline -3` to confirm clean state
+4. Report to Jon: current branch, HEAD commit, and first pending task
+5. Ask: "Ready to begin — shall I start [first pending task]?"
+
+**DO NOT start coding until Jon confirms.**
+
+---
+
 ## REQUIRED READING (All AI Agents)
 
 **CRITICAL:** Both Kerry McGregor (Sonnet 4.5) and Tony Stark (Opus 4.5) MUST read:
 1. This Claude.md file (always)
-2. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
-3. `.claude/skills/gitflow/gitflow.md` (git operations)
-4. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
-5. `/doc/output/analysis/` (technical analysis and investigation reports)
-6. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
+2. `doc/output/sessions/Session-State_Sonnet-4.5_v1.4.1-planning_2026-02-17.md` ← **LATEST SESSION STATE**
+3. `/doc/output/Project-Vision_JH_v1.0_2026-02-17.md` (mission, pillars, graphics strategy, AI-first mandate)
+4. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
+5. `.claude/skills/gitflow/gitflow.md` (git operations)
+6. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
+7. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 
 ---
 
-## Model Roles
+## Team Roles
 
-**Kerry McGregor (Sonnet 4.5):** Primary development agent - coding, docs, git, testing, implementation
-**Tony Stark (Opus 4.5):** Architectural consultant - deep analysis, root cause investigation, strategic decisions
+**Jon (JH) — Project Manager:** Vision, priorities, approvals, play testing, feedback. Does NOT write code.
+**Kerry McGregor (Sonnet 4.5) — Lead Developer:** All coding, docs, git, testing, implementation.
+**Tony Stark (Opus 4.5) — Architectural Consultant:** Deep analysis, root cause investigation, strategic decisions.
+
+### AI-First Mandate (CORE PROJECT RULE)
+
+AI is the default and preferred solution for every problem. Manual human effort is the last resort.
+
+- All code is written by Kerry McGregor (AI)
+- All testing and automated tasks are managed by Kerry McGregor (AI)
+- All documentation is authored and maintained by Kerry McGregor (AI)
+- All git operations are performed by Kerry McGregor (AI)
+- When any new problem arises: **ask "can AI solve this?" first**
+- Jon reviews, approves, and provides direction — he does not write code
 
 See Development-Workflow-Protocol document for complete handoff procedures and token management.
 
@@ -116,6 +143,35 @@ Three formal project documents:
   - Approaching token limits
 
 - Auto-pause when token usage reaches threshold
+
+## CRITICAL: Automatic Documentation Maintenance (PRIORITY RULE)
+
+**ALWAYS update project documentation automatically as tasks complete. NEVER wait to be asked.**
+
+After completing ANY task, phase, or significant milestone:
+
+1. **Update session state document** (`/doc/output/sessions/Session-State_*.md`):
+   - Mark completed tasks with ✅
+   - Update current status and next pending tasks
+   - Update git state (branch, HEAD commit)
+   - Add brief summary of what was implemented
+
+2. **Update CLAUDE.md**:
+   - Update "Last Updated" date at bottom
+   - Update "Project Status" section
+   - Update "Recent Work" section
+
+3. **Update DELIVERY_PLAN.md** (if phase/week completed):
+   - Mark completed sprint items
+   - Update overall project percentage
+
+4. **Create summary document** (if major feature/phase completed):
+   - Technical summary in `/doc/output/`
+   - Include implementation details, decisions made, known issues
+
+**Timing:** Update documentation IMMEDIATELY after pushing code, before continuing to next task.
+
+**This is NOT optional.** Keeping documentation current is a core responsibility.
 
 ---
 
@@ -304,6 +360,20 @@ src/
   - Screenshot capture and visual regression testing
   - Test file organization in `tests/ui/` directory
 
+#### Playwright Visual Tests (v1.0.0)
+- **Location:** `.claude/skills/playwright-visual-tests/playwright-visual-tests.md`
+- **Purpose:** Execute and manage Playwright-based visual regression tests in `tests/automated/`
+- **Invoke:** `/playwright-visual-tests` or "Use the playwright-visual-tests skill"
+- **Created:** 2026-02-20
+- **Covers:**
+  - ⚠️ **CRITICAL:** Correct execution method (`node` NOT `npx playwright test`)
+  - Test file structure and locations (8 test files, 60+ scenarios)
+  - Running tests across mobile, tablet, desktop viewports
+  - Screenshot review and troubleshooting
+  - Common errors and fixes
+  - Prerequisites (Chromium install, dev server on port 5500)
+- **KEY RULE:** Always run with `node tests/automated/*.test.js`, NEVER with `npx playwright test`
+
 ---
 
 ## Version History
@@ -318,6 +388,7 @@ src/
 | 2026-02-14 | 1.5 | Comprehensive analysis complete - screen adaptation root cause identified | Kerry McGregor |
 | 2026-02-14 | 1.6 | Reorganised documentation - moved existing docs to /doc/output, investigations to /investigation | Kerry McGregor |
 | 2026-02-14 | 1.7 | Updated paths - Investigation capitalised, original docs to Original-Docs subfolder | Kerry McGregor |
+| 2026-02-20 | 1.8 | Added playwright-visual-tests skill v1.0.0 - documented correct test execution method | Kerry McGregor |
 
 ---
 
@@ -389,20 +460,21 @@ src/
 
 ---
 
-**Last Updated:** 2026-02-17 (Session End: Week 4 AI Opponent Complete)
-**Project Status:** 🎉 v1.4.0 RELEASED TO PRODUCTION
+**Last Updated:** 2026-02-20 (Session End: Week 5 UX Features Complete + All Tests Passing)
+**Project Status:** 🚀 Week 5 UX Implementation COMPLETE
 **Branch Status:**
-- main: 1a64982 (tagged v1.4.0) - PRODUCTION
-- develop: 451db24 - LATEST DEVELOPMENT
+- main: b2dc515 (tagged v1.4.1) - PRODUCTION
+- develop: 1212c60 - LATEST DEVELOPMENT
+- feature/week5-enhanced-features-from-develop: edafb07 (HEAD) - CURRENT WORK
 
-**Week 4 Completion Summary:**
-✅ AIManager.js: AI fleet placement + Easy/Normal/Hard targeting algorithms
-✅ TurnManager.js: Turn state machine, score tracking, win/loss detection
-✅ GameScene.js: Full combat loop with hit/miss/sunk visual feedback
-✅ GameOverScene.js: Victory and defeat screens with score save
-✅ main.js: GameOverScene registered
-✅ UI Tests: All PASS at 4 screen sizes (375×500 to 1280×720)
-✅ Complete gitflow: feature → develop → release/v1.4.0 → main → tag
+**Week 5 Completion Summary:**
+✅ Task 1: Addictiveness mechanics (Sonar Ping, Row Nuke, Chain Bonus) - commits d711551, 095721d, a48303a
+✅ Task 2: Settings overhaul (pip-dot controls 0-8, difficulty selector) - commit 110afd2
+✅ Task 3: Exit confirmation + game state save/load - commit 90a52eb
+✅ Unit tests: 13+ tests across TurnManager, Ship, Settings - all passing
+✅ Playwright tests: 8 files, 60+ visual scenarios - all passing
+✅ Skill created: playwright-visual-tests v1.0.0
+⚠️ **NEXT PRIORITY:** Fix GameScene + SettingsScene layouts (elements overlapping/off-screen)
 
 **Key Technical Decisions (Week 4):**
 - Auto-place player fleet (ship placement UI is Week 5)

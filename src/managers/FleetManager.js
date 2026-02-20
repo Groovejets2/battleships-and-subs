@@ -214,7 +214,7 @@ export class FleetManager {
      */
     previewPlacement(row, col, length, orientation) {
         const validation = isValidPlacement(this.grid, row, col, length, orientation);
-        
+
         const cells = [];
         if (validation.valid) {
             for (let i = 0; i < length; i++) {
@@ -225,11 +225,47 @@ export class FleetManager {
                 }
             }
         }
-        
+
         return {
             valid: validation.valid,
             reason: validation.reason,
             cells
         };
+    }
+
+    /**
+     * Serialize fleet state to plain object for save/load
+     * @returns {object} Serialized fleet state
+     */
+    serialize() {
+        return {
+            ships: this.ships.map(ship => ship.serialize()),
+            allShipsPlaced: this.allShipsPlaced
+        };
+    }
+
+    /**
+     * Restore fleet state from serialized object
+     * @param {object} data - Serialized fleet state
+     */
+    deserialize(data) {
+        // Clear existing fleet
+        this.reset();
+
+        // Restore ships
+        for (const shipData of data.ships) {
+            const ship = new Ship(shipData.type, shipData.name, shipData.length, shipData.color);
+            ship.deserialize(shipData);
+
+            // Restore ship to grid
+            if (ship.isPlaced) {
+                for (const segment of ship.segments) {
+                    this.grid[segment.row][segment.col] = ship;
+                }
+                this.ships.push(ship);
+            }
+        }
+
+        this.allShipsPlaced = data.allShipsPlaced;
     }
 }
