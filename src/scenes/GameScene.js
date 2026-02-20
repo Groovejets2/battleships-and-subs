@@ -71,6 +71,7 @@ export class GameScene extends Phaser.Scene {
         this.initCellStates();
         this.setupFleets();
         this.createGameLayout();
+        this.createSceneTitle();
         this.createUI();
         this.applyGridStates();
         this.setupInput();
@@ -207,6 +208,20 @@ export class GameScene extends Phaser.Scene {
 
         // Attach combat click handlers to enemy grid cells
         this.attachEnemyClickHandlers();
+    }
+
+    /**
+     * Create scene title header
+     */
+    createSceneTitle() {
+        const { width, height } = this.scale;
+        this.sceneTitle = this.add.text(width / 2, height * 0.05, 'COMBAT', {
+            fontSize: Math.min(width * 0.06, 42) + 'px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(10);
     }
 
     /**
@@ -515,6 +530,15 @@ export class GameScene extends Phaser.Scene {
         this.enemyCellStates[row][col] = newState;
         this.refreshEnemyCellByState(row, col, newState);
 
+        // Show floating combat text (HIT/MISS)
+        const cellCenterX = this.currentLayout.enemyX + col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        const cellCenterY = this.currentLayout.enemyY + row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        if (attackResult.hit) {
+            this.showCombatText('HIT!', '#ff4444', cellCenterX, cellCenterY);
+        } else {
+            this.showCombatText('MISS', '#ffffff', cellCenterX, cellCenterY);
+        }
+
         // Announce if sunk
         if (attackResult.sunk && attackResult.ship) {
             this.showSunkAnnouncement(`You sank their ${attackResult.ship.name}!`, true);
@@ -578,6 +602,15 @@ export class GameScene extends Phaser.Scene {
         const newState = attackResult.sunk ? CELL.SUNK : (attackResult.hit ? CELL.HIT : CELL.MISS);
         this.playerCellStates[target.row][target.col] = newState;
         this.refreshPlayerCellByState(target.row, target.col, newState);
+
+        // Show floating combat text (HIT/MISS)
+        const cellCenterX = this.currentLayout.playerX + target.col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        const cellCenterY = this.currentLayout.playerY + target.row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        if (attackResult.hit) {
+            this.showCombatText('HIT!', '#ff4444', cellCenterX, cellCenterY);
+        } else {
+            this.showCombatText('MISS', '#ffffff', cellCenterX, cellCenterY);
+        }
 
         // Announce if sunk
         if (attackResult.sunk && attackResult.ship) {
@@ -735,6 +768,36 @@ export class GameScene extends Phaser.Scene {
     // ─── Announcements ──────────────────────────────────────────────────────────
 
     /**
+     * Show floating combat text (HIT/MISS) over attacked grid cell.
+     * @param {string} message - "HIT!" or "MISS"
+     * @param {string} color - Text color (#ff4444 for HIT, #ffffff for MISS)
+     * @param {number} centerX - Grid cell center X coordinate
+     * @param {number} centerY - Grid cell center Y coordinate
+     */
+    showCombatText(message, color, centerX, centerY) {
+        const text = this.add.text(centerX, centerY, message, {
+            fontSize: Math.min(18, this.scale.width * 0.03) + 'px',
+            fontFamily: 'Arial Black',
+            fill: color,
+            fontWeight: 'bold',
+            stroke: '#000000',
+            strokeThickness: 3
+        }).setOrigin(0.5).setDepth(101);
+
+        // Hold for 900ms, then fade and float up over 1400ms
+        this.time.delayedCall(900, () => {
+            this.tweens.add({
+                targets: text,
+                y: centerY - 40,
+                alpha: 0,
+                duration: 1400,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
      * Show a temporary "ship sunk" announcement.
      * @param {string} message
      * @param {boolean} isPlayerScoring - True = player sank enemy ship (use green)
@@ -752,13 +815,16 @@ export class GameScene extends Phaser.Scene {
             strokeThickness: 3
         }).setOrigin(0.5).setDepth(100);
 
-        this.tweens.add({
-            targets: text,
-            y: height / 2 - 80,
-            alpha: 0,
-            duration: 2000,
-            ease: 'Power2',
-            onComplete: () => text.destroy()
+        // Hold for 1800ms, then fade and float up over 1800ms
+        this.time.delayedCall(1800, () => {
+            this.tweens.add({
+                targets: text,
+                y: height / 2 - 80,
+                alpha: 0,
+                duration: 1800,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
         });
     }
 
@@ -839,7 +905,14 @@ export class GameScene extends Phaser.Scene {
             this.gridTitles.forEach(t => t.destroy());
             this.gridTitles = [];
 
+            // Destroy and recreate scene title
+            if (this.sceneTitle) {
+                this.sceneTitle.destroy();
+                this.sceneTitle = null;
+            }
+
             this.createGameLayout();
+            this.createSceneTitle();
             this.applyGridStates();
 
             // Restore combat lock state (don't allow clicks during AI turn after resize)

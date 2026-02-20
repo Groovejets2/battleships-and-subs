@@ -101,11 +101,11 @@ export class SettingsScene extends Phaser.Scene {
      * Create settings title
      */
     createTitle(width, height) {
-        this.titleText = this.add.text(width / 2, height * 0.12, 'SETTINGS', {
+        this.titleText = this.add.text(width / 2, height * 0.05, 'SETTINGS', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
-            stroke: '#1e3c72',
+            stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5);
     }
