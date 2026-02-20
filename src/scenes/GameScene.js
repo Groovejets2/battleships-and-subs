@@ -65,6 +65,10 @@ export class GameScene extends Phaser.Scene {
 
         // Combat lock (prevent double-clicks during AI turn)
         this.combatLocked = false;
+
+        // Special attack mode tracking
+        this.attackMode = 'NORMAL'; // 'NORMAL', 'SONAR', 'NUKE'
+        this.abilityButtons = null; // {sonarBtn, sonarText, nukeBtn, nukeText}
     }
 
     create() {
@@ -371,8 +375,127 @@ export class GameScene extends Phaser.Scene {
             fontWeight: 'bold'
         }).setOrigin(1, 0.5);
 
+        // Ability buttons (center between grids)
+        this.createAbilityButtons();
+
         // Ship status panel (below grids)
         this.createShipStatusPanel();
+    }
+
+    /**
+     * Create special ability buttons (Sonar Ping + Row Nuke)
+     */
+    createAbilityButtons() {
+        const { width, height } = this.scale;
+
+        // Position buttons in center between the two grids
+        const centerY = height / 2;
+        const buttonWidth = Math.min(width * 0.18, 100);
+        const buttonHeight = 44;
+        const spacing = 12;
+
+        // Sonar Ping button (top)
+        const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
+        const sonarBtn = this.add.rectangle(
+            width / 2, sonarY, buttonWidth, buttonHeight, 0x2c3e50
+        );
+        sonarBtn.setStrokeStyle(3, 0x00ffff);
+        sonarBtn.setInteractive({ useHandCursor: true });
+
+        const sonarText = this.add.text(width / 2, sonarY, 'SONAR\nPING', {
+            fontSize: '12px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        sonarBtn.on('pointerover', () => {
+            if (this.turnManager.sonarPingAvailable && this.attackMode === 'NORMAL') {
+                sonarBtn.setFillStyle(0x00ffff);
+            }
+        });
+
+        sonarBtn.on('pointerout', () => {
+            if (this.attackMode !== 'SONAR') {
+                sonarBtn.setFillStyle(0x2c3e50);
+            }
+        });
+
+        sonarBtn.on('pointerdown', () => {
+            if (this.turnManager.sonarPingAvailable && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
+                this.enterSonarMode();
+            }
+        });
+
+        // Row Nuke button (bottom)
+        const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
+        const nukeBtn = this.add.rectangle(
+            width / 2, nukeY, buttonWidth, buttonHeight, 0x2c3e50
+        );
+        nukeBtn.setStrokeStyle(3, 0xff00ff);
+        nukeBtn.setInteractive({ useHandCursor: true });
+
+        const nukeText = this.add.text(width / 2, nukeY, 'ROW\nNUKE', {
+            fontSize: '12px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            align: 'center'
+        }).setOrigin(0.5);
+
+        nukeBtn.on('pointerover', () => {
+            if (this.turnManager.rowNukeCharges > 0 && this.attackMode === 'NORMAL') {
+                nukeBtn.setFillStyle(0xff00ff);
+            }
+        });
+
+        nukeBtn.on('pointerout', () => {
+            if (this.attackMode !== 'NUKE') {
+                nukeBtn.setFillStyle(0x2c3e50);
+            }
+        });
+
+        nukeBtn.on('pointerdown', () => {
+            if (this.turnManager.rowNukeCharges > 0 && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
+                this.enterNukeMode();
+            }
+        });
+
+        // Store references
+        this.abilityButtons = { sonarBtn, sonarText, nukeBtn, nukeText };
+
+        // Initial state update
+        this.updateAbilityButtons();
+    }
+
+    /**
+     * Update ability button states (enabled/disabled based on availability)
+     */
+    updateAbilityButtons() {
+        if (!this.abilityButtons) return;
+
+        const { sonarBtn, sonarText, nukeBtn, nukeText } = this.abilityButtons;
+
+        // Sonar Ping state
+        if (this.turnManager.sonarPingAvailable) {
+            sonarBtn.setAlpha(1.0);
+            sonarText.setAlpha(1.0);
+            sonarText.setText('SONAR\nPING');
+        } else {
+            sonarBtn.setAlpha(0.3);
+            sonarText.setAlpha(0.3);
+            sonarText.setText('SONAR\nUSED');
+        }
+
+        // Row Nuke state
+        if (this.turnManager.rowNukeCharges > 0) {
+            nukeBtn.setAlpha(1.0);
+            nukeText.setAlpha(1.0);
+            nukeText.setText(`ROW\nNUKE x${this.turnManager.rowNukeCharges}`);
+        } else {
+            nukeBtn.setAlpha(0.3);
+            nukeText.setAlpha(0.3);
+            nukeText.setText('ROW\nNUKE x0');
+        }
     }
 
     /**
@@ -461,13 +584,17 @@ export class GameScene extends Phaser.Scene {
         const messages = {
             PLAYER_TURN: short ? 'YOUR TURN' : 'YOUR TURN - Choose target',
             ENEMY_TURN:  short ? 'ENEMY...' : 'ENEMY TURN - Thinking...',
-            GAME_OVER:   'GAME OVER'
+            GAME_OVER:   'GAME OVER',
+            SONAR_MODE:  short ? 'SONAR' : 'SONAR PING - Select 3×3 zone',
+            NUKE_MODE:   short ? 'NUKE' : 'ROW NUKE - Select target row'
         };
 
         const colors = {
             PLAYER_TURN: '#ffff00',
             ENEMY_TURN:  '#ff8800',
-            GAME_OVER:   '#ff0000'
+            GAME_OVER:   '#ff0000',
+            SONAR_MODE:  '#00ffff',
+            NUKE_MODE:   '#ff00ff'
         };
 
         this.uiElements.statusText
@@ -528,10 +655,21 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Handle a player attack on the enemy fleet.
+     * Routes to appropriate handler based on attackMode.
      * @param {number} row
      * @param {number} col
      */
     handlePlayerAttack(row, col) {
+        // Route based on current attack mode
+        if (this.attackMode === 'SONAR') {
+            this.executeSonarPing(row, col);
+            return;
+        } else if (this.attackMode === 'NUKE') {
+            this.executeRowNuke(row, col);
+            return;
+        }
+
+        // Normal attack
         if (!this.canPlayerAttack(row, col)) return;
 
         this.combatLocked = true;
@@ -667,6 +805,203 @@ export class GameScene extends Phaser.Scene {
             this.updateStatusDisplay('PLAYER_TURN');
             this.combatLocked = false;
         }
+    }
+
+    // ─── Special Attacks ────────────────────────────────────────────────────────
+
+    /**
+     * Enter Sonar Ping mode (player clicks button to activate)
+     */
+    enterSonarMode() {
+        this.attackMode = 'SONAR';
+        this.abilityButtons.sonarBtn.setFillStyle(0x00ffff); // Highlight active
+        this.updateStatusDisplay('SONAR_MODE');
+        console.log('GameScene: SONAR PING mode activated - click 3×3 zone');
+    }
+
+    /**
+     * Execute Sonar Ping on clicked cell (reveals 3×3 zone)
+     * @param {number} centerRow - Center of 3×3 zone
+     * @param {number} centerCol - Center of 3×3 zone
+     */
+    executeSonarPing(centerRow, centerCol) {
+        console.log(`GameScene: Sonar ping at (${centerRow}, ${centerCol})`);
+
+        // Mark sonar as used
+        this.turnManager.sonarPingAvailable = false;
+        this.attackMode = 'NORMAL';
+        this.abilityButtons.sonarBtn.setFillStyle(0x2c3e50); // Reset button
+        this.updateAbilityButtons();
+        this.updateStatusDisplay('PLAYER_TURN');
+
+        // Reveal 3×3 grid centered on clicked cell
+        const reveals = [];
+        for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+                const r = centerRow + dr;
+                const c = centerCol + dc;
+
+                if (r >= 0 && r < 10 && c >= 0 && c < 10) {
+                    const ship = this.enemyFleet.getShipAt(r, c);
+                    reveals.push({ row: r, col: c, hasShip: ship !== null });
+                }
+            }
+        }
+
+        // Visual feedback - show sonar overlay
+        this.showSonarOverlay(reveals);
+    }
+
+    /**
+     * Show sonar ping visual overlay (reveals ship/no-ship in 3×3)
+     * @param {Array} reveals - Array of {row, col, hasShip}
+     */
+    showSonarOverlay(reveals) {
+        const { width, height } = this.scale;
+        const cellSize = this.currentLayout.cellSize;
+
+        reveals.forEach(({ row, col, hasShip }, index) => {
+            const x = this.currentLayout.enemyX + col * cellSize + cellSize / 2;
+            const y = this.currentLayout.enemyY + row * cellSize + cellSize / 2;
+
+            // Create sonar pulse circle
+            const circle = this.add.circle(x, y, cellSize * 0.4, hasShip ? 0xff0000 : 0x00ffff, 0.5);
+            circle.setDepth(99);
+
+            // Fade in + fade out
+            circle.setAlpha(0);
+            this.tweens.add({
+                targets: circle,
+                alpha: 0.7,
+                duration: 400,
+                delay: index * 50,
+                yoyo: true,
+                onComplete: () => circle.destroy()
+            });
+        });
+
+        // Show announcement
+        const text = this.add.text(width / 2, height / 2 - 60, 'SONAR PING!', {
+            fontSize: '24px',
+            fontFamily: 'Arial Black',
+            fill: '#00ffff',
+            stroke: '#000000',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(100);
+
+        this.time.delayedCall(1500, () => {
+            this.tweens.add({
+                targets: text,
+                alpha: 0,
+                duration: 600,
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
+     * Enter Row Nuke mode (player clicks button to activate)
+     */
+    enterNukeMode() {
+        this.attackMode = 'NUKE';
+        this.abilityButtons.nukeBtn.setFillStyle(0xff00ff); // Highlight active
+        this.updateStatusDisplay('NUKE_MODE');
+        console.log('GameScene: ROW NUKE mode activated - click any cell in target row');
+    }
+
+    /**
+     * Execute Row Nuke on clicked row (attacks entire row)
+     * @param {number} row - Target row (0-9)
+     * @param {number} col - Clicked column (ignored, just for row detection)
+     */
+    executeRowNuke(row, col) {
+        console.log(`GameScene: Row Nuke fired at row ${row}`);
+
+        // Consume one nuke charge
+        this.turnManager.rowNukeCharges--;
+        this.attackMode = 'NORMAL';
+        this.abilityButtons.nukeBtn.setFillStyle(0x2c3e50); // Reset button
+        this.updateAbilityButtons();
+        this.updateStatusDisplay('PLAYER_TURN');
+        this.combatLocked = true;
+
+        // Attack all 10 cells in the row
+        let totalHits = 0;
+        let totalSinks = 0;
+        const attackedCells = [];
+
+        for (let c = 0; c < 10; c++) {
+            const attackResult = this.enemyFleet.receiveAttack(row, c);
+
+            if (!attackResult.duplicate && attackResult.hit) {
+                totalHits++;
+                if (attackResult.sunk) totalSinks++;
+            }
+
+            const newState = attackResult.sunk ? CELL.SUNK : (attackResult.hit ? CELL.HIT : CELL.MISS);
+            this.enemyCellStates[row][c] = newState;
+            attackedCells.push({ col: c, state: newState, attackResult });
+        }
+
+        // Visual effects - sequential explosions
+        attackedCells.forEach(({ col, state, attackResult }, index) => {
+            this.time.delayedCall(index * 100, () => {
+                this.refreshEnemyCellByState(row, col, state);
+
+                // Show mini explosion
+                const x = this.currentLayout.enemyX + col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+                const y = this.currentLayout.enemyY + row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+
+                const explosion = this.add.circle(x, y, this.currentLayout.cellSize * 0.6, 0xff00ff, 0.8);
+                explosion.setDepth(100);
+                this.tweens.add({
+                    targets: explosion,
+                    scaleX: 1.5,
+                    scaleY: 1.5,
+                    alpha: 0,
+                    duration: 400,
+                    ease: 'Power2',
+                    onComplete: () => explosion.destroy()
+                });
+            });
+        });
+
+        // Show results after all explosions
+        this.time.delayedCall(1200, () => {
+            const { width, height } = this.scale;
+            const text = this.add.text(width / 2, height / 2 - 60, `ROW NUKE!\n${totalHits} HITS, ${totalSinks} SUNK`, {
+                fontSize: '24px',
+                fontFamily: 'Arial Black',
+                fill: '#ff00ff',
+                stroke: '#000000',
+                strokeThickness: 4,
+                align: 'center'
+            }).setOrigin(0.5).setDepth(100);
+
+            this.time.delayedCall(1500, () => {
+                this.tweens.add({
+                    targets: text,
+                    alpha: 0,
+                    duration: 600,
+                    onComplete: () => text.destroy()
+                });
+            });
+
+            // Update game state
+            this.updateShipStatus();
+
+            // Check victory
+            if (this.enemyFleet.isFleetDestroyed()) {
+                this.turnManager.setGameOver('PLAYER');
+                this.time.delayedCall(800, () => this.endGame('PLAYER'));
+                return;
+            }
+
+            // Switch to AI turn (nuke ends player turn)
+            this.turnManager.switchToEnemy();
+            this.updateStatusDisplay('ENEMY_TURN');
+            this.time.delayedCall(700, () => this.executeAITurn());
+        });
     }
 
     // ─── Visual Feedback ────────────────────────────────────────────────────────
