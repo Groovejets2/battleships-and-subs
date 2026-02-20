@@ -168,13 +168,17 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Read difficulty setting from localStorage (falls back to NORMAL).
-     * @returns {string}
+     * @returns {string} 'EASY', 'NORMAL', or 'HARD'
      */
     getDifficulty() {
         try {
-            const settings = JSON.parse(localStorage.getItem('battleships_settings') || '{}');
-            const diffMap = { 0: 'EASY', 1: 'NORMAL', 2: 'HARD' };
-            return diffMap[settings.difficulty] || 'NORMAL';
+            const settings = JSON.parse(localStorage.getItem('battleshipsSettings') || '{}');
+            const difficulty = settings.difficulty || 'NORMAL';
+            // Validate difficulty value
+            if (['EASY', 'NORMAL', 'HARD'].includes(difficulty)) {
+                return difficulty;
+            }
+            return 'NORMAL';
         } catch {
             return 'NORMAL';
         }
