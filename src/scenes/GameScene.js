@@ -44,6 +44,9 @@ export class GameScene extends Phaser.Scene {
         this.enemyGrid = null;
         this.gridTitles = [];
 
+        // Ship sprite containers (Week 6: Graphics integration)
+        this.playerShipSprites = [];  // 2D array [row][col] of sprite objects
+
         // Game managers
         this.playerFleet = null;
         this.enemyFleet = null;
@@ -69,6 +72,18 @@ export class GameScene extends Phaser.Scene {
         // Special attack mode tracking
         this.attackMode = 'NORMAL'; // 'NORMAL', 'SONAR', 'NUKE'
         this.abilityButtons = null; // {sonarBtn, sonarText, nukeBtn, nukeText}
+    }
+
+    /**
+     * Preload ship sprite assets
+     */
+    preload() {
+        // Load ship sprites (Kenney.nl CC0 assets)
+        this.load.image('ship-carrier', 'assets/ships/Carrier/ShipCarrierHull.png');
+        this.load.image('ship-battleship', 'assets/ships/Battleship/ShipBattleshipHull.png');
+        this.load.image('ship-cruiser', 'assets/ships/Cruiser/ShipCruiserHull.png');
+        this.load.image('ship-submarine', 'assets/ships/Submarine/ShipSubMarineHull.png');
+        this.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
     }
 
     create() {
@@ -110,6 +125,7 @@ export class GameScene extends Phaser.Scene {
         this.playerCellStates  = Array.from({ length: SIZE }, () => Array(SIZE).fill(CELL.EMPTY));
         this.enemyCellStates   = Array.from({ length: SIZE }, () => Array(SIZE).fill(CELL.EMPTY));
         this.playerShipColors  = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+        this.playerShipSprites = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
     }
 
     /**
@@ -1091,20 +1107,31 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Apply color to a player grid cell based on its state.
+     * Week 6: Enhanced to render ship sprites instead of solid colors
      * @param {Phaser.GameObjects.Rectangle} cell
      * @param {string} state
      * @param {number|null} shipColor
      */
     applyPlayerCellColor(cell, state, shipColor) {
+        const row = cell.getData('row');
+        const col = cell.getData('col');
+
         switch (state) {
             case CELL.SHIP:
-                cell.setFillStyle(shipColor || 0x00aa00, 0.85);
+                // Make cell transparent to show ocean background
+                cell.setFillStyle(0x0088aa, 0.1);
+                // Render ship sprite on top
+                this.renderShipSprite(row, col, shipColor);
                 break;
             case CELL.HIT:
                 cell.setFillStyle(CELL_COLORS.HIT, 0.9);
+                // Clear ship sprite if any
+                this.clearShipSprite(row, col);
                 break;
             case CELL.SUNK:
                 cell.setFillStyle(CELL_COLORS.SUNK, 0.9);
+                // Clear ship sprite if any
+                this.clearShipSprite(row, col);
                 break;
             case CELL.MISS:
                 cell.setFillStyle(CELL_COLORS.MISS, 0.7);
@@ -1112,6 +1139,81 @@ export class GameScene extends Phaser.Scene {
             default:
                 cell.setFillStyle(CELL_COLORS.PLAYER_EMPTY, 0.5);
         }
+    }
+
+    /**
+     * Render a ship sprite at the given grid position.
+     * Week 6: Graphics integration
+     * @param {number} row
+     * @param {number} col
+     * @param {number} shipColor - Color used to identify ship type
+     */
+    renderShipSprite(row, col, shipColor) {
+        // Clear existing sprite if any
+        this.clearShipSprite(row, col);
+
+        // Get sprite key based on ship color
+        const spriteKey = this.getSpriteKeyFromColor(shipColor);
+        if (!spriteKey || !this.textures.exists(spriteKey)) return;
+
+        // Calculate sprite position
+        const x = this.currentLayout.playerX + col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+        const y = this.currentLayout.playerY + row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+
+        // Create sprite
+        const sprite = this.add.image(x, y, spriteKey);
+
+        // Scale to fit cell (ship sprites are ~32-64px, scale to fit 80% of cell)
+        const targetSize = this.currentLayout.cellSize * 0.8;
+        const scale = targetSize / Math.max(sprite.width, sprite.height);
+        sprite.setScale(scale);
+
+        // Store sprite reference
+        this.playerShipSprites[row][col] = sprite;
+    }
+
+    /**
+     * Clear ship sprite at the given grid position.
+     * @param {number} row
+     * @param {number} col
+     */
+    clearShipSprite(row, col) {
+        if (this.playerShipSprites[row] && this.playerShipSprites[row][col]) {
+            this.playerShipSprites[row][col].destroy();
+            this.playerShipSprites[row][col] = null;
+        }
+    }
+
+    /**
+     * Clear all ship sprites (used during resize/grid recreation).
+     */
+    clearAllShipSprites() {
+        const SIZE = GAME_CONSTANTS.GRID_SIZE;
+        for (let row = 0; row < SIZE; row++) {
+            for (let col = 0; col < SIZE; col++) {
+                if (this.playerShipSprites[row] && this.playerShipSprites[row][col]) {
+                    this.playerShipSprites[row][col].destroy();
+                    this.playerShipSprites[row][col] = null;
+                }
+            }
+        }
+    }
+
+    /**
+     * Get sprite key from ship color (reverse mapping).
+     * @param {number} shipColor
+     * @returns {string|null}
+     */
+    getSpriteKeyFromColor(shipColor) {
+        // Map colors to sprite keys based on SHIP_TYPES config
+        const colorMap = {
+            [SHIP_TYPES.CARRIER.color]: SHIP_TYPES.CARRIER.sprite,
+            [SHIP_TYPES.NUCLEAR_SUB.color]: SHIP_TYPES.NUCLEAR_SUB.sprite,
+            [SHIP_TYPES.CRUISER.color]: SHIP_TYPES.CRUISER.sprite,
+            [SHIP_TYPES.ATTACK_SUB.color]: SHIP_TYPES.ATTACK_SUB.sprite,
+            [SHIP_TYPES.DESTROYER.color]: SHIP_TYPES.DESTROYER.sprite
+        };
+        return colorMap[shipColor] || null;
     }
 
     /**
@@ -1601,6 +1703,9 @@ export class GameScene extends Phaser.Scene {
             Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.15;
 
         if (orientationChanged || stackChanged || cellSizeChanged || !this.currentLayout) {
+            // Destroy ship sprites first (Week 6: Graphics)
+            this.clearAllShipSprites();
+
             // Destroy old grids
             if (this.playerGrid) {
                 this.playerGrid.cells.clear(true, true);

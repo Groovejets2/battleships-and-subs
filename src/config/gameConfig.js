@@ -44,31 +44,36 @@ export const SHIP_TYPES = {
         type: 'CARRIER',
         name: 'Carrier',
         length: 5,
-        color: 0x808080
+        color: 0x808080,
+        sprite: 'ship-carrier'
     },
     NUCLEAR_SUB: {
         type: 'NUCLEAR_SUB',
         name: 'Nuclear Submarine',
         length: 3,
-        color: 0x0000ff
+        color: 0x0000ff,
+        sprite: 'ship-submarine'
     },
     CRUISER: {
         type: 'CRUISER',
         name: 'Cruiser',
         length: 3,
-        color: 0x00ff00
+        color: 0x00ff00,
+        sprite: 'ship-cruiser'
     },
     ATTACK_SUB: {
         type: 'ATTACK_SUB',
         name: 'Attack Submarine',
         length: 2,
-        color: 0xff00ff
+        color: 0xff00ff,
+        sprite: 'ship-submarine'
     },
     DESTROYER: {
         type: 'DESTROYER',
         name: 'Destroyer',
         length: 2,
-        color: 0xffff00
+        color: 0xffff00,
+        sprite: 'ship-destroyer'
     }
 };
 

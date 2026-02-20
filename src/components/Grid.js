@@ -22,8 +22,17 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
     const gridWidth = gridSize * cellSize;
     const gridHeight = gridSize * cellSize;
 
-    // Draw grid lines
+    // Add ocean background gradient
     const graphics = scene.add.graphics();
+
+    // Create ocean gradient (deeper blue at bottom, lighter at top)
+    const oceanTopColor = gridType === 'PLAYER' ? 0x0066aa : 0x004488;  // Player: lighter blue, Enemy: darker blue
+    const oceanBottomColor = gridType === 'PLAYER' ? 0x004488 : 0x002255;  // Darker gradient
+
+    graphics.fillGradientStyle(oceanTopColor, oceanTopColor, oceanBottomColor, oceanBottomColor, 1);
+    graphics.fillRect(xOffset, yOffset, gridWidth, gridHeight);
+
+    // Draw grid lines (thicker, lighter for better visibility on ocean background)
     graphics.lineStyle(2, 0x000000, 1);
 
     for (let i = 0; i <= gridSize; i++) {
@@ -34,10 +43,18 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
     }
     graphics.strokePath();
 
-    // Add coordinate labels
-    const labelStyle = { font: '16px Arial', fill: '#ffffff' };
+    // Add coordinate labels (arcade style)
+    const labelStyle = {
+        fontSize: '18px',
+        fontFamily: 'Arial Black',
+        fill: '#ffffff',
+        fontWeight: 'bold',
+        stroke: '#000000',
+        strokeThickness: 2
+    };
     const labels = [];
 
+    // Column labels (A-J)
     for (let i = 0; i < gridSize; i++) {
         const label = scene.add.text(
             xOffset + i * cellSize + cellSize / 2,
@@ -48,6 +65,7 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
         labels.push(label);
     }
 
+    // Row labels (1-10)
     for (let i = 0; i < gridSize; i++) {
         const label = scene.add.text(
             xOffset - 15,
@@ -68,8 +86,8 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
                 yOffset + row * cellSize,
                 cellSize,
                 cellSize,
-                gridType === 'PLAYER' ? 0x00aa00 : 0xff6600,
-                0.5
+                gridType === 'PLAYER' ? 0x0088aa : 0x006688,  // Light cyan for player, darker for enemy
+                0.2  // More transparent to show ocean gradient
             );
             cell.setOrigin(0, 0);
             cell.setInteractive();
