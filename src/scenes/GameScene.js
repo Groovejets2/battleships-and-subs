@@ -542,8 +542,8 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
-        // Record in turn manager
-        const { bonusTurn } = this.turnManager.processPlayerAttack(row, col, attackResult);
+        // Record in turn manager (now returns chainBonus and rowNukeEarned)
+        const { bonusTurn, chainBonus, rowNukeEarned } = this.turnManager.processPlayerAttack(row, col, attackResult);
 
         // Update visual state
         const newState = attackResult.sunk ? CELL.SUNK : (attackResult.hit ? CELL.HIT : CELL.MISS);
@@ -559,6 +559,12 @@ export class GameScene extends Phaser.Scene {
             this.showCombatText('MISS', '#ffffff', cellCenterX, cellCenterY);
         }
 
+        // Show chain bonus if active
+        if (chainBonus > 0) {
+            const multiplier = this.turnManager.getChainMultiplier();
+            this.showChainBonus(multiplier, chainBonus);
+        }
+
         // Announce if sunk
         if (attackResult.sunk && attackResult.ship) {
             this.showSunkAnnouncement(`You sank their ${attackResult.ship.name}!`, true);
@@ -569,7 +575,13 @@ export class GameScene extends Phaser.Scene {
             });
         }
 
+        // Announce Row Nuke unlock
+        if (rowNukeEarned) {
+            this.showRowNukeEarned();
+        }
+
         this.updateShipStatus();
+        this.updateAbilityButtons(); // Update ability button states
 
         // Check victory
         if (this.enemyFleet.isFleetDestroyed()) {
@@ -842,6 +854,94 @@ export class GameScene extends Phaser.Scene {
                 y: height / 2 - 80,
                 alpha: 0,
                 duration: 1800,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
+     * Show chain bonus combo text (COMBO x2/x3/x4!)
+     * @param {number} multiplier - Chain multiplier (2, 3, or 4)
+     * @param {number} bonus - Bonus points awarded
+     */
+    showChainBonus(multiplier, bonus) {
+        const { width, height } = this.scale;
+
+        const text = this.add.text(width / 2, height / 2 + 40, `COMBO x${multiplier}! +${bonus}`, {
+            fontSize: Math.min(28, width * 0.045) + 'px',
+            fontFamily: 'Arial Black',
+            fill: '#ffff00', // Bright yellow for combo
+            fontWeight: 'bold',
+            stroke: '#ff8800',
+            strokeThickness: 4,
+            shadow: {
+                offsetX: 0,
+                offsetY: 0,
+                color: '#ffaa00',
+                blur: 12,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(101);
+
+        // Pulse animation + fade out
+        this.tweens.add({
+            targets: text,
+            scaleX: 1.3,
+            scaleY: 1.3,
+            duration: 300,
+            yoyo: true,
+            repeat: 1
+        });
+
+        this.time.delayedCall(1000, () => {
+            this.tweens.add({
+                targets: text,
+                alpha: 0,
+                duration: 600,
+                ease: 'Power2',
+                onComplete: () => text.destroy()
+            });
+        });
+    }
+
+    /**
+     * Show "ROW NUKE EARNED!" announcement
+     */
+    showRowNukeEarned() {
+        const { width, height } = this.scale;
+
+        const text = this.add.text(width / 2, height / 2, 'ROW NUKE EARNED!', {
+            fontSize: Math.min(32, width * 0.05) + 'px',
+            fontFamily: 'Arial Black',
+            fill: '#ff00ff', // Magenta for special unlock
+            fontWeight: 'bold',
+            stroke: '#000000',
+            strokeThickness: 5,
+            shadow: {
+                offsetX: 0,
+                offsetY: 0,
+                color: '#ff00ff',
+                blur: 16,
+                fill: true
+            }
+        }).setOrigin(0.5).setDepth(102);
+
+        // Flash animation
+        this.tweens.add({
+            targets: text,
+            alpha: 0.3,
+            duration: 200,
+            yoyo: true,
+            repeat: 4
+        });
+
+        this.time.delayedCall(2000, () => {
+            this.tweens.add({
+                targets: text,
+                alpha: 0,
+                y: height / 2 - 50,
+                duration: 800,
                 ease: 'Power2',
                 onComplete: () => text.destroy()
             });
