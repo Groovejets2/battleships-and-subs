@@ -21,6 +21,35 @@
 
 ## Completed This Session (2026-02-20)
 
+### ✅ Task 1: Addictiveness Mechanics - Sonar Ping, Row Nuke, Chain Bonus (commits d711551, 095721d, a48303a)
+
+**Complete arcade-style special abilities system:**
+
+**TurnManager Tracking (commit d711551):**
+- Added sonarPingAvailable (boolean, once per game)
+- Added rowNukeCharges (integer, earned by 2 consecutive sinks)
+- Added consecutiveHits (integer, for chain bonus)
+- Added lastConsecutiveSinks (integer, for row nuke unlock)
+- getChainBonus() and getChainMultiplier() methods
+- processPlayerAttack() returns chainBonus and rowNukeEarned
+- Full serialize/deserialize support
+
+**Visual Feedback (commit 095721d):**
+- showChainBonus(): Yellow text "COMBO x2/x3/x4! +{bonus}", pulse animation
+- showRowNukeEarned(): Magenta text "ROW NUKE EARNED!", flash animation
+- handlePlayerAttack() displays feedback when bonuses triggered
+
+**Ability Buttons + Special Attacks (commit a48303a):**
+- Sonar Ping button (cyan stroke, center between grids)
+- Row Nuke button (magenta stroke, below sonar)
+- updateAbilityButtons() manages state (alpha, text labels)
+- Sonar mode: 3×3 reveal (red=ship, cyan=empty), fade animations
+- Nuke mode: Full row attack (10 cells), sequential explosions, result announcement
+- Attack mode routing: 'NORMAL', 'SONAR', 'NUKE'
+- Status display integration (cyan/magenta colors for modes)
+
+---
+
 ### ✅ Task 3: Exit Confirmation + Game State Save/Load (commit 90a52eb)
 
 **Full save/resume system implemented:**
@@ -90,7 +119,7 @@
 
 ---
 
-### 🔄 Task 1: Addictiveness Mechanics - Sonar Ping, Row Nuke, Chain Bonus (70% complete)
+### ✅ Task 1: Addictiveness Mechanics - Sonar Ping, Row Nuke, Chain Bonus (commit a48303a)
 
 #### ✅ COMPLETE: TurnManager Tracking System (commit d711551)
 
@@ -144,22 +173,33 @@
 - Floats up and fades after 2 seconds
 - Depth 102 (highest priority)
 
-#### ❌ REMAINING (30%):
+#### ✅ COMPLETE: Ability Buttons + Special Attack Modes (commit a48303a)
 
-**Still to implement:**
-1. Ability buttons UI (Sonar Ping + Row Nuke buttons below grids)
-2. `updateAbilityButtons()` method (enable/disable based on availability)
-3. Sonar Ping mode implementation:
-   - Click Sonar button → enter sonar mode
-   - Click enemy grid 3×3 zone → reveal ship/no-ship
-   - Visual overlay showing 3×3 grid
-   - Consume sonarPingAvailable flag
-4. Row Nuke mode implementation:
-   - Click Row Nuke button → enter nuke mode
-   - Click enemy grid row → attack entire row (10 cells)
-   - Visual effects (explosion animation)
-   - Consume 1 rowNukeCharges
-   - Process all 10 attacks with visual feedback
+**Ability Buttons UI:**
+- Sonar Ping button (cyan #00ffff stroke) positioned center between grids
+- Row Nuke button (magenta #ff00ff stroke) below Sonar button
+- `updateAbilityButtons()` method manages enabled/disabled state (alpha + text)
+- Buttons show availability: "SONAR PING" vs "SONAR USED", "ROW NUKE x2" vs "ROW NUKE x0"
+- Interactive hover effects when abilities available
+
+**Sonar Ping Mode:**
+- `enterSonarMode()`: Activates sonar targeting, highlights button cyan
+- `executeSonarPing(row, col)`: Reveals 3×3 zone centered on clicked cell
+- `showSonarOverlay()`: Visual feedback (red circles = ship, cyan = empty)
+- Consumes sonarPingAvailable flag (once per game)
+- Fade-in/fade-out animations (50ms stagger per cell)
+
+**Row Nuke Mode:**
+- `enterNukeMode()`: Activates nuke targeting, highlights button magenta
+- `executeRowNuke(row, col)`: Attacks entire row (10 cells)
+- Sequential explosion animations (100ms stagger)
+- Shows "ROW NUKE! X HITS, Y SUNK" announcement
+- Consumes 1 rowNukeCharges, ends player turn
+
+**Attack Mode Routing:**
+- Added `attackMode` state: 'NORMAL', 'SONAR', 'NUKE'
+- `handlePlayerAttack()` routes based on mode
+- `updateStatusDisplay()` handles 'SONAR_MODE' and 'NUKE_MODE' messages (cyan/magenta colors)
 
 ---
 
@@ -187,21 +227,16 @@ src/
 
 **Next (Autonomous Execution):**
 
-1. **Complete Task 1** (30% remaining):
-   - [ ] Add ability buttons to GameScene UI
-   - [ ] Implement `updateAbilityButtons()` method
-   - [ ] Implement Sonar Ping mode (3×3 reveal)
-   - [ ] Implement Row Nuke mode (full row attack)
-   - [ ] Commit and push
-
-2. **Write unit tests for Week 5 features:**
+1. **Write unit tests for Week 5 features:**
    - [ ] Test serialize/deserialize for Ship, FleetManager, TurnManager, AIManager
    - [ ] Test TurnManager chain bonus calculations
    - [ ] Test TurnManager row nuke charge logic
    - [ ] Test settings pip-dot value conversions (0-8 scale)
    - [ ] Test difficulty selector persistence
+   - [ ] Test sonar ping availability tracking
+   - [ ] Test row nuke charge earning logic
 
-3. **Run all tests and fix until 100% pass:**
+2. **Run all tests and fix until 100% pass:**
    - [ ] Run existing Playwright tests
    - [ ] Run new unit tests
    - [ ] Fix any failures
