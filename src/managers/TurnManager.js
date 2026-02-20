@@ -188,4 +188,38 @@ export class TurnManager {
             winner: this.winner
         };
     }
+
+    /**
+     * Serialize turn manager state to plain object for save/load
+     * @returns {object} Serialized turn manager state
+     */
+    serialize() {
+        return {
+            currentTurn: this.currentTurn,
+            gameOver: this.gameOver,
+            winner: this.winner,
+            score: this.score,
+            totalShots: this.totalShots,
+            totalHits: this.totalHits,
+            turnsCount: this.turnsCount,
+            playerAttacks: this.playerAttacks.map(a => ({ ...a })), // Deep copy
+            enemyAttacks: this.enemyAttacks.map(a => ({ ...a }))    // Deep copy
+        };
+    }
+
+    /**
+     * Restore turn manager state from serialized object
+     * @param {object} data - Serialized turn manager state
+     */
+    deserialize(data) {
+        this.currentTurn = data.currentTurn;
+        this.gameOver = data.gameOver;
+        this.winner = data.winner;
+        this.score = data.score;
+        this.totalShots = data.totalShots;
+        this.totalHits = data.totalHits;
+        this.turnsCount = data.turnsCount;
+        this.playerAttacks = data.playerAttacks.map(a => ({ ...a })); // Deep copy
+        this.enemyAttacks = data.enemyAttacks.map(a => ({ ...a }));   // Deep copy
+    }
 }

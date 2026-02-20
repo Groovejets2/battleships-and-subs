@@ -68,6 +68,21 @@ export class GameScene extends Phaser.Scene {
     }
 
     create() {
+        // Check for saved game state
+        const savedState = this.loadGameState();
+        if (savedState && !savedState.gameOver) {
+            this.showResumeDialog(savedState);
+            return; // Wait for user choice before proceeding
+        }
+
+        // Start new game
+        this.startNewGame();
+    }
+
+    /**
+     * Start a new game (clean state)
+     */
+    startNewGame() {
         this.initCellStates();
         this.setupFleets();
         this.createGameLayout();
@@ -75,6 +90,7 @@ export class GameScene extends Phaser.Scene {
         this.createUI();
         this.applyGridStates();
         this.setupInput();
+        this.setupBeforeUnload();
         this.updateStatusDisplay('PLAYER_TURN');
 
         console.log('GameScene: Combat ready. Player goes first.');
@@ -338,7 +354,7 @@ export class GameScene extends Phaser.Scene {
 
         backBtn.on('pointerover', () => backBtn.setFillStyle(0xe74c3c));
         backBtn.on('pointerout',  () => backBtn.setFillStyle(0x2c3e50));
-        backBtn.on('pointerdown', () => this.scene.start('TitleScene'));
+        backBtn.on('pointerdown', () => this.handleExitAttempt());
 
         this.uiElements.backButton = backBtn;
         this.uiElements.backText   = backText;
@@ -865,7 +881,247 @@ export class GameScene extends Phaser.Scene {
      */
     setupInput() {
         this.input.keyboard.on('keydown-ESC', () => {
-            this.scene.start('TitleScene');
+            this.handleExitAttempt();
+        });
+    }
+
+    /**
+     * Set up beforeunload handler to save game state when tab closes
+     */
+    setupBeforeUnload() {
+        this.beforeUnloadHandler = () => {
+            if (!this.turnManager.gameOver) {
+                this.saveGameState();
+            }
+        };
+        window.addEventListener('beforeunload', this.beforeUnloadHandler);
+    }
+
+    // ─── Save / Load ────────────────────────────────────────────────────────────
+
+    /**
+     * Handle exit attempt (BACK button or ESC key)
+     */
+    handleExitAttempt() {
+        if (this.turnManager.gameOver) {
+            // Game is over, exit immediately
+            this.cleanupAndExit();
+            return;
+        }
+
+        // Game in progress - show confirmation
+        this.showConfirmationDialog(
+            'Exit to main menu?\\nYour progress will be saved.',
+            () => {
+                this.saveGameState();
+                this.cleanupAndExit();
+            },
+            () => {
+                // User cancelled - do nothing
+            }
+        );
+    }
+
+    /**
+     * Clean up event listeners and exit to title
+     */
+    cleanupAndExit() {
+        if (this.beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            this.beforeUnloadHandler = null;
+        }
+        this.scene.start('TitleScene');
+    }
+
+    /**
+     * Save current game state to localStorage
+     */
+    saveGameState() {
+        try {
+            const state = {
+                playerCellStates: this.playerCellStates,
+                enemyCellStates: this.enemyCellStates,
+                playerFleet: this.playerFleet.serialize(),
+                enemyFleet: this.enemyFleet.serialize(),
+                turnManager: this.turnManager.serialize(),
+                aiManager: this.aiManager.serialize(),
+                combatLocked: this.combatLocked,
+                gameOver: this.turnManager.gameOver,
+                timestamp: Date.now()
+            };
+            localStorage.setItem('battleshipsGameState', JSON.stringify(state));
+            console.log('Game state saved to localStorage');
+        } catch (error) {
+            console.warn('Failed to save game state:', error);
+        }
+    }
+
+    /**
+     * Load game state from localStorage
+     * @returns {object|null} Saved state or null if none exists
+     */
+    loadGameState() {
+        try {
+            const saved = localStorage.getItem('battleshipsGameState');
+            if (!saved) return null;
+
+            const state = JSON.parse(saved);
+
+            // Check age - discard if older than 7 days
+            const age = Date.now() - (state.timestamp || 0);
+            if (age > 7 * 24 * 60 * 60 * 1000) {
+                this.clearSavedGame();
+                return null;
+            }
+
+            return state;
+        } catch (error) {
+            console.warn('Failed to load game state:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Restore game state from saved data
+     */
+    restoreGameState(savedState) {
+        this.playerCellStates = savedState.playerCellStates;
+        this.enemyCellStates = savedState.enemyCellStates;
+
+        // Restore fleets (will need deserialize methods in FleetManager)
+        this.playerFleet.deserialize(savedState.playerFleet);
+        this.enemyFleet.deserialize(savedState.enemyFleet);
+
+        // Restore managers
+        this.turnManager.deserialize(savedState.turnManager);
+        this.aiManager.deserialize(savedState.aiManager);
+
+        this.combatLocked = savedState.combatLocked;
+
+        // Create layout and apply states
+        this.createGameLayout();
+        this.createSceneTitle();
+        this.createUI();
+        this.applyGridStates();
+        this.setupInput();
+        this.setupBeforeUnload();
+
+        // Update displays
+        this.updateStatusDisplay(this.turnManager.currentTurn === 'PLAYER' ? 'PLAYER_TURN' : 'ENEMY_TURN');
+        this.updateShipStatus();
+        this.uiElements.scoreText.setText(`SCORE: ${this.turnManager.score}`);
+
+        console.log('Game state restored from save');
+    }
+
+    /**
+     * Clear saved game from localStorage
+     */
+    clearSavedGame() {
+        try {
+            localStorage.removeItem('battleshipsGameState');
+            console.log('Saved game cleared');
+        } catch (error) {
+            console.warn('Failed to clear saved game:', error);
+        }
+    }
+
+    /**
+     * Show resume game dialog
+     */
+    showResumeDialog(savedState) {
+        const { width, height } = this.scale;
+
+        this.showConfirmationDialog(
+            'Resume previous game?',
+            () => {
+                // Resume - restore saved state
+                this.restoreGameState(savedState);
+            },
+            () => {
+                // Start new game - clear saved state
+                this.clearSavedGame();
+                this.startNewGame();
+            }
+        );
+    }
+
+    /**
+     * Show a confirmation dialog with Yes/No options
+     * @param {string} message - Dialog message
+     * @param {function} onConfirm - Callback for Yes
+     * @param {function} onCancel - Callback for No
+     */
+    showConfirmationDialog(message, onConfirm, onCancel) {
+        const { width, height } = this.scale;
+
+        // Dim background overlay
+        const overlay = this.add.rectangle(0, 0, width, height, 0x000000, 0.7)
+            .setOrigin(0, 0)
+            .setDepth(200)
+            .setInteractive();
+
+        // Dialog box
+        const dialogWidth = Math.min(width * 0.8, 400);
+        const dialogHeight = Math.min(height * 0.35, 200);
+        const dialogBox = this.add.rectangle(width / 2, height / 2, dialogWidth, dialogHeight, 0x2c3e50)
+            .setDepth(201)
+            .setStrokeStyle(4, 0x3498db);
+
+        // Message text
+        const messageText = this.add.text(width / 2, height / 2 - 30, message, {
+            fontSize: Math.min(width * 0.04, 18) + 'px',
+            fontFamily: 'Arial',
+            fill: '#ffffff',
+            align: 'center',
+            wordWrap: { width: dialogWidth - 40 }
+        }).setOrigin(0.5).setDepth(202);
+
+        // Yes button
+        const yesBtn = this.add.rectangle(width / 2 - 60, height / 2 + 40, 100, 44, 0x2ecc71)
+            .setDepth(202)
+            .setInteractive({ useHandCursor: true });
+        const yesText = this.add.text(width / 2 - 60, height / 2 + 40, 'YES', {
+            fontSize: '16px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff'
+        }).setOrigin(0.5).setDepth(202);
+
+        // No button
+        const noBtn = this.add.rectangle(width / 2 + 60, height / 2 + 40, 100, 44, 0xe74c3c)
+            .setDepth(202)
+            .setInteractive({ useHandCursor: true });
+        const noText = this.add.text(width / 2 + 60, height / 2 + 40, 'NO', {
+            fontSize: '16px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff'
+        }).setOrigin(0.5).setDepth(202);
+
+        // Button hover effects
+        yesBtn.on('pointerover', () => yesBtn.setFillStyle(0x27ae60));
+        yesBtn.on('pointerout', () => yesBtn.setFillStyle(0x2ecc71));
+        noBtn.on('pointerover', () => noBtn.setFillStyle(0xc0392b));
+        noBtn.on('pointerout', () => noBtn.setFillStyle(0xe74c3c));
+
+        // Button click handlers
+        const cleanup = () => {
+            overlay.destroy();
+            dialogBox.destroy();
+            messageText.destroy();
+            yesBtn.destroy();
+            yesText.destroy();
+            noBtn.destroy();
+            noText.destroy();
+        };
+
+        yesBtn.on('pointerdown', () => {
+            cleanup();
+            if (onConfirm) onConfirm();
+        });
+
+        noBtn.on('pointerdown', () => {
+            cleanup();
+            if (onCancel) onCancel();
         });
     }
 
