@@ -315,7 +315,8 @@ export class GameScene extends Phaser.Scene {
                 (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
                 (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
             );
-            cellSize   = Math.max(20, Math.min(CELL_SIZE, maxCell));
+            // Allow larger cells on big screens (use MAX_CELL_SIZE instead of CELL_SIZE)
+            cellSize   = Math.max(20, Math.min(GAME_CONSTANTS.MAX_CELL_SIZE, maxCell));
             titleH     = 20;
             labelSpace = LABEL_SPACE;
 
@@ -388,8 +389,18 @@ export class GameScene extends Phaser.Scene {
     createAbilityButtons() {
         const { width, height } = this.scale;
 
-        // Position buttons in center between the two grids
-        const centerY = height / 2;
+        // Position buttons based on layout to avoid overlap with grids
+        let centerY;
+        if (this.currentLayout.shouldStack) {
+            // Stacked layout (portrait): Position between the two grids
+            const playerBottom = this.currentLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize) + this.currentLayout.labelSpace;
+            const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
+            centerY = (playerBottom + enemyTop) / 2;
+        } else {
+            // Side-by-side layout (landscape): Position in vertical center
+            centerY = height / 2;
+        }
+
         const buttonWidth = Math.min(width * 0.18, 100);
         const buttonHeight = 44;
         const spacing = 12;
@@ -1635,6 +1646,30 @@ export class GameScene extends Phaser.Scene {
         }
         if (this.uiElements.enemyShipStatus) {
             this.uiElements.enemyShipStatus.setPosition(width * 0.75, statusY);
+        }
+
+        // Reposition ability buttons based on new layout
+        if (this.abilityButtons) {
+            let centerY;
+            if (newLayout.shouldStack) {
+                // Stacked layout: Position between grids
+                const playerBottom = newLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize) + newLayout.labelSpace;
+                const enemyTop = newLayout.enemyY - newLayout.titleH;
+                centerY = (playerBottom + enemyTop) / 2;
+            } else {
+                // Side-by-side: Vertical center
+                centerY = height / 2;
+            }
+
+            const buttonHeight = 44;
+            const spacing = 12;
+            const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
+            const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
+
+            this.abilityButtons.sonarBtn.setPosition(width / 2, sonarY);
+            this.abilityButtons.sonarText.setPosition(width / 2, sonarY);
+            this.abilityButtons.nukeBtn.setPosition(width / 2, nukeY);
+            this.abilityButtons.nukeText.setPosition(width / 2, nukeY);
         }
 
         this.currentLayout = newLayout;

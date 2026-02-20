@@ -6,9 +6,9 @@
 // Game constants following DRY principle
 export const GAME_CONSTANTS = {
     GRID_SIZE: 10,
-    CELL_SIZE: 40,
-    MIN_CELL_SIZE: 30,
-    MAX_CELL_SIZE: 50,
+    CELL_SIZE: 40,      // Default/target cell size
+    MIN_CELL_SIZE: 30,  // Minimum for tiny screens
+    MAX_CELL_SIZE: 70,  // Maximum for large screens (increased from 50)
     GRID_SPACING: 100,
     MIN_GRID_SPACING: 60,
     

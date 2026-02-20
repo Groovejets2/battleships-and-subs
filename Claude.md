@@ -360,6 +360,20 @@ src/
   - Screenshot capture and visual regression testing
   - Test file organization in `tests/ui/` directory
 
+#### Playwright Visual Tests (v1.0.0)
+- **Location:** `.claude/skills/playwright-visual-tests/playwright-visual-tests.md`
+- **Purpose:** Execute and manage Playwright-based visual regression tests in `tests/automated/`
+- **Invoke:** `/playwright-visual-tests` or "Use the playwright-visual-tests skill"
+- **Created:** 2026-02-20
+- **Covers:**
+  - ⚠️ **CRITICAL:** Correct execution method (`node` NOT `npx playwright test`)
+  - Test file structure and locations (8 test files, 60+ scenarios)
+  - Running tests across mobile, tablet, desktop viewports
+  - Screenshot review and troubleshooting
+  - Common errors and fixes
+  - Prerequisites (Chromium install, dev server on port 5500)
+- **KEY RULE:** Always run with `node tests/automated/*.test.js`, NEVER with `npx playwright test`
+
 ---
 
 ## Version History
@@ -374,6 +388,7 @@ src/
 | 2026-02-14 | 1.5 | Comprehensive analysis complete - screen adaptation root cause identified | Kerry McGregor |
 | 2026-02-14 | 1.6 | Reorganised documentation - moved existing docs to /doc/output, investigations to /investigation | Kerry McGregor |
 | 2026-02-14 | 1.7 | Updated paths - Investigation capitalised, original docs to Original-Docs subfolder | Kerry McGregor |
+| 2026-02-20 | 1.8 | Added playwright-visual-tests skill v1.0.0 - documented correct test execution method | Kerry McGregor |
 
 ---
 
@@ -445,20 +460,21 @@ src/
 
 ---
 
-**Last Updated:** 2026-02-17 (Session End: Week 4 AI Opponent Complete)
-**Project Status:** 🎉 v1.4.0 RELEASED TO PRODUCTION
+**Last Updated:** 2026-02-20 (Session End: Week 5 UX Features Complete + All Tests Passing)
+**Project Status:** 🚀 Week 5 UX Implementation COMPLETE
 **Branch Status:**
-- main: 1a64982 (tagged v1.4.0) - PRODUCTION
-- develop: 451db24 - LATEST DEVELOPMENT
+- main: b2dc515 (tagged v1.4.1) - PRODUCTION
+- develop: 1212c60 - LATEST DEVELOPMENT
+- feature/week5-enhanced-features-from-develop: edafb07 (HEAD) - CURRENT WORK
 
-**Week 4 Completion Summary:**
-✅ AIManager.js: AI fleet placement + Easy/Normal/Hard targeting algorithms
-✅ TurnManager.js: Turn state machine, score tracking, win/loss detection
-✅ GameScene.js: Full combat loop with hit/miss/sunk visual feedback
-✅ GameOverScene.js: Victory and defeat screens with score save
-✅ main.js: GameOverScene registered
-✅ UI Tests: All PASS at 4 screen sizes (375×500 to 1280×720)
-✅ Complete gitflow: feature → develop → release/v1.4.0 → main → tag
+**Week 5 Completion Summary:**
+✅ Task 1: Addictiveness mechanics (Sonar Ping, Row Nuke, Chain Bonus) - commits d711551, 095721d, a48303a
+✅ Task 2: Settings overhaul (pip-dot controls 0-8, difficulty selector) - commit 110afd2
+✅ Task 3: Exit confirmation + game state save/load - commit 90a52eb
+✅ Unit tests: 13+ tests across TurnManager, Ship, Settings - all passing
+✅ Playwright tests: 8 files, 60+ visual scenarios - all passing
+✅ Skill created: playwright-visual-tests v1.0.0
+⚠️ **NEXT PRIORITY:** Fix GameScene + SettingsScene layouts (elements overlapping/off-screen)
 
 **Key Technical Decisions (Week 4):**
 - Auto-place player fleet (ship placement UI is Week 5)

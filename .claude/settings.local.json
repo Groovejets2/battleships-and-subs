@@ -22,7 +22,12 @@
       "WebFetch(domain:kenney.nl)",
       "WebFetch(domain:opengameart.org)",
       "WebFetch(domain:craftpix.net)",
-      "Bash(unzip:*)"
+      "Bash(unzip:*)",
+      "Bash(node:*)",
+      "Bash(npx playwright test:*)",
+      "Bash(npx playwright install chromium)",
+      "WebFetch(domain:jhonny-chamoun.medium.com)",
+      "WebFetch(domain:css-tricks.com)"
     ],
     "deny": [],
     "ask": []
