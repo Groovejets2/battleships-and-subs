@@ -63,6 +63,10 @@ export class GameScene extends Phaser.Scene {
         // UI elements
         this.uiElements = {};
 
+        // Week 6A: Ship status bar sprite containers
+        this.playerShipStatusSprites = [];  // Array of {sprite, crossSprite, ship}
+        this.enemyShipStatusSprites = [];   // Array of {sprite, crossSprite}
+
         // Layout state
         this.currentLayout = null;
 
@@ -84,6 +88,9 @@ export class GameScene extends Phaser.Scene {
         this.load.image('ship-cruiser', 'assets/ships/Cruiser/ShipCruiserHull.png');
         this.load.image('ship-submarine', 'assets/ships/Submarine/ShipSubMarineHull.png');
         this.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
+
+        // Week 6A: Patrol boat for status bar indicators (simple outline tinted with ship colors)
+        this.load.image('ship-status-icon', 'assets/ships/PatrolBoat/ShipPatrolHull.png');
     }
 
     create() {
@@ -544,30 +551,123 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
+     * Destroy ship status panel sprites (used during resize).
+     * Week 6A: Cleans up sprite-based status bar.
+     */
+    destroyShipStatusPanel() {
+        // Destroy player ship status sprites
+        this.playerShipStatusSprites.forEach(({ sprite, crossSprite }) => {
+            if (sprite) sprite.destroy();
+            if (crossSprite) crossSprite.destroy();
+        });
+        this.playerShipStatusSprites = [];
+
+        // Destroy enemy ship status sprites
+        this.enemyShipStatusSprites.forEach(({ sprite, crossSprite }) => {
+            if (sprite) sprite.destroy();
+            if (crossSprite) crossSprite.destroy();
+        });
+        this.enemyShipStatusSprites = [];
+
+        // Destroy labels
+        if (this.uiElements.playerShipStatusLabel) {
+            this.uiElements.playerShipStatusLabel.destroy();
+            this.uiElements.playerShipStatusLabel = null;
+        }
+        if (this.uiElements.enemyShipStatusLabel) {
+            this.uiElements.enemyShipStatusLabel.destroy();
+            this.uiElements.enemyShipStatusLabel = null;
+        }
+    }
+
+    /**
      * Create ship health status display below the grids.
+     * Week 6A: Uses ship outline sprites (patrol boat) tinted with ship colors.
      */
     createShipStatusPanel() {
         const { width, height } = this.scale;
-        const ships = this.playerFleet.getAllShips();
+        const playerShips = this.playerFleet.getAllShips();
+        const enemyShipCount = 5;  // Always 5 enemy ships
 
-        // Simple status line at bottom: "Your ships: ■■■■□  Enemy: ■■■■□"
-        const statusY = height - 18;
+        const statusY = height - 22;
         const fontSize = Math.max(10, Math.min(13, width * 0.016)) + 'px';
+        const iconSize = Math.min(24, width * 0.025);  // Ship icon size
+        const iconSpacing = iconSize + 4;  // Space between icons
 
-        // Player fleet status
-        const playerStatus = this.buildFleetStatusString(ships, false);
-        this.uiElements.playerShipStatus = this.add.text(
-            width * 0.25, statusY,
-            'YOUR SHIPS: ' + playerStatus,
-            { fontSize, fontFamily: 'Arial', fill: '#00ff88' }
-        ).setOrigin(0.5);
+        // === PLAYER FLEET STATUS ===
+        const playerLabelX = width * 0.25 - (iconSpacing * 2.5);
+        this.uiElements.playerShipStatusLabel = this.add.text(
+            playerLabelX, statusY,
+            'YOUR SHIPS:',
+            { fontSize, fontFamily: 'Arial', fill: '#00ff88', fontWeight: 'bold' }
+        ).setOrigin(1, 0.5);
 
-        // Enemy fleet status (show remaining ships count only)
-        this.uiElements.enemyShipStatus = this.add.text(
-            width * 0.75, statusY,
-            'ENEMY: 5 ships',
-            { fontSize, fontFamily: 'Arial', fill: '#ff8800' }
-        ).setOrigin(0.5);
+        // Create ship status sprites for each player ship
+        this.playerShipStatusSprites = [];
+        playerShips.forEach((ship, index) => {
+            const shipType = this.getShipTypeByLength(ship.length);
+            const iconX = playerLabelX + 10 + (index * iconSpacing);
+
+            // Ship outline sprite (tinted with ship color)
+            const sprite = this.add.image(iconX, statusY, 'ship-status-icon');
+            sprite.setDisplaySize(iconSize, iconSize);
+            sprite.setTint(shipType.color);
+
+            // Red cross sprite (hidden initially, shown when sunk)
+            const crossSprite = this.add.graphics();
+            crossSprite.lineStyle(2, 0xff0000, 1);
+            crossSprite.beginPath();
+            crossSprite.moveTo(iconX - iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX + iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.moveTo(iconX + iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX - iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.strokePath();
+            crossSprite.setVisible(false);
+
+            this.playerShipStatusSprites.push({ sprite, crossSprite, ship });
+        });
+
+        // === ENEMY FLEET STATUS ===
+        const enemyLabelX = width * 0.75 - (iconSpacing * 2.5);
+        this.uiElements.enemyShipStatusLabel = this.add.text(
+            enemyLabelX, statusY,
+            'ENEMY:',
+            { fontSize, fontFamily: 'Arial', fill: '#ff8800', fontWeight: 'bold' }
+        ).setOrigin(1, 0.5);
+
+        // Create 5 enemy ship status sprites (all same color)
+        this.enemyShipStatusSprites = [];
+        for (let i = 0; i < enemyShipCount; i++) {
+            const iconX = enemyLabelX + 10 + (i * iconSpacing);
+
+            // Ship outline sprite (orange for enemy)
+            const sprite = this.add.image(iconX, statusY, 'ship-status-icon');
+            sprite.setDisplaySize(iconSize, iconSize);
+            sprite.setTint(0xff8800);  // Orange
+
+            // Red cross sprite (hidden initially)
+            const crossSprite = this.add.graphics();
+            crossSprite.lineStyle(2, 0xff0000, 1);
+            crossSprite.beginPath();
+            crossSprite.moveTo(iconX - iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX + iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.moveTo(iconX + iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX - iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.strokePath();
+            crossSprite.setVisible(false);
+
+            this.enemyShipStatusSprites.push({ sprite, crossSprite });
+        }
+    }
+
+    /**
+     * Get ship type object by ship length.
+     * @param {number} length
+     * @returns {object} Ship type from SHIP_TYPES
+     */
+    getShipTypeByLength(length) {
+        const types = Object.values(SHIP_TYPES);
+        return types.find(t => t.length === length) || types[0];
     }
 
     /**
@@ -586,21 +686,32 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Update ship status panel after each attack.
+     * Week 6A: Updates sprite-based status bar with red X overlays on sunk ships.
      */
     updateShipStatus() {
-        const playerShips = this.playerFleet.getAllShips();
-        const enemyShips  = this.enemyFleet.getAllShips();
+        // Update player ship status sprites
+        this.playerShipStatusSprites.forEach(({ sprite, crossSprite, ship }) => {
+            if (ship.isSunk) {
+                // Show red X over sunk ship (ship sprite remains visible)
+                crossSprite.setVisible(true);
+            } else {
+                crossSprite.setVisible(false);
+            }
+        });
 
-        if (this.uiElements.playerShipStatus) {
-            const str = this.buildFleetStatusString(playerShips, false);
-            this.uiElements.playerShipStatus.setText('YOUR SHIPS: ' + str);
-        }
+        // Update enemy ship status sprites
+        const enemyShips = this.enemyFleet.getAllShips();
+        const sunkEnemyShips = enemyShips.filter(s => s.isSunk);
+        this.enemyShipStatusSprites.forEach(({ sprite, crossSprite }, index) => {
+            if (index < sunkEnemyShips.length) {
+                // Show red X over sunk ships
+                crossSprite.setVisible(true);
+            } else {
+                crossSprite.setVisible(false);
+            }
+        });
 
-        if (this.uiElements.enemyShipStatus) {
-            const alive = enemyShips.filter(s => !s.isSunk).length;
-            this.uiElements.enemyShipStatus.setText(`ENEMY: ${alive} ship${alive !== 1 ? 's' : ''}`);
-        }
-
+        // Update score
         if (this.uiElements.scoreText) {
             this.uiElements.scoreText.setText('SCORE: ' + this.turnManager.score);
         }
@@ -1777,14 +1888,10 @@ export class GameScene extends Phaser.Scene {
                 .setFontSize(this.getStatusFontSize(width));
         }
 
-        // Reposition ship status panel
-        const statusY = height - 18;
-        if (this.uiElements.playerShipStatus) {
-            this.uiElements.playerShipStatus.setPosition(width * 0.25, statusY);
-        }
-        if (this.uiElements.enemyShipStatus) {
-            this.uiElements.enemyShipStatus.setPosition(width * 0.75, statusY);
-        }
+        // Destroy and recreate ship status panel on resize (Week 6A: Sprite-based status bar)
+        this.destroyShipStatusPanel();
+        this.createShipStatusPanel();
+        this.updateShipStatus();  // Restore sunk ship indicators
 
         // Reposition ability buttons based on new layout (Week 6A: Fixed grid overlap)
         if (this.abilityButtons) {
