@@ -44,8 +44,8 @@ export class GameScene extends Phaser.Scene {
         this.enemyGrid = null;
         this.gridTitles = [];
 
-        // Ship sprite containers (Week 6: Graphics integration)
-        this.playerShipSprites = [];  // 2D array [row][col] of sprite objects
+        // Ship sprite containers (Week 6A: Refactored to span multiple cells)
+        this.playerShipSprites = [];  // Array of ship sprite objects {sprite, ship, orientation}
 
         // Game managers
         this.playerFleet = null;
@@ -125,7 +125,7 @@ export class GameScene extends Phaser.Scene {
         this.playerCellStates  = Array.from({ length: SIZE }, () => Array(SIZE).fill(CELL.EMPTY));
         this.enemyCellStates   = Array.from({ length: SIZE }, () => Array(SIZE).fill(CELL.EMPTY));
         this.playerShipColors  = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
-        this.playerShipSprites = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+        this.playerShipSprites = [];  // Week 6A: Simple array of ship objects
     }
 
     /**
@@ -174,6 +174,13 @@ export class GameScene extends Phaser.Scene {
                         this.playerCellStates[seg.row][seg.col] = CELL.SHIP;
                         this.playerShipColors[seg.row][seg.col] = shipType.color;
                     }
+                    // Week 6A: Store ship data for sprite rendering (whole ship, not per-cell)
+                    this.playerShipSprites.push({
+                        ship: ship,
+                        shipType: shipType,
+                        orientation: orientation,
+                        sprite: null  // Will be created after layout is ready
+                    });
                 }
 
                 placed = result.success;
@@ -1046,6 +1053,7 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Apply all stored cell states to the current grid cells (used after resize).
+     * Week 6A: Also renders ship sprites after applying cell states.
      */
     applyGridStates() {
         const SIZE = GAME_CONSTANTS.GRID_SIZE;
@@ -1070,6 +1078,9 @@ export class GameScene extends Phaser.Scene {
                 this.applyEnemyCellColor(cell, state);
             });
         }
+
+        // Week 6A: Render ship sprites (one per ship, spanning multiple cells)
+        this.renderAllShipSprites();
     }
 
     /**
@@ -1112,31 +1123,23 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Apply color to a player grid cell based on its state.
-     * Week 6: Enhanced to render ship sprites instead of solid colors
+     * Week 6A: Ship sprites span entire ship, not per-cell
      * @param {Phaser.GameObjects.Rectangle} cell
      * @param {string} state
      * @param {number|null} shipColor
      */
     applyPlayerCellColor(cell, state, shipColor) {
-        const row = cell.getData('row');
-        const col = cell.getData('col');
-
         switch (state) {
             case CELL.SHIP:
                 // Make cell transparent to show ocean background
                 cell.setFillStyle(0x0088aa, 0.1);
-                // Render ship sprite on top
-                this.renderShipSprite(row, col, shipColor);
+                // Ship sprites are rendered separately (whole ship, not per-cell)
                 break;
             case CELL.HIT:
                 cell.setFillStyle(CELL_COLORS.HIT, 0.9);
-                // Clear ship sprite if any
-                this.clearShipSprite(row, col);
                 break;
             case CELL.SUNK:
                 cell.setFillStyle(CELL_COLORS.SUNK, 0.9);
-                // Clear ship sprite if any
-                this.clearShipSprite(row, col);
                 break;
             case CELL.MISS:
                 cell.setFillStyle(CELL_COLORS.MISS, 0.7);
@@ -1147,45 +1150,69 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
-     * Render a ship sprite at the given grid position.
-     * Week 6: Graphics integration
-     * @param {number} row
-     * @param {number} col
-     * @param {number} shipColor - Color used to identify ship type
+     * Render all player ship sprites (Week 6A: One sprite per ship, spanning multiple cells).
+     * Called after grid layout is ready.
      */
-    renderShipSprite(row, col, shipColor) {
-        // Clear existing sprite if any
-        this.clearShipSprite(row, col);
+    renderAllShipSprites() {
+        if (!this.currentLayout) return;
 
-        // Get sprite key based on ship color
-        const spriteKey = this.getSpriteKeyFromColor(shipColor);
-        if (!spriteKey || !this.textures.exists(spriteKey)) return;
+        // Render each ship sprite (spans entire ship length)
+        this.playerShipSprites.forEach(shipObj => {
+            const { ship, shipType, orientation } = shipObj;
+            const spriteKey = shipType.sprite;
 
-        // Calculate sprite position
-        const x = this.currentLayout.playerX + col * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
-        const y = this.currentLayout.playerY + row * this.currentLayout.cellSize + this.currentLayout.cellSize / 2;
+            if (!this.textures.exists(spriteKey)) {
+                console.warn(`Sprite not found: ${spriteKey}`);
+                return;
+            }
 
-        // Create sprite
-        const sprite = this.add.image(x, y, spriteKey);
+            // Calculate ship's center position
+            const segments = ship.segments;
+            const firstSeg = segments[0];
+            const lastSeg = segments[segments.length - 1];
 
-        // Scale to fit cell (ship sprites are ~32-64px, scale to fit 80% of cell)
-        const targetSize = this.currentLayout.cellSize * 0.8;
-        const scale = targetSize / Math.max(sprite.width, sprite.height);
-        sprite.setScale(scale);
+            let centerX, centerY, spriteWidth, spriteHeight;
+            const cellSize = this.currentLayout.cellSize;
 
-        // Store sprite reference
-        this.playerShipSprites[row][col] = sprite;
+            if (orientation === 'horizontal') {
+                // Horizontal ship: spans multiple columns
+                centerX = this.currentLayout.playerX + ((firstSeg.col + lastSeg.col + 1) / 2) * cellSize;
+                centerY = this.currentLayout.playerY + (firstSeg.row + 0.5) * cellSize;
+                spriteWidth = ship.length * cellSize * 0.9;  // 90% of cell width
+                spriteHeight = cellSize * 0.8;  // 80% of cell height
+            } else {
+                // Vertical ship: spans multiple rows
+                centerX = this.currentLayout.playerX + (firstSeg.col + 0.5) * cellSize;
+                centerY = this.currentLayout.playerY + ((firstSeg.row + lastSeg.row + 1) / 2) * cellSize;
+                spriteWidth = cellSize * 0.8;  // 80% of cell width
+                spriteHeight = ship.length * cellSize * 0.9;  // 90% of cell height
+            }
+
+            // Create sprite
+            const sprite = this.add.image(centerX, centerY, spriteKey);
+
+            // Set display size (not scale, to handle rotation properly)
+            sprite.setDisplaySize(spriteWidth, spriteHeight);
+
+            // Rotate if vertical
+            if (orientation === 'vertical') {
+                sprite.setAngle(90);
+            }
+
+            // Store sprite reference
+            shipObj.sprite = sprite;
+        });
     }
 
     /**
-     * Clear ship sprite at the given grid position.
-     * @param {number} row
-     * @param {number} col
+     * Clear ship sprite for a specific ship (when sunk).
+     * @param {object} ship - Ship model object
      */
-    clearShipSprite(row, col) {
-        if (this.playerShipSprites[row] && this.playerShipSprites[row][col]) {
-            this.playerShipSprites[row][col].destroy();
-            this.playerShipSprites[row][col] = null;
+    clearShipSpriteByShip(ship) {
+        const shipObj = this.playerShipSprites.find(obj => obj.ship === ship);
+        if (shipObj && shipObj.sprite) {
+            shipObj.sprite.destroy();
+            shipObj.sprite = null;
         }
     }
 
@@ -1193,15 +1220,12 @@ export class GameScene extends Phaser.Scene {
      * Clear all ship sprites (used during resize/grid recreation).
      */
     clearAllShipSprites() {
-        const SIZE = GAME_CONSTANTS.GRID_SIZE;
-        for (let row = 0; row < SIZE; row++) {
-            for (let col = 0; col < SIZE; col++) {
-                if (this.playerShipSprites[row] && this.playerShipSprites[row][col]) {
-                    this.playerShipSprites[row][col].destroy();
-                    this.playerShipSprites[row][col] = null;
-                }
+        this.playerShipSprites.forEach(shipObj => {
+            if (shipObj.sprite) {
+                shipObj.sprite.destroy();
+                shipObj.sprite = null;
             }
-        }
+        });
     }
 
     /**
