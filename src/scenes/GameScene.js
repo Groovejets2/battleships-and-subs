@@ -79,6 +79,8 @@ export class GameScene extends Phaser.Scene {
 
         // Week 6B: Gunsight cursor for targeting
         this.gunsightCursor = null;
+        this.hoveredTarget = null;  // {row, col} of currently hovered enemy cell
+        this.fireButton = null;  // FIRE button UI element
     }
 
     /**
@@ -442,6 +444,9 @@ export class GameScene extends Phaser.Scene {
         // Ability buttons (center between grids)
         this.createAbilityButtons();
 
+        // Week 6B: FIRE button for attacking
+        this.createFireButton();
+
         // Ship status panel (below grids)
         this.createShipStatusPanel();
     }
@@ -604,6 +609,90 @@ export class GameScene extends Phaser.Scene {
         if (this.uiElements.enemyShipStatusLabel) {
             this.uiElements.enemyShipStatusLabel.destroy();
             this.uiElements.enemyShipStatusLabel = null;
+        }
+    }
+
+    /**
+     * Create FIRE button for attacking (Week 6B).
+     * Alternative to clicking on cells - useful for mobile/touch screens.
+     */
+    createFireButton() {
+        const { width, height } = this.scale;
+
+        // Position FIRE button based on layout
+        let centerX, centerY;
+        const gridWidth = GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize;
+
+        if (this.currentLayout.shouldStack) {
+            // Stacked layout (portrait): Position between grids vertically
+            const playerBottom = this.currentLayout.playerY + gridWidth + this.currentLayout.labelSpace;
+            const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
+            centerX = width / 2;
+            centerY = (playerBottom + enemyTop) / 2;
+        } else {
+            // Side-by-side (landscape): Position between grids horizontally
+            centerX = this.currentLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+            centerY = this.currentLayout.playerY + (gridWidth / 2);
+        }
+
+        const buttonWidth = Math.min(width * 0.20, 110);
+        const buttonHeight = 50;
+
+        // FIRE button (below Row Nuke button)
+        const nukeBtn = this.abilityButtons?.nukeBtn;
+        const nukeY = nukeBtn ? nukeBtn.y : centerY;
+        const fireY = nukeY + (buttonHeight / 2) + 14;  // 14px spacing
+
+        const fireBtn = this.add.rectangle(
+            centerX, fireY, buttonWidth, buttonHeight, 0x8B0000  // Dark red
+        );
+        fireBtn.setStrokeStyle(3, 0xff0000);  // Red border
+        fireBtn.setInteractive({ useHandCursor: true });
+        fireBtn.setAlpha(0.3);  // Disabled by default
+
+        const fireText = this.add.text(centerX, fireY, 'FIRE', {
+            fontSize: '18px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            fontWeight: 'bold'
+        }).setOrigin(0.5);
+        fireText.setAlpha(0.3);  // Disabled by default
+
+        fireBtn.on('pointerover', () => {
+            if (this.hoveredTarget) {
+                fireBtn.setFillStyle(0xff0000);  // Bright red on hover
+            }
+        });
+
+        fireBtn.on('pointerout', () => {
+            fireBtn.setFillStyle(0x8B0000);  // Back to dark red
+        });
+
+        fireBtn.on('pointerdown', () => {
+            if (this.hoveredTarget) {
+                this.handlePlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col);
+            }
+        });
+
+        this.fireButton = { button: fireBtn, text: fireText };
+    }
+
+    /**
+     * Update FIRE button state based on hovered target.
+     */
+    updateFireButton() {
+        if (!this.fireButton) return;
+
+        const { button, text } = this.fireButton;
+
+        if (this.hoveredTarget && this.canPlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col)) {
+            // Enable button
+            button.setAlpha(1.0);
+            text.setAlpha(1.0);
+        } else {
+            // Disable button
+            button.setAlpha(0.3);
+            text.setAlpha(0.3);
         }
     }
 
@@ -806,6 +895,10 @@ export class GameScene extends Phaser.Scene {
                 if (this.canPlayerAttack(row, col)) {
                     cell.setFillStyle(0xffff00, 0.7); // Yellow hover
 
+                    // Week 6B: Track hovered target for FIRE button
+                    this.hoveredTarget = { row, col };
+                    this.updateFireButton();
+
                     // Week 6B: Show gunsight cursor at cell center
                     if (this.gunsightCursor) {
                         const cellCenterX = this.currentLayout.enemyX + (col + 0.5) * this.currentLayout.cellSize;
@@ -819,6 +912,10 @@ export class GameScene extends Phaser.Scene {
             cell.on('pointerout', () => {
                 // Restore correct color based on state
                 this.refreshEnemyCellColor(cell, row, col);
+
+                // Week 6B: Clear hovered target and disable FIRE button
+                this.hoveredTarget = null;
+                this.updateFireButton();
 
                 // Week 6B: Hide gunsight cursor
                 if (this.gunsightCursor) {
@@ -856,10 +953,12 @@ export class GameScene extends Phaser.Scene {
      * @param {number} col
      */
     handlePlayerAttack(row, col) {
-        // Week 6B: Hide gunsight cursor on attack
+        // Week 6B: Hide gunsight cursor and disable FIRE button on attack
         if (this.gunsightCursor) {
             this.gunsightCursor.setVisible(false);
         }
+        this.hoveredTarget = null;
+        this.updateFireButton();
 
         // Route based on current attack mode
         if (this.attackMode === 'SONAR') {
@@ -1964,6 +2063,29 @@ export class GameScene extends Phaser.Scene {
             this.abilityButtons.sonarText.setPosition(centerX, sonarY);
             this.abilityButtons.nukeBtn.setPosition(centerX, nukeY);
             this.abilityButtons.nukeText.setPosition(centerX, nukeY);
+        }
+
+        // Week 6B: Reposition FIRE button (below Row Nuke)
+        if (this.fireButton && this.abilityButtons) {
+            let centerX, centerY;
+            const gridWidth = GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize;
+
+            if (newLayout.shouldStack) {
+                const playerBottom = newLayout.playerY + gridWidth + newLayout.labelSpace;
+                const enemyTop = newLayout.enemyY - newLayout.titleH;
+                centerX = width / 2;
+                centerY = (playerBottom + enemyTop) / 2;
+            } else {
+                centerX = newLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+                centerY = newLayout.playerY + (gridWidth / 2);
+            }
+
+            const buttonHeight = 50;
+            const nukeY = this.abilityButtons.nukeBtn.y;
+            const fireY = nukeY + (buttonHeight / 2) + 14;
+
+            this.fireButton.button.setPosition(centerX, fireY);
+            this.fireButton.text.setPosition(centerX, fireY);
         }
 
         this.currentLayout = newLayout;
