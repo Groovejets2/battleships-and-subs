@@ -76,6 +76,9 @@ export class GameScene extends Phaser.Scene {
         // Special attack mode tracking
         this.attackMode = 'NORMAL'; // 'NORMAL', 'SONAR', 'NUKE'
         this.abilityButtons = null; // {sonarBtn, sonarText, nukeBtn, nukeText}
+
+        // Week 6B: Gunsight cursor for targeting
+        this.gunsightCursor = null;
     }
 
     /**
@@ -91,6 +94,9 @@ export class GameScene extends Phaser.Scene {
 
         // Week 6A: Patrol boat for status bar indicators (simple outline tinted with ship colors)
         this.load.image('ship-status-icon', 'assets/ships/PatrolBoat/ShipPatrolHull.png');
+
+        // Week 6B: Gunsight cursor for targeting
+        this.load.image('gunsight', 'assets/ui/gunsight.png');
     }
 
     create() {
@@ -262,6 +268,27 @@ export class GameScene extends Phaser.Scene {
 
         // Attach combat click handlers to enemy grid cells
         this.attachEnemyClickHandlers();
+
+        // Week 6B: Create gunsight cursor for targeting
+        this.createGunsightCursor();
+    }
+
+    /**
+     * Create gunsight cursor sprite for targeting (Week 6B).
+     * Initially hidden, shown on enemy grid hover.
+     */
+    createGunsightCursor() {
+        // Destroy existing gunsight if any
+        if (this.gunsightCursor) {
+            this.gunsightCursor.destroy();
+        }
+
+        // Create gunsight sprite (white crosshair)
+        const size = this.currentLayout.cellSize * 1.2;  // 120% of cell size
+        this.gunsightCursor = this.add.image(0, 0, 'gunsight');
+        this.gunsightCursor.setDisplaySize(size, size);
+        this.gunsightCursor.setDepth(100);  // Above grid cells
+        this.gunsightCursor.setVisible(false);  // Hidden by default
     }
 
     /**
@@ -778,12 +805,25 @@ export class GameScene extends Phaser.Scene {
             cell.on('pointerover', () => {
                 if (this.canPlayerAttack(row, col)) {
                     cell.setFillStyle(0xffff00, 0.7); // Yellow hover
+
+                    // Week 6B: Show gunsight cursor at cell center
+                    if (this.gunsightCursor) {
+                        const cellCenterX = this.currentLayout.enemyX + (col + 0.5) * this.currentLayout.cellSize;
+                        const cellCenterY = this.currentLayout.enemyY + (row + 0.5) * this.currentLayout.cellSize;
+                        this.gunsightCursor.setPosition(cellCenterX, cellCenterY);
+                        this.gunsightCursor.setVisible(true);
+                    }
                 }
             });
 
             cell.on('pointerout', () => {
                 // Restore correct color based on state
                 this.refreshEnemyCellColor(cell, row, col);
+
+                // Week 6B: Hide gunsight cursor
+                if (this.gunsightCursor) {
+                    this.gunsightCursor.setVisible(false);
+                }
             });
 
             cell.on('pointerdown', () => {
@@ -816,6 +856,11 @@ export class GameScene extends Phaser.Scene {
      * @param {number} col
      */
     handlePlayerAttack(row, col) {
+        // Week 6B: Hide gunsight cursor on attack
+        if (this.gunsightCursor) {
+            this.gunsightCursor.setVisible(false);
+        }
+
         // Route based on current attack mode
         if (this.attackMode === 'SONAR') {
             this.executeSonarPing(row, col);
