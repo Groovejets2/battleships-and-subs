@@ -94,8 +94,8 @@ export class GameScene extends Phaser.Scene {
         this.load.image('ship-submarine', 'assets/ships/Submarine/ShipSubMarineHull.png');
         this.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
 
-        // Week 6A: Patrol boat for status bar indicators (simple outline tinted with ship colors)
-        this.load.image('ship-status-icon', 'assets/ships/PatrolBoat/ShipPatrolHull.png');
+        // Week 6B: Simple ship icon for status bar indicators (basic boat outline)
+        this.load.image('ship-status-icon', 'assets/ui/simple-ship-icon.png');
 
         // Week 6B: Gunsight cursor for targeting
         this.load.image('gunsight', 'assets/ui/gunsight.png');
@@ -469,8 +469,10 @@ export class GameScene extends Phaser.Scene {
             centerX = width / 2;
             centerY = (playerBottom + enemyTop) / 2;
         } else {
-            // Side-by-side layout (landscape): Position between the two grids horizontally
-            centerX = this.currentLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+            // Side-by-side layout (landscape): Center between grid edges
+            const playerRight = this.currentLayout.playerX + gridWidth;
+            const enemyLeft = this.currentLayout.enemyX;
+            centerX = (playerRight + enemyLeft) / 2;
             centerY = this.currentLayout.playerY + (gridWidth / 2);
         }
 
@@ -486,8 +488,8 @@ export class GameScene extends Phaser.Scene {
         sonarBtn.setStrokeStyle(3, 0x00ffff);
         sonarBtn.setInteractive({ useHandCursor: true });
 
-        const sonarText = this.add.text(centerX, sonarY, 'SONAR\nPING', {
-            fontSize: '12px',
+        const sonarText = this.add.text(centerX, sonarY, 'SONAR', {
+            fontSize: '14px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
             align: 'center'
@@ -519,8 +521,8 @@ export class GameScene extends Phaser.Scene {
         nukeBtn.setStrokeStyle(3, 0xff00ff);
         nukeBtn.setInteractive({ useHandCursor: true });
 
-        const nukeText = this.add.text(centerX, nukeY, 'ROW\nNUKE', {
-            fontSize: '12px',
+        const nukeText = this.add.text(centerX, nukeY, 'NUKE', {
+            fontSize: '14px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
             align: 'center'
@@ -559,26 +561,28 @@ export class GameScene extends Phaser.Scene {
 
         const { sonarBtn, sonarText, nukeBtn, nukeText } = this.abilityButtons;
 
-        // Sonar Ping state
+        // Sonar state
         if (this.turnManager.sonarPingAvailable) {
             sonarBtn.setAlpha(1.0);
             sonarText.setAlpha(1.0);
-            sonarText.setText('SONAR\nPING');
         } else {
             sonarBtn.setAlpha(0.3);
             sonarText.setAlpha(0.3);
-            sonarText.setText('SONAR\nUSED');
         }
 
-        // Row Nuke state
+        // Nuke state (show charge count if > 1)
         if (this.turnManager.rowNukeCharges > 0) {
             nukeBtn.setAlpha(1.0);
             nukeText.setAlpha(1.0);
-            nukeText.setText(`ROW\nNUKE x${this.turnManager.rowNukeCharges}`);
+            if (this.turnManager.rowNukeCharges > 1) {
+                nukeText.setText(`NUKE x${this.turnManager.rowNukeCharges}`);
+            } else {
+                nukeText.setText('NUKE');
+            }
         } else {
             nukeBtn.setAlpha(0.3);
             nukeText.setAlpha(0.3);
-            nukeText.setText('ROW\nNUKE x0');
+            nukeText.setText('NUKE');
         }
     }
 
@@ -630,8 +634,10 @@ export class GameScene extends Phaser.Scene {
             centerX = width / 2;
             centerY = (playerBottom + enemyTop) / 2;
         } else {
-            // Side-by-side (landscape): Position between grids horizontally
-            centerX = this.currentLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+            // Side-by-side (landscape): Center between grid edges
+            const playerRight = this.currentLayout.playerX + gridWidth;
+            const enemyLeft = this.currentLayout.enemyX;
+            centerX = (playerRight + enemyLeft) / 2;
             centerY = this.currentLayout.playerY + (gridWidth / 2);
         }
 
@@ -721,13 +727,12 @@ export class GameScene extends Phaser.Scene {
         // Create ship status sprites for each player ship
         this.playerShipStatusSprites = [];
         playerShips.forEach((ship, index) => {
-            const shipType = this.getShipTypeByLength(ship.length);
             const iconX = playerLabelX + 10 + (index * iconSpacing);
 
-            // Ship outline sprite (tinted with ship color)
+            // Ship outline sprite (green to match "YOUR SHIPS" label)
             const sprite = this.add.image(iconX, statusY, 'ship-status-icon');
             sprite.setDisplaySize(iconSize, iconSize);
-            sprite.setTint(shipType.color);
+            sprite.setTint(0x00ff88);  // Green (same as label)
 
             // Red cross sprite (hidden initially, shown when sunk)
             const crossSprite = this.add.graphics();
@@ -893,13 +898,11 @@ export class GameScene extends Phaser.Scene {
 
             cell.on('pointerover', () => {
                 if (this.canPlayerAttack(row, col)) {
-                    cell.setFillStyle(0xffff00, 0.7); // Yellow hover
-
                     // Week 6B: Track hovered target for FIRE button
                     this.hoveredTarget = { row, col };
                     this.updateFireButton();
 
-                    // Week 6B: Show gunsight cursor at cell center
+                    // Week 6B: Show gunsight cursor at cell center (no yellow highlight needed)
                     if (this.gunsightCursor) {
                         const cellCenterX = this.currentLayout.enemyX + (col + 0.5) * this.currentLayout.cellSize;
                         const cellCenterY = this.currentLayout.enemyY + (row + 0.5) * this.currentLayout.cellSize;
@@ -2049,8 +2052,10 @@ export class GameScene extends Phaser.Scene {
                 centerX = width / 2;
                 centerY = (playerBottom + enemyTop) / 2;
             } else {
-                // Side-by-side: Position between grids horizontally
-                centerX = newLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+                // Side-by-side: Center between grid edges
+                const playerRight = newLayout.playerX + gridWidth;
+                const enemyLeft = newLayout.enemyX;
+                centerX = (playerRight + enemyLeft) / 2;
                 centerY = newLayout.playerY + (gridWidth / 2);
             }
 
@@ -2076,7 +2081,9 @@ export class GameScene extends Phaser.Scene {
                 centerX = width / 2;
                 centerY = (playerBottom + enemyTop) / 2;
             } else {
-                centerX = newLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+                const playerRight = newLayout.playerX + gridWidth;
+                const enemyLeft = newLayout.enemyX;
+                centerX = (playerRight + enemyLeft) / 2;
                 centerY = newLayout.playerY + (gridWidth / 2);
             }
 
