@@ -190,14 +190,15 @@ export class TitleScene extends Phaser.Scene {
         const buttonConfig = [
             { text: 'START GAME', key: 'start', color: '#2ecc71' },
             { text: 'SETTINGS', key: 'settings', color: '#3498db' },
-            { text: 'HIGH SCORES', key: 'scores', color: '#e74c3c' }
+            { text: 'HIGH SCORES', key: 'scores', color: '#e74c3c' },
+            { text: 'HELP', key: 'help', color: '#f39c12' }
         ];
 
         const buttonWidth  = Math.min(Math.max(width * 0.6, 200), 400);
         // Cap height at 56px so buttons aren't oversized on large portrait screens
         const buttonHeight = Math.max(44, Math.min(56, height * 0.08));
         const spacing      = buttonHeight + 16;
-        const startY       = height * 0.55;
+        const startY       = height * 0.5;
 
         buttonConfig.forEach((config, index) => {
             const y = startY + (index * spacing);
@@ -324,6 +325,9 @@ export class TitleScene extends Phaser.Scene {
                 break;
             case 'scores':
                 this.scene.start('HighScoresScene');  // CHANGE FROM console.log
+                break;
+            case 'help':
+                this.scene.start('HelpScene');
                 break;
         }
     }

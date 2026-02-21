@@ -27,7 +27,7 @@ const CELL_COLORS = {
     ENEMY_EMPTY:  0xff6600,   // Orange
     HIT:          0xff0000,   // Red
     MISS:         0xcccccc,   // Light gray
-    SUNK:         0x660000    // Dark red
+    SUNK:         0xff0000    // Bright red (same as HIT, but for sunk ships)
 };
 
 /**
@@ -46,6 +46,7 @@ export class GameScene extends Phaser.Scene {
 
         // Ship sprite containers (Week 6A: Refactored to span multiple cells)
         this.playerShipSprites = [];  // Array of ship sprite objects {sprite, ship, orientation}
+        this.enemyShipSprites = [];   // Array of enemy ship sprite objects {sprite, ship, shipType, orientation}
 
         // Game managers
         this.playerFleet = null;
@@ -442,21 +443,6 @@ export class GameScene extends Phaser.Scene {
 
         this.uiElements.backButton = backBtn;
         this.uiElements.backText   = backText;
-
-        // Help button (top left, next to BACK)
-        const helpBtn = this.add.rectangle(155, buttonY, 90, 30, 0x2c3e50)
-            .setStrokeStyle(2, 0x3498db)  // Blue border
-            .setInteractive({ useHandCursor: true });
-        const helpText = this.add.text(155, buttonY, 'HELP', {
-            fontSize: '13px', fontFamily: 'Arial', fill: '#ffffff', fontWeight: 'bold'
-        }).setOrigin(0.5);
-
-        helpBtn.on('pointerover', () => helpBtn.setFillStyle(0x3498db));
-        helpBtn.on('pointerout',  () => helpBtn.setFillStyle(0x2c3e50));
-        helpBtn.on('pointerdown', () => this.scene.start('HelpScene'));
-
-        this.uiElements.helpButton = helpBtn;
-        this.uiElements.helpText   = helpText;
 
         // Score display (top right)
         this.uiElements.scoreText = this.add.text(width - 10, 15, 'SCORE: 0', {
@@ -1034,11 +1020,13 @@ export class GameScene extends Phaser.Scene {
         // Announce if sunk
         if (attackResult.sunk && attackResult.ship) {
             this.showSunkAnnouncement(`You sank their ${attackResult.ship.name}!`, true);
-            // Mark all segments of sunk ship
+            // Mark all segments of sunk ship with red background
             attackResult.ship.segments.forEach(seg => {
                 this.enemyCellStates[seg.row][seg.col] = CELL.SUNK;
                 this.refreshEnemyCellByState(seg.row, seg.col, CELL.SUNK);
             });
+            // Render enemy ship sprite on enemy grid
+            this.renderEnemyShipSprite(attackResult.ship);
         }
 
         // Announce Row Nuke unlock
@@ -1257,13 +1245,20 @@ export class GameScene extends Phaser.Scene {
         let totalHits = 0;
         let totalSinks = 0;
         const attackedCells = [];
+        const sunkShips = [];
 
         for (let c = 0; c < 10; c++) {
             const attackResult = this.enemyFleet.receiveAttack(row, c);
 
             if (!attackResult.duplicate && attackResult.hit) {
                 totalHits++;
-                if (attackResult.sunk) totalSinks++;
+                if (attackResult.sunk) {
+                    totalSinks++;
+                    // Track sunk ships (avoid duplicates)
+                    if (attackResult.ship && !sunkShips.find(s => s === attackResult.ship)) {
+                        sunkShips.push(attackResult.ship);
+                    }
+                }
             }
 
             const newState = attackResult.sunk ? CELL.SUNK : (attackResult.hit ? CELL.HIT : CELL.MISS);
@@ -1313,6 +1308,15 @@ export class GameScene extends Phaser.Scene {
                     duration: 600,
                     onComplete: () => text.destroy()
                 });
+            });
+
+            // Mark all segments of sunk ships and render sprites
+            sunkShips.forEach(ship => {
+                ship.segments.forEach(seg => {
+                    this.enemyCellStates[seg.row][seg.col] = CELL.SUNK;
+                    this.refreshEnemyCellByState(seg.row, seg.col, CELL.SUNK);
+                });
+                this.renderEnemyShipSprite(ship);
             });
 
             // Update game state
@@ -1501,6 +1505,70 @@ export class GameScene extends Phaser.Scene {
                 shipObj.sprite.destroy();
                 shipObj.sprite = null;
             }
+        });
+        this.enemyShipSprites.forEach(shipObj => {
+            if (shipObj.sprite) {
+                shipObj.sprite.destroy();
+                shipObj.sprite = null;
+            }
+        });
+    }
+
+    /**
+     * Render an enemy ship sprite when it's sunk (Week 6A).
+     * @param {object} ship - Sunk enemy ship object
+     */
+    renderEnemyShipSprite(ship) {
+        if (!this.currentLayout) return;
+
+        // Find ship type from ship properties
+        const shipType = Object.values(SHIP_TYPES).find(type =>
+            type.length === ship.length && type.name === ship.name
+        );
+
+        if (!shipType) {
+            console.warn(`renderEnemyShipSprite: Could not find ship type for ${ship.name}`);
+            return;
+        }
+
+        const spriteKey = shipType.sprite;
+        if (!this.textures.exists(spriteKey)) {
+            console.warn(`Sprite not found: ${spriteKey}`);
+            return;
+        }
+
+        // Calculate ship's center position based on actual grid placement
+        const segments = ship.segments;
+        const firstSeg = segments[0];
+        const lastSeg = segments[segments.length - 1];
+        const cellSize = this.currentLayout.cellSize;
+        const orientation = ship.orientation;
+
+        // Center = midpoint of first and last segment
+        const centerX = this.currentLayout.enemyX + ((firstSeg.col + lastSeg.col + 1) / 2) * cellSize;
+        const centerY = this.currentLayout.enemyY + ((firstSeg.row + lastSeg.row + 1) / 2) * cellSize;
+
+        // All sprites designed VERTICAL (tall × narrow)
+        const spriteWidth = cellSize * 0.8;                 // Narrow (1 cell width)
+        const spriteHeight = ship.length * cellSize * 0.9;  // Tall (ship length)
+
+        // Create sprite
+        const sprite = this.add.image(centerX, centerY, spriteKey);
+
+        // Set display size (always vertical dimensions matching sprite design)
+        sprite.setDisplaySize(spriteWidth, spriteHeight);
+
+        // Rotate 90° if ship is placed HORIZONTALLY (to lay it sideways)
+        if (orientation === 'horizontal') {
+            sprite.setAngle(90);
+        }
+
+        // Store sprite reference
+        this.enemyShipSprites.push({
+            ship: ship,
+            shipType: shipType,
+            orientation: orientation,
+            sprite: sprite
         });
     }
 
@@ -2047,8 +2115,6 @@ export class GameScene extends Phaser.Scene {
         }
         if (this.uiElements.backButton) this.uiElements.backButton.setPosition(55, buttonY);
         if (this.uiElements.backText)   this.uiElements.backText.setPosition(55, buttonY);
-        if (this.uiElements.helpButton) this.uiElements.helpButton.setPosition(155, buttonY);
-        if (this.uiElements.helpText)   this.uiElements.helpText.setPosition(155, buttonY);
         if (this.uiElements.scoreText) {
             this.uiElements.scoreText
                 .setPosition(width - 10, 15)
