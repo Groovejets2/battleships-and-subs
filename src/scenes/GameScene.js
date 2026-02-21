@@ -407,20 +407,25 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Create special ability buttons (Sonar Ping + Row Nuke)
+     * Week 6A: Fixed positioning to avoid grid overlap on desktop
      */
     createAbilityButtons() {
         const { width, height } = this.scale;
 
         // Position buttons based on layout to avoid overlap with grids
-        let centerY;
+        let centerX, centerY;
+        const gridWidth = GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize;
+
         if (this.currentLayout.shouldStack) {
-            // Stacked layout (portrait): Position between the two grids
-            const playerBottom = this.currentLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize) + this.currentLayout.labelSpace;
+            // Stacked layout (portrait): Position between the two grids vertically
+            const playerBottom = this.currentLayout.playerY + gridWidth + this.currentLayout.labelSpace;
             const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
+            centerX = width / 2;
             centerY = (playerBottom + enemyTop) / 2;
         } else {
-            // Side-by-side layout (landscape): Position in vertical center
-            centerY = height / 2;
+            // Side-by-side layout (landscape): Position between the two grids horizontally
+            centerX = this.currentLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+            centerY = this.currentLayout.playerY + (gridWidth / 2);
         }
 
         const buttonWidth = Math.min(width * 0.18, 100);
@@ -430,12 +435,12 @@ export class GameScene extends Phaser.Scene {
         // Sonar Ping button (top)
         const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
         const sonarBtn = this.add.rectangle(
-            width / 2, sonarY, buttonWidth, buttonHeight, 0x2c3e50
+            centerX, sonarY, buttonWidth, buttonHeight, 0x2c3e50
         );
         sonarBtn.setStrokeStyle(3, 0x00ffff);
         sonarBtn.setInteractive({ useHandCursor: true });
 
-        const sonarText = this.add.text(width / 2, sonarY, 'SONAR\nPING', {
+        const sonarText = this.add.text(centerX, sonarY, 'SONAR\nPING', {
             fontSize: '12px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -463,12 +468,12 @@ export class GameScene extends Phaser.Scene {
         // Row Nuke button (bottom)
         const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
         const nukeBtn = this.add.rectangle(
-            width / 2, nukeY, buttonWidth, buttonHeight, 0x2c3e50
+            centerX, nukeY, buttonWidth, buttonHeight, 0x2c3e50
         );
         nukeBtn.setStrokeStyle(3, 0xff00ff);
         nukeBtn.setInteractive({ useHandCursor: true });
 
-        const nukeText = this.add.text(width / 2, nukeY, 'ROW\nNUKE', {
+        const nukeText = this.add.text(centerX, nukeY, 'ROW\nNUKE', {
             fontSize: '12px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
@@ -1757,17 +1762,21 @@ export class GameScene extends Phaser.Scene {
             this.uiElements.enemyShipStatus.setPosition(width * 0.75, statusY);
         }
 
-        // Reposition ability buttons based on new layout
+        // Reposition ability buttons based on new layout (Week 6A: Fixed grid overlap)
         if (this.abilityButtons) {
-            let centerY;
+            let centerX, centerY;
+            const gridWidth = GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize;
+
             if (newLayout.shouldStack) {
-                // Stacked layout: Position between grids
-                const playerBottom = newLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize) + newLayout.labelSpace;
+                // Stacked layout: Position between grids vertically
+                const playerBottom = newLayout.playerY + gridWidth + newLayout.labelSpace;
                 const enemyTop = newLayout.enemyY - newLayout.titleH;
+                centerX = width / 2;
                 centerY = (playerBottom + enemyTop) / 2;
             } else {
-                // Side-by-side: Vertical center
-                centerY = height / 2;
+                // Side-by-side: Position between grids horizontally
+                centerX = newLayout.playerX + gridWidth + (GAME_CONSTANTS.GRID_SPACING / 2);
+                centerY = newLayout.playerY + (gridWidth / 2);
             }
 
             const buttonHeight = 44;
@@ -1775,10 +1784,10 @@ export class GameScene extends Phaser.Scene {
             const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
             const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
 
-            this.abilityButtons.sonarBtn.setPosition(width / 2, sonarY);
-            this.abilityButtons.sonarText.setPosition(width / 2, sonarY);
-            this.abilityButtons.nukeBtn.setPosition(width / 2, nukeY);
-            this.abilityButtons.nukeText.setPosition(width / 2, nukeY);
+            this.abilityButtons.sonarBtn.setPosition(centerX, sonarY);
+            this.abilityButtons.sonarText.setPosition(centerX, sonarY);
+            this.abilityButtons.nukeBtn.setPosition(centerX, nukeY);
+            this.abilityButtons.nukeText.setPosition(centerX, nukeY);
         }
 
         this.currentLayout = newLayout;
