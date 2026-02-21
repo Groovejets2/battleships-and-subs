@@ -13,6 +13,12 @@ import { GAME_CONSTANTS } from '../config/gameConfig.js';
 export class HelpScene extends Phaser.Scene {
     constructor() {
         super({ key: 'HelpScene' });
+        this.returnScene = 'TitleScene'; // Default return destination
+    }
+
+    init(data) {
+        // Remember which scene to return to
+        this.returnScene = data?.from || 'TitleScene';
     }
 
     create() {
@@ -88,11 +94,11 @@ export class HelpScene extends Phaser.Scene {
 
         backBtn.on('pointerover', () => backBtn.setFillStyle(0xe74c3c));
         backBtn.on('pointerout',  () => backBtn.setFillStyle(0x2c3e50));
-        backBtn.on('pointerdown', () => this.scene.start('GameScene'));
+        backBtn.on('pointerdown', () => this.scene.start(this.returnScene));
 
         // ESC key to return
         this.input.keyboard.on('keydown-ESC', () => {
-            this.scene.start('GameScene');
+            this.scene.start(this.returnScene);
         });
     }
 }

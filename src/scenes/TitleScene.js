@@ -327,7 +327,7 @@ export class TitleScene extends Phaser.Scene {
                 this.scene.start('HighScoresScene');  // CHANGE FROM console.log
                 break;
             case 'help':
-                this.scene.start('HelpScene');
+                this.scene.start('HelpScene', { from: 'TitleScene' });
                 break;
         }
     }
