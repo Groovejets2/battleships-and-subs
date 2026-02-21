@@ -433,6 +433,21 @@ export class GameScene extends Phaser.Scene {
         this.uiElements.backButton = backBtn;
         this.uiElements.backText   = backText;
 
+        // Help button (top left, next to BACK)
+        const helpBtn = this.add.rectangle(155, buttonY, 90, 30, 0x2c3e50)
+            .setStrokeStyle(2, 0x3498db)  // Blue border
+            .setInteractive({ useHandCursor: true });
+        const helpText = this.add.text(155, buttonY, 'HELP', {
+            fontSize: '13px', fontFamily: 'Arial', fill: '#ffffff', fontWeight: 'bold'
+        }).setOrigin(0.5);
+
+        helpBtn.on('pointerover', () => helpBtn.setFillStyle(0x3498db));
+        helpBtn.on('pointerout',  () => helpBtn.setFillStyle(0x2c3e50));
+        helpBtn.on('pointerdown', () => this.scene.start('HelpScene'));
+
+        this.uiElements.helpButton = helpBtn;
+        this.uiElements.helpText   = helpText;
+
         // Score display (top right)
         this.uiElements.scoreText = this.add.text(width - 10, 15, 'SCORE: 0', {
             fontSize: this.getStatusFontSize(width),
@@ -2029,6 +2044,8 @@ export class GameScene extends Phaser.Scene {
         }
         if (this.uiElements.backButton) this.uiElements.backButton.setPosition(55, buttonY);
         if (this.uiElements.backText)   this.uiElements.backText.setPosition(55, buttonY);
+        if (this.uiElements.helpButton) this.uiElements.helpButton.setPosition(155, buttonY);
+        if (this.uiElements.helpText)   this.uiElements.helpText.setPosition(155, buttonY);
         if (this.uiElements.scoreText) {
             this.uiElements.scoreText
                 .setPosition(width - 10, 15)
