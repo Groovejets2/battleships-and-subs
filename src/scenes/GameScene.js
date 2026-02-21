@@ -88,11 +88,21 @@ export class GameScene extends Phaser.Scene {
      */
     preload() {
         // Load ship sprites (Kenney.nl CC0 assets)
+        // Base sprites (horizontal orientation)
         this.load.image('ship-carrier', 'assets/ships/Carrier/ShipCarrierHull.png');
         this.load.image('ship-battleship', 'assets/ships/Battleship/ShipBattleshipHull.png');
         this.load.image('ship-cruiser', 'assets/ships/Cruiser/ShipCruiserHull.png');
         this.load.image('ship-submarine', 'assets/ships/Submarine/ShipSubMarineHull.png');
         this.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
+
+        // Week 6A FIX: Horizontal and vertical sprite variants (no rotation artifacts)
+        // Battleship (has both H/V variants)
+        this.load.image('ship-battleship-h', 'assets/ships/Battleship/ShipBattleshipHull_Horizontal.png');
+        this.load.image('ship-battleship-v', 'assets/ships/Battleship/ShipBattleshipHull_Vertical.png');
+
+        // TODO: Create vertical variants for other ships (currently fallback to rotation)
+        // this.load.image('ship-carrier-h', 'assets/ships/Carrier/ShipCarrierHull_Horizontal.png');
+        // this.load.image('ship-carrier-v', 'assets/ships/Carrier/ShipCarrierHull_Vertical.png');
 
         // Week 6B: Simple ship icon for status bar indicators (basic boat outline)
         this.load.image('ship-status-icon', 'assets/ui/simple-ship-icon.png');
@@ -1439,36 +1449,29 @@ export class GameScene extends Phaser.Scene {
                 return;
             }
 
-            // Calculate ship's center position
+            // Calculate ship's center position based on actual grid placement
             const segments = ship.segments;
             const firstSeg = segments[0];
             const lastSeg = segments[segments.length - 1];
-
-            let centerX, centerY, spriteWidth, spriteHeight;
             const cellSize = this.currentLayout.cellSize;
 
-            if (orientation === 'horizontal') {
-                // Horizontal ship: spans multiple columns
-                centerX = this.currentLayout.playerX + ((firstSeg.col + lastSeg.col + 1) / 2) * cellSize;
-                centerY = this.currentLayout.playerY + (firstSeg.row + 0.5) * cellSize;
-                spriteWidth = ship.length * cellSize * 0.9;  // 90% of cell width
-                spriteHeight = cellSize * 0.8;  // 80% of cell height
-            } else {
-                // Vertical ship: spans multiple rows
-                centerX = this.currentLayout.playerX + (firstSeg.col + 0.5) * cellSize;
-                centerY = this.currentLayout.playerY + ((firstSeg.row + lastSeg.row + 1) / 2) * cellSize;
-                spriteWidth = cellSize * 0.8;  // 80% of cell width
-                spriteHeight = ship.length * cellSize * 0.9;  // 90% of cell height
-            }
+            // Center = midpoint of first and last segment
+            const centerX = this.currentLayout.playerX + ((firstSeg.col + lastSeg.col + 1) / 2) * cellSize;
+            const centerY = this.currentLayout.playerY + ((firstSeg.row + lastSeg.row + 1) / 2) * cellSize;
+
+            // CORRECT FIX: All sprites are designed as VERTICAL (tall × narrow, up-down)
+            // Always calculate dimensions as vertical, then rotate for horizontal placement
+            const spriteWidth = cellSize * 0.8;                 // Narrow (1 cell width)
+            const spriteHeight = ship.length * cellSize * 0.9;  // Tall (ship length)
 
             // Create sprite
             const sprite = this.add.image(centerX, centerY, spriteKey);
 
-            // Set display size (not scale, to handle rotation properly)
+            // Set display size (always vertical dimensions matching sprite design)
             sprite.setDisplaySize(spriteWidth, spriteHeight);
 
-            // Rotate if vertical
-            if (orientation === 'vertical') {
+            // Rotate 90° if ship is placed HORIZONTALLY (to lay it sideways)
+            if (orientation === 'horizontal') {
                 sprite.setAngle(90);
             }
 
