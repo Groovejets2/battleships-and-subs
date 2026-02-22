@@ -565,6 +565,19 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
+     * Destroy ability buttons (used during resize)
+     */
+    destroyAbilityButtons() {
+        if (this.abilityButtons) {
+            this.abilityButtons.sonarBtn?.destroy();
+            this.abilityButtons.sonarText?.destroy();
+            this.abilityButtons.nukeBtn?.destroy();
+            this.abilityButtons.nukeText?.destroy();
+            this.abilityButtons = null;
+        }
+    }
+
+    /**
      * Update ability button states (enabled/disabled based on availability)
      */
     updateAbilityButtons() {
@@ -710,6 +723,17 @@ export class GameScene extends Phaser.Scene {
             // Disable button
             button.setAlpha(0.3);
             text.setAlpha(0.3);
+        }
+    }
+
+    /**
+     * Destroy FIRE button (used during resize)
+     */
+    destroyFireButton() {
+        if (this.fireButton) {
+            this.fireButton.button?.destroy();
+            this.fireButton.text?.destroy();
+            this.fireButton = null;
         }
     }
 
@@ -2126,60 +2150,15 @@ export class GameScene extends Phaser.Scene {
         this.createShipStatusPanel();
         this.updateShipStatus();  // Restore sunk ship indicators
 
-        // Reposition ability buttons based on new layout (Week 6A: Fixed grid overlap)
-        if (this.abilityButtons) {
-            let centerX, centerY;
-            const gridWidth = GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize;
+        // Destroy and recreate ability buttons to fix size on resize
+        this.destroyAbilityButtons();
+        this.createAbilityButtons();
+        this.updateAbilityButtons();  // Restore button states
 
-            if (newLayout.shouldStack) {
-                // Stacked layout: Position between grids vertically
-                const playerBottom = newLayout.playerY + gridWidth + newLayout.labelSpace;
-                const enemyTop = newLayout.enemyY - newLayout.titleH;
-                centerX = width / 2;
-                centerY = (playerBottom + enemyTop) / 2;
-            } else {
-                // Side-by-side: Center between grid edges
-                const playerRight = newLayout.playerX + gridWidth;
-                const enemyLeft = newLayout.enemyX;
-                centerX = (playerRight + enemyLeft) / 2;
-                centerY = newLayout.playerY + (gridWidth / 2);
-            }
-
-            const buttonHeight = 44;
-            const spacing = 12;
-            const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
-            const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
-
-            this.abilityButtons.sonarBtn.setPosition(centerX, sonarY);
-            this.abilityButtons.sonarText.setPosition(centerX, sonarY);
-            this.abilityButtons.nukeBtn.setPosition(centerX, nukeY);
-            this.abilityButtons.nukeText.setPosition(centerX, nukeY);
-        }
-
-        // Week 6B: Reposition FIRE button (below Row Nuke)
-        if (this.fireButton && this.abilityButtons) {
-            let centerX, centerY;
-            const gridWidth = GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize;
-
-            if (newLayout.shouldStack) {
-                const playerBottom = newLayout.playerY + gridWidth + newLayout.labelSpace;
-                const enemyTop = newLayout.enemyY - newLayout.titleH;
-                centerX = width / 2;
-                centerY = (playerBottom + enemyTop) / 2;
-            } else {
-                const playerRight = newLayout.playerX + gridWidth;
-                const enemyLeft = newLayout.enemyX;
-                centerX = (playerRight + enemyLeft) / 2;
-                centerY = newLayout.playerY + (gridWidth / 2);
-            }
-
-            const buttonHeight = 50;
-            const nukeY = this.abilityButtons.nukeBtn.y;
-            const fireY = nukeY + (buttonHeight / 2) + 14;
-
-            this.fireButton.button.setPosition(centerX, fireY);
-            this.fireButton.text.setPosition(centerX, fireY);
-        }
+        // Destroy and recreate FIRE button to fix size on resize
+        this.destroyFireButton();
+        this.createFireButton();
+        this.updateFireButton();  // Restore button state
 
         this.currentLayout = newLayout;
     }
