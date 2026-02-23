@@ -487,7 +487,10 @@ export class GameScene extends Phaser.Scene {
             centerY = this.currentLayout.playerY + (gridWidth / 2);
         }
 
-        const buttonWidth = Math.min(width * 0.18, 100);
+        // Make button width responsive to layout mode
+        const buttonWidth = this.currentLayout.shouldStack
+            ? Math.min(width * 0.22, 90)   // Portrait mode - wider % but smaller max
+            : Math.min(width * 0.18, 100); // Landscape mode
         const buttonHeight = 44;
         const spacing = 12;
 
@@ -665,7 +668,10 @@ export class GameScene extends Phaser.Scene {
             centerY = this.currentLayout.playerY + (gridWidth / 2);
         }
 
-        const buttonWidth = Math.min(width * 0.20, 110);
+        // Make FIRE button width responsive to layout mode
+        const buttonWidth = this.currentLayout.shouldStack
+            ? Math.min(width * 0.24, 100)  // Portrait mode - wider % but smaller max
+            : Math.min(width * 0.20, 110); // Landscape mode
         const buttonHeight = 50;
 
         // FIRE button (below Row Nuke button)
@@ -2090,25 +2096,29 @@ export class GameScene extends Phaser.Scene {
     handleResize(width, height) {
         const newLayout = this.calculateLayout(width, height);
 
-        const orientationChanged = this.currentLayout &&
-            (this.currentLayout.width > this.currentLayout.height) !== (width > height);
+        // UPDATE LAYOUT FIRST - buttons and other elements need current layout data
+        const oldLayout = this.currentLayout;
+        this.currentLayout = newLayout;
 
-        const stackChanged = this.currentLayout &&
-            this.currentLayout.shouldStack !== newLayout.shouldStack;
+        const orientationChanged = oldLayout &&
+            (oldLayout.width > oldLayout.height) !== (width > height);
+
+        const stackChanged = oldLayout &&
+            oldLayout.shouldStack !== newLayout.shouldStack;
 
         // Lower threshold from 15% to 5% to catch manual browser resizes
-        const cellSizeChanged = this.currentLayout &&
-            Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.05;
+        const cellSizeChanged = oldLayout &&
+            Math.abs(oldLayout.cellSize - newLayout.cellSize) / oldLayout.cellSize > 0.05;
 
         // Also check if grid positions changed significantly (manual resize fix)
-        const gridPositionChanged = this.currentLayout && (
-            Math.abs(this.currentLayout.enemyX - newLayout.enemyX) > 10 ||
-            Math.abs(this.currentLayout.enemyY - newLayout.enemyY) > 10 ||
-            Math.abs(this.currentLayout.playerX - newLayout.playerX) > 10 ||
-            Math.abs(this.currentLayout.playerY - newLayout.playerY) > 10
+        const gridPositionChanged = oldLayout && (
+            Math.abs(oldLayout.enemyX - newLayout.enemyX) > 10 ||
+            Math.abs(oldLayout.enemyY - newLayout.enemyY) > 10 ||
+            Math.abs(oldLayout.playerX - newLayout.playerX) > 10 ||
+            Math.abs(oldLayout.playerY - newLayout.playerY) > 10
         );
 
-        if (orientationChanged || stackChanged || cellSizeChanged || gridPositionChanged || !this.currentLayout) {
+        if (orientationChanged || stackChanged || cellSizeChanged || gridPositionChanged || !oldLayout) {
             // Destroy ship sprites first (Week 6: Graphics)
             this.clearAllShipSprites();
 
@@ -2168,7 +2178,5 @@ export class GameScene extends Phaser.Scene {
         this.destroyFireButton();
         this.createFireButton();
         this.updateFireButton();  // Restore button state
-
-        this.currentLayout = newLayout;
     }
 }
