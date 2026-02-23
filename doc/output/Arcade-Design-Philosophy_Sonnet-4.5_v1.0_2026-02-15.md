@@ -1,9 +1,10 @@
 # Arcade Design Philosophy
 ## Battleships & Subs - Classic Gaming Aesthetic
 
-**Version:** 1.0
-**Date:** 2026-02-15
+**Version:** 1.1
+**Date:** 2026-02-21
 **Created by:** Sonnet 4.5
+**Updated:** Mobile-first mandate added
 **Status:** Active Design Standard
 
 ---
@@ -12,11 +13,43 @@
 
 This document defines the arcade design philosophy for Battleships & Subs - a modern web game built with old-school arcade cabinet aesthetics. Every UI decision, animation, interaction, and visual element should embody the spirit of classic 1980s-1990s arcade gaming.
 
+**CRITICAL DESIGN MANDATE:** This is a **touch-screen mobile game FIRST**, PC browser game SECOND. All design decisions must prioritize mobile/touch interaction over keyboard/mouse input.
+
 ---
 
 ## Core Principles
 
-### 1. **Old-School Arcade Cabinet Aesthetic**
+### 1. **Mobile-First / Touch-Screen Priority**
+This is a touch-screen mobile game first, PC browser game second. All interactions must work perfectly on mobile devices.
+
+**Design Decisions:**
+- **Touch targets:** Minimum 44×44px (Apple HIG standard) for all interactive elements
+- **Large buttons:** All buttons must be easily tappable with a thumb
+- **No keyboard dependencies:** Never rely on ESC, arrow keys, or keyboard shortcuts as primary interaction
+- **Visible buttons for all actions:** Every action must have an on-screen button/tap target
+- **Gesture-friendly:** Consider swipe, tap, and touch-hold interactions
+- **Thumb-zone optimization:** Most important controls in easy-to-reach areas on mobile
+
+**Input Method Priority:**
+1. **Primary:** Touch/tap on mobile screens
+2. **Secondary:** Mouse click on PC browsers
+3. **Tertiary (convenience only):** Keyboard shortcuts (never required)
+
+**Examples:**
+- ✅ GOOD: BACK button on screen that can be tapped
+- ✅ GOOD: ESC key also works as convenience shortcut
+- ❌ BAD: ESC key required to exit (no visible button)
+- ❌ BAD: Hover-only interactions (doesn't work on touch)
+
+**Testing Priority:**
+- Test on mobile devices FIRST (iPhone SE, Galaxy, iPad)
+- Verify all functionality works without keyboard
+- Ensure buttons are large enough for thumb tapping
+- PC/desktop is secondary validation
+
+---
+
+### 2. **Old-School Arcade Cabinet Aesthetic**
 Games should feel like they belong in a vintage arcade cabinet with a CRT monitor.
 
 **Design Decisions:**
@@ -33,7 +66,7 @@ Games should feel like they belong in a vintage arcade cabinet with a CRT monito
 
 ---
 
-### 2. **Top 5 / Limited Display Philosophy**
+### 3. **Top 5 / Limited Display Philosophy**
 Classic arcades showed only the best scores to create aspirational competition and save screen space.
 
 **Design Decisions:**
@@ -56,7 +89,7 @@ Classic arcades showed only the best scores to create aspirational competition a
 
 ---
 
-### 3. **White Text Philosophy**
+### 4. **White Text Philosophy**
 Clean, uniform, readable text without unnecessary color coding.
 
 **Design Decisions:**
@@ -77,7 +110,7 @@ Clean, uniform, readable text without unnecessary color coding.
 
 ---
 
-### 4. **Big Fonts / Touch-Friendly Sizing**
+### 5. **Big Fonts / Touch-Friendly Sizing**
 Arcade screens were viewed from standing distance; touch screens need large hit targets.
 
 **Design Decisions:**
@@ -98,7 +131,7 @@ Arcade screens were viewed from standing distance; touch screens need large hit 
 
 ---
 
-### 5. **Fixed Spacing / Content-Relative Positioning**
+### 6. **Fixed Spacing / Content-Relative Positioning**
 Elements positioned relative to content, not arbitrary screen percentages.
 
 **Design Decisions:**
@@ -124,7 +157,7 @@ const buttonY = height * 0.94; // Button "floats" unpredictably
 
 ---
 
-### 6. **Arcade-Style Animations**
+### 7. **Arcade-Style Animations**
 Quick, snappy, game-feel animations that enhance (not delay) interaction.
 
 **Animation Principles:**
@@ -158,7 +191,7 @@ Total: ~1.5 seconds for full board reveal
 
 ---
 
-### 7. **Immediate Feedback**
+### 8. **Immediate Feedback**
 Every touch/click gets instant visual and (eventually) audio confirmation.
 
 **Design Decisions:**
