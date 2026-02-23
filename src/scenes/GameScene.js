@@ -2096,10 +2096,19 @@ export class GameScene extends Phaser.Scene {
         const stackChanged = this.currentLayout &&
             this.currentLayout.shouldStack !== newLayout.shouldStack;
 
+        // Lower threshold from 15% to 5% to catch manual browser resizes
         const cellSizeChanged = this.currentLayout &&
-            Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.15;
+            Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.05;
 
-        if (orientationChanged || stackChanged || cellSizeChanged || !this.currentLayout) {
+        // Also check if grid positions changed significantly (manual resize fix)
+        const gridPositionChanged = this.currentLayout && (
+            Math.abs(this.currentLayout.enemyX - newLayout.enemyX) > 10 ||
+            Math.abs(this.currentLayout.enemyY - newLayout.enemyY) > 10 ||
+            Math.abs(this.currentLayout.playerX - newLayout.playerX) > 10 ||
+            Math.abs(this.currentLayout.playerY - newLayout.playerY) > 10
+        );
+
+        if (orientationChanged || stackChanged || cellSizeChanged || gridPositionChanged || !this.currentLayout) {
             // Destroy ship sprites first (Week 6: Graphics)
             this.clearAllShipSprites();
 
