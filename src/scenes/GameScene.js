@@ -27,7 +27,7 @@ const CELL_COLORS = {
     ENEMY_EMPTY:  0xff6600,   // Orange
     HIT:          0xff0000,   // Red
     MISS:         0xcccccc,   // Light gray
-    SUNK:         0x660000    // Dark red
+    SUNK:         0xff0000    // Bright red (same as HIT, but for sunk ships)
 };
 
 /**
@@ -43,6 +43,10 @@ export class GameScene extends Phaser.Scene {
         this.playerGrid = null;
         this.enemyGrid = null;
         this.gridTitles = [];
+
+        // Ship sprite containers (Week 6A: Refactored to span multiple cells)
+        this.playerShipSprites = [];  // Array of ship sprite objects {sprite, ship, orientation}
+        this.enemyShipSprites = [];   // Array of enemy ship sprite objects {sprite, ship, shipType, orientation}
 
         // Game managers
         this.playerFleet = null;
@@ -60,6 +64,10 @@ export class GameScene extends Phaser.Scene {
         // UI elements
         this.uiElements = {};
 
+        // Week 6A: Ship status bar sprite containers
+        this.playerShipStatusSprites = [];  // Array of {sprite, crossSprite, ship}
+        this.enemyShipStatusSprites = [];   // Array of {sprite, crossSprite}
+
         // Layout state
         this.currentLayout = null;
 
@@ -69,6 +77,39 @@ export class GameScene extends Phaser.Scene {
         // Special attack mode tracking
         this.attackMode = 'NORMAL'; // 'NORMAL', 'SONAR', 'NUKE'
         this.abilityButtons = null; // {sonarBtn, sonarText, nukeBtn, nukeText}
+
+        // Week 6B: Gunsight cursor for targeting
+        this.gunsightCursor = null;
+        this.hoveredTarget = null;  // {row, col} of currently hovered enemy cell
+        this.fireButton = null;  // FIRE button UI element
+    }
+
+    /**
+     * Preload ship sprite assets
+     */
+    preload() {
+        // Load ship sprites (Kenney.nl CC0 assets)
+        // Base sprites (horizontal orientation)
+        this.load.image('ship-carrier', 'assets/ships/Carrier/ShipCarrierHull.png');
+        this.load.image('ship-battleship', 'assets/ships/Battleship/ShipBattleshipHull.png');
+        this.load.image('ship-cruiser', 'assets/ships/Cruiser/ShipCruiserHull.png');
+        this.load.image('ship-submarine', 'assets/ships/Submarine/ShipSubMarineHull.png');
+        this.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
+
+        // Week 6A FIX: Horizontal and vertical sprite variants (no rotation artifacts)
+        // Battleship (has both H/V variants)
+        this.load.image('ship-battleship-h', 'assets/ships/Battleship/ShipBattleshipHull_Horizontal.png');
+        this.load.image('ship-battleship-v', 'assets/ships/Battleship/ShipBattleshipHull_Vertical.png');
+
+        // TODO: Create vertical variants for other ships (currently fallback to rotation)
+        // this.load.image('ship-carrier-h', 'assets/ships/Carrier/ShipCarrierHull_Horizontal.png');
+        // this.load.image('ship-carrier-v', 'assets/ships/Carrier/ShipCarrierHull_Vertical.png');
+
+        // Week 6B: Simple ship icon for status bar indicators (basic boat outline)
+        this.load.image('ship-status-icon', 'assets/ui/simple-ship-icon.png');
+
+        // Week 6B: Gunsight cursor for targeting
+        this.load.image('gunsight', 'assets/ui/gunsight.png');
     }
 
     create() {
@@ -110,6 +151,7 @@ export class GameScene extends Phaser.Scene {
         this.playerCellStates  = Array.from({ length: SIZE }, () => Array(SIZE).fill(CELL.EMPTY));
         this.enemyCellStates   = Array.from({ length: SIZE }, () => Array(SIZE).fill(CELL.EMPTY));
         this.playerShipColors  = Array.from({ length: SIZE }, () => Array(SIZE).fill(null));
+        this.playerShipSprites = [];  // Week 6A: Simple array of ship objects
     }
 
     /**
@@ -158,6 +200,13 @@ export class GameScene extends Phaser.Scene {
                         this.playerCellStates[seg.row][seg.col] = CELL.SHIP;
                         this.playerShipColors[seg.row][seg.col] = shipType.color;
                     }
+                    // Week 6A: Store ship data for sprite rendering (whole ship, not per-cell)
+                    this.playerShipSprites.push({
+                        ship: ship,
+                        shipType: shipType,
+                        orientation: orientation,
+                        sprite: null  // Will be created after layout is ready
+                    });
                 }
 
                 placed = result.success;
@@ -232,6 +281,27 @@ export class GameScene extends Phaser.Scene {
 
         // Attach combat click handlers to enemy grid cells
         this.attachEnemyClickHandlers();
+
+        // Week 6B: Create gunsight cursor for targeting
+        this.createGunsightCursor();
+    }
+
+    /**
+     * Create gunsight cursor sprite for targeting (Week 6B).
+     * Initially hidden, shown on enemy grid hover.
+     */
+    createGunsightCursor() {
+        // Destroy existing gunsight if any
+        if (this.gunsightCursor) {
+            this.gunsightCursor.destroy();
+        }
+
+        // Create gunsight sprite (white crosshair)
+        const size = this.currentLayout.cellSize * 1.2;  // 120% of cell size
+        this.gunsightCursor = this.add.image(0, 0, 'gunsight');
+        this.gunsightCursor.setDisplaySize(size, size);
+        this.gunsightCursor.setDepth(100);  // Above grid cells
+        this.gunsightCursor.setVisible(false);  // Hidden by default
     }
 
     /**
@@ -385,26 +455,36 @@ export class GameScene extends Phaser.Scene {
         // Ability buttons (center between grids)
         this.createAbilityButtons();
 
+        // Week 6B: FIRE button for attacking
+        this.createFireButton();
+
         // Ship status panel (below grids)
         this.createShipStatusPanel();
     }
 
     /**
      * Create special ability buttons (Sonar Ping + Row Nuke)
+     * Week 6A: Fixed positioning to avoid grid overlap on desktop
      */
     createAbilityButtons() {
         const { width, height } = this.scale;
 
         // Position buttons based on layout to avoid overlap with grids
-        let centerY;
+        let centerX, centerY;
+        const gridWidth = GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize;
+
         if (this.currentLayout.shouldStack) {
-            // Stacked layout (portrait): Position between the two grids
-            const playerBottom = this.currentLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize) + this.currentLayout.labelSpace;
+            // Stacked layout (portrait): Position between the two grids vertically
+            const playerBottom = this.currentLayout.playerY + gridWidth + this.currentLayout.labelSpace;
             const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
+            centerX = width / 2;
             centerY = (playerBottom + enemyTop) / 2;
         } else {
-            // Side-by-side layout (landscape): Position in vertical center
-            centerY = height / 2;
+            // Side-by-side layout (landscape): Center between grid edges
+            const playerRight = this.currentLayout.playerX + gridWidth;
+            const enemyLeft = this.currentLayout.enemyX;
+            centerX = (playerRight + enemyLeft) / 2;
+            centerY = this.currentLayout.playerY + (gridWidth / 2);
         }
 
         const buttonWidth = Math.min(width * 0.18, 100);
@@ -414,13 +494,13 @@ export class GameScene extends Phaser.Scene {
         // Sonar Ping button (top)
         const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
         const sonarBtn = this.add.rectangle(
-            width / 2, sonarY, buttonWidth, buttonHeight, 0x2c3e50
+            centerX, sonarY, buttonWidth, buttonHeight, 0x2c3e50
         );
         sonarBtn.setStrokeStyle(3, 0x00ffff);
         sonarBtn.setInteractive({ useHandCursor: true });
 
-        const sonarText = this.add.text(width / 2, sonarY, 'SONAR\nPING', {
-            fontSize: '12px',
+        const sonarText = this.add.text(centerX, sonarY, 'SONAR', {
+            fontSize: '14px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
             align: 'center'
@@ -447,13 +527,13 @@ export class GameScene extends Phaser.Scene {
         // Row Nuke button (bottom)
         const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
         const nukeBtn = this.add.rectangle(
-            width / 2, nukeY, buttonWidth, buttonHeight, 0x2c3e50
+            centerX, nukeY, buttonWidth, buttonHeight, 0x2c3e50
         );
         nukeBtn.setStrokeStyle(3, 0xff00ff);
         nukeBtn.setInteractive({ useHandCursor: true });
 
-        const nukeText = this.add.text(width / 2, nukeY, 'ROW\nNUKE', {
-            fontSize: '12px',
+        const nukeText = this.add.text(centerX, nukeY, 'NUKE', {
+            fontSize: '14px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
             align: 'center'
@@ -485,6 +565,19 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
+     * Destroy ability buttons (used during resize)
+     */
+    destroyAbilityButtons() {
+        if (this.abilityButtons) {
+            this.abilityButtons.sonarBtn?.destroy();
+            this.abilityButtons.sonarText?.destroy();
+            this.abilityButtons.nukeBtn?.destroy();
+            this.abilityButtons.nukeText?.destroy();
+            this.abilityButtons = null;
+        }
+    }
+
+    /**
      * Update ability button states (enabled/disabled based on availability)
      */
     updateAbilityButtons() {
@@ -492,54 +585,245 @@ export class GameScene extends Phaser.Scene {
 
         const { sonarBtn, sonarText, nukeBtn, nukeText } = this.abilityButtons;
 
-        // Sonar Ping state
+        // Sonar state
         if (this.turnManager.sonarPingAvailable) {
             sonarBtn.setAlpha(1.0);
             sonarText.setAlpha(1.0);
-            sonarText.setText('SONAR\nPING');
         } else {
             sonarBtn.setAlpha(0.3);
             sonarText.setAlpha(0.3);
-            sonarText.setText('SONAR\nUSED');
         }
 
-        // Row Nuke state
+        // Nuke state (show charge count if > 1)
         if (this.turnManager.rowNukeCharges > 0) {
             nukeBtn.setAlpha(1.0);
             nukeText.setAlpha(1.0);
-            nukeText.setText(`ROW\nNUKE x${this.turnManager.rowNukeCharges}`);
+            if (this.turnManager.rowNukeCharges > 1) {
+                nukeText.setText(`NUKE x${this.turnManager.rowNukeCharges}`);
+            } else {
+                nukeText.setText('NUKE');
+            }
         } else {
             nukeBtn.setAlpha(0.3);
             nukeText.setAlpha(0.3);
-            nukeText.setText('ROW\nNUKE x0');
+            nukeText.setText('NUKE');
+        }
+    }
+
+    /**
+     * Destroy ship status panel sprites (used during resize).
+     * Week 6A: Cleans up sprite-based status bar.
+     */
+    destroyShipStatusPanel() {
+        // Destroy player ship status sprites
+        this.playerShipStatusSprites.forEach(({ sprite, crossSprite }) => {
+            if (sprite) sprite.destroy();
+            if (crossSprite) crossSprite.destroy();
+        });
+        this.playerShipStatusSprites = [];
+
+        // Destroy enemy ship status sprites
+        this.enemyShipStatusSprites.forEach(({ sprite, crossSprite }) => {
+            if (sprite) sprite.destroy();
+            if (crossSprite) crossSprite.destroy();
+        });
+        this.enemyShipStatusSprites = [];
+
+        // Destroy labels
+        if (this.uiElements.playerShipStatusLabel) {
+            this.uiElements.playerShipStatusLabel.destroy();
+            this.uiElements.playerShipStatusLabel = null;
+        }
+        if (this.uiElements.enemyShipStatusLabel) {
+            this.uiElements.enemyShipStatusLabel.destroy();
+            this.uiElements.enemyShipStatusLabel = null;
+        }
+    }
+
+    /**
+     * Create FIRE button for attacking (Week 6B).
+     * Alternative to clicking on cells - useful for mobile/touch screens.
+     */
+    createFireButton() {
+        const { width, height } = this.scale;
+
+        // Position FIRE button based on layout
+        let centerX, centerY;
+        const gridWidth = GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize;
+
+        if (this.currentLayout.shouldStack) {
+            // Stacked layout (portrait): Position between grids vertically
+            const playerBottom = this.currentLayout.playerY + gridWidth + this.currentLayout.labelSpace;
+            const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
+            centerX = width / 2;
+            centerY = (playerBottom + enemyTop) / 2;
+        } else {
+            // Side-by-side (landscape): Center between grid edges
+            const playerRight = this.currentLayout.playerX + gridWidth;
+            const enemyLeft = this.currentLayout.enemyX;
+            centerX = (playerRight + enemyLeft) / 2;
+            centerY = this.currentLayout.playerY + (gridWidth / 2);
+        }
+
+        const buttonWidth = Math.min(width * 0.20, 110);
+        const buttonHeight = 50;
+
+        // FIRE button (below Row Nuke button)
+        const nukeBtn = this.abilityButtons?.nukeBtn;
+        const nukeY = nukeBtn ? nukeBtn.y : centerY;
+        const fireY = nukeY + (buttonHeight / 2) + 14;  // 14px spacing
+
+        const fireBtn = this.add.rectangle(
+            centerX, fireY, buttonWidth, buttonHeight, 0x8B0000  // Dark red
+        );
+        fireBtn.setStrokeStyle(3, 0xff0000);  // Red border
+        fireBtn.setInteractive({ useHandCursor: true });
+        fireBtn.setAlpha(0.3);  // Disabled by default
+
+        const fireText = this.add.text(centerX, fireY, 'FIRE', {
+            fontSize: '18px',
+            fontFamily: 'Arial Black',
+            fill: '#ffffff',
+            fontWeight: 'bold'
+        }).setOrigin(0.5);
+        fireText.setAlpha(0.3);  // Disabled by default
+
+        fireBtn.on('pointerover', () => {
+            if (this.hoveredTarget) {
+                fireBtn.setFillStyle(0xff0000);  // Bright red on hover
+            }
+        });
+
+        fireBtn.on('pointerout', () => {
+            fireBtn.setFillStyle(0x8B0000);  // Back to dark red
+        });
+
+        fireBtn.on('pointerdown', () => {
+            if (this.hoveredTarget) {
+                this.handlePlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col);
+            }
+        });
+
+        this.fireButton = { button: fireBtn, text: fireText };
+    }
+
+    /**
+     * Update FIRE button state based on hovered target.
+     */
+    updateFireButton() {
+        if (!this.fireButton) return;
+
+        const { button, text } = this.fireButton;
+
+        if (this.hoveredTarget && this.canPlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col)) {
+            // Enable button
+            button.setAlpha(1.0);
+            text.setAlpha(1.0);
+        } else {
+            // Disable button
+            button.setAlpha(0.3);
+            text.setAlpha(0.3);
+        }
+    }
+
+    /**
+     * Destroy FIRE button (used during resize)
+     */
+    destroyFireButton() {
+        if (this.fireButton) {
+            this.fireButton.button?.destroy();
+            this.fireButton.text?.destroy();
+            this.fireButton = null;
         }
     }
 
     /**
      * Create ship health status display below the grids.
+     * Week 6A: Uses ship outline sprites (patrol boat) tinted with ship colors.
      */
     createShipStatusPanel() {
         const { width, height } = this.scale;
-        const ships = this.playerFleet.getAllShips();
+        const playerShips = this.playerFleet.getAllShips();
+        const enemyShipCount = 5;  // Always 5 enemy ships
 
-        // Simple status line at bottom: "Your ships: ■■■■□  Enemy: ■■■■□"
-        const statusY = height - 18;
+        const statusY = height - 22;
         const fontSize = Math.max(10, Math.min(13, width * 0.016)) + 'px';
+        const iconSize = Math.min(24, width * 0.025);  // Ship icon size
+        const iconSpacing = iconSize + 4;  // Space between icons
 
-        // Player fleet status
-        const playerStatus = this.buildFleetStatusString(ships, false);
-        this.uiElements.playerShipStatus = this.add.text(
-            width * 0.25, statusY,
-            'YOUR SHIPS: ' + playerStatus,
-            { fontSize, fontFamily: 'Arial', fill: '#00ff88' }
-        ).setOrigin(0.5);
+        // === PLAYER FLEET STATUS ===
+        const playerLabelX = width * 0.25 - (iconSpacing * 2.5);
+        this.uiElements.playerShipStatusLabel = this.add.text(
+            playerLabelX, statusY,
+            'YOUR SHIPS:',
+            { fontSize, fontFamily: 'Arial', fill: '#00ff88', fontWeight: 'bold' }
+        ).setOrigin(1, 0.5);
 
-        // Enemy fleet status (show remaining ships count only)
-        this.uiElements.enemyShipStatus = this.add.text(
-            width * 0.75, statusY,
-            'ENEMY: 5 ships',
-            { fontSize, fontFamily: 'Arial', fill: '#ff8800' }
-        ).setOrigin(0.5);
+        // Create ship status sprites for each player ship
+        this.playerShipStatusSprites = [];
+        playerShips.forEach((ship, index) => {
+            const iconX = playerLabelX + 10 + (index * iconSpacing);
+
+            // Ship outline sprite (green to match "YOUR SHIPS" label)
+            const sprite = this.add.image(iconX, statusY, 'ship-status-icon');
+            sprite.setDisplaySize(iconSize, iconSize);
+            sprite.setTint(0x00ff88);  // Green (same as label)
+
+            // Red cross sprite (hidden initially, shown when sunk)
+            const crossSprite = this.add.graphics();
+            crossSprite.lineStyle(2, 0xff0000, 1);
+            crossSprite.beginPath();
+            crossSprite.moveTo(iconX - iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX + iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.moveTo(iconX + iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX - iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.strokePath();
+            crossSprite.setVisible(false);
+
+            this.playerShipStatusSprites.push({ sprite, crossSprite, ship });
+        });
+
+        // === ENEMY FLEET STATUS ===
+        const enemyLabelX = width * 0.75 - (iconSpacing * 2.5);
+        this.uiElements.enemyShipStatusLabel = this.add.text(
+            enemyLabelX, statusY,
+            'ENEMY:',
+            { fontSize, fontFamily: 'Arial', fill: '#ff8800', fontWeight: 'bold' }
+        ).setOrigin(1, 0.5);
+
+        // Create 5 enemy ship status sprites (all same color)
+        this.enemyShipStatusSprites = [];
+        for (let i = 0; i < enemyShipCount; i++) {
+            const iconX = enemyLabelX + 10 + (i * iconSpacing);
+
+            // Ship outline sprite (orange for enemy)
+            const sprite = this.add.image(iconX, statusY, 'ship-status-icon');
+            sprite.setDisplaySize(iconSize, iconSize);
+            sprite.setTint(0xff8800);  // Orange
+
+            // Red cross sprite (hidden initially)
+            const crossSprite = this.add.graphics();
+            crossSprite.lineStyle(2, 0xff0000, 1);
+            crossSprite.beginPath();
+            crossSprite.moveTo(iconX - iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX + iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.moveTo(iconX + iconSize * 0.35, statusY - iconSize * 0.35);
+            crossSprite.lineTo(iconX - iconSize * 0.35, statusY + iconSize * 0.35);
+            crossSprite.strokePath();
+            crossSprite.setVisible(false);
+
+            this.enemyShipStatusSprites.push({ sprite, crossSprite });
+        }
+    }
+
+    /**
+     * Get ship type object by ship length.
+     * @param {number} length
+     * @returns {object} Ship type from SHIP_TYPES
+     */
+    getShipTypeByLength(length) {
+        const types = Object.values(SHIP_TYPES);
+        return types.find(t => t.length === length) || types[0];
     }
 
     /**
@@ -558,21 +842,32 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Update ship status panel after each attack.
+     * Week 6A: Updates sprite-based status bar with red X overlays on sunk ships.
      */
     updateShipStatus() {
-        const playerShips = this.playerFleet.getAllShips();
-        const enemyShips  = this.enemyFleet.getAllShips();
+        // Update player ship status sprites
+        this.playerShipStatusSprites.forEach(({ sprite, crossSprite, ship }) => {
+            if (ship.isSunk) {
+                // Show red X over sunk ship (ship sprite remains visible)
+                crossSprite.setVisible(true);
+            } else {
+                crossSprite.setVisible(false);
+            }
+        });
 
-        if (this.uiElements.playerShipStatus) {
-            const str = this.buildFleetStatusString(playerShips, false);
-            this.uiElements.playerShipStatus.setText('YOUR SHIPS: ' + str);
-        }
+        // Update enemy ship status sprites
+        const enemyShips = this.enemyFleet.getAllShips();
+        const sunkEnemyShips = enemyShips.filter(s => s.isSunk);
+        this.enemyShipStatusSprites.forEach(({ sprite, crossSprite }, index) => {
+            if (index < sunkEnemyShips.length) {
+                // Show red X over sunk ships
+                crossSprite.setVisible(true);
+            } else {
+                crossSprite.setVisible(false);
+            }
+        });
 
-        if (this.uiElements.enemyShipStatus) {
-            const alive = enemyShips.filter(s => !s.isSunk).length;
-            this.uiElements.enemyShipStatus.setText(`ENEMY: ${alive} ship${alive !== 1 ? 's' : ''}`);
-        }
-
+        // Update score
         if (this.uiElements.scoreText) {
             this.uiElements.scoreText.setText('SCORE: ' + this.turnManager.score);
         }
@@ -638,13 +933,32 @@ export class GameScene extends Phaser.Scene {
 
             cell.on('pointerover', () => {
                 if (this.canPlayerAttack(row, col)) {
-                    cell.setFillStyle(0xffff00, 0.7); // Yellow hover
+                    // Week 6B: Track hovered target for FIRE button
+                    this.hoveredTarget = { row, col };
+                    this.updateFireButton();
+
+                    // Week 6B: Show gunsight cursor at cell center (no yellow highlight needed)
+                    if (this.gunsightCursor) {
+                        const cellCenterX = this.currentLayout.enemyX + (col + 0.5) * this.currentLayout.cellSize;
+                        const cellCenterY = this.currentLayout.enemyY + (row + 0.5) * this.currentLayout.cellSize;
+                        this.gunsightCursor.setPosition(cellCenterX, cellCenterY);
+                        this.gunsightCursor.setVisible(true);
+                    }
                 }
             });
 
             cell.on('pointerout', () => {
                 // Restore correct color based on state
                 this.refreshEnemyCellColor(cell, row, col);
+
+                // Week 6B: Clear hovered target and disable FIRE button
+                this.hoveredTarget = null;
+                this.updateFireButton();
+
+                // Week 6B: Hide gunsight cursor
+                if (this.gunsightCursor) {
+                    this.gunsightCursor.setVisible(false);
+                }
             });
 
             cell.on('pointerdown', () => {
@@ -677,6 +991,13 @@ export class GameScene extends Phaser.Scene {
      * @param {number} col
      */
     handlePlayerAttack(row, col) {
+        // Week 6B: Hide gunsight cursor and disable FIRE button on attack
+        if (this.gunsightCursor) {
+            this.gunsightCursor.setVisible(false);
+        }
+        this.hoveredTarget = null;
+        this.updateFireButton();
+
         // Route based on current attack mode
         if (this.attackMode === 'SONAR') {
             this.executeSonarPing(row, col);
@@ -723,11 +1044,13 @@ export class GameScene extends Phaser.Scene {
         // Announce if sunk
         if (attackResult.sunk && attackResult.ship) {
             this.showSunkAnnouncement(`You sank their ${attackResult.ship.name}!`, true);
-            // Mark all segments of sunk ship
+            // Mark all segments of sunk ship with red background
             attackResult.ship.segments.forEach(seg => {
                 this.enemyCellStates[seg.row][seg.col] = CELL.SUNK;
                 this.refreshEnemyCellByState(seg.row, seg.col, CELL.SUNK);
             });
+            // Render enemy ship sprite on enemy grid
+            this.renderEnemyShipSprite(attackResult.ship);
         }
 
         // Announce Row Nuke unlock
@@ -946,13 +1269,20 @@ export class GameScene extends Phaser.Scene {
         let totalHits = 0;
         let totalSinks = 0;
         const attackedCells = [];
+        const sunkShips = [];
 
         for (let c = 0; c < 10; c++) {
             const attackResult = this.enemyFleet.receiveAttack(row, c);
 
             if (!attackResult.duplicate && attackResult.hit) {
                 totalHits++;
-                if (attackResult.sunk) totalSinks++;
+                if (attackResult.sunk) {
+                    totalSinks++;
+                    // Track sunk ships (avoid duplicates)
+                    if (attackResult.ship && !sunkShips.find(s => s === attackResult.ship)) {
+                        sunkShips.push(attackResult.ship);
+                    }
+                }
             }
 
             const newState = attackResult.sunk ? CELL.SUNK : (attackResult.hit ? CELL.HIT : CELL.MISS);
@@ -1004,6 +1334,15 @@ export class GameScene extends Phaser.Scene {
                 });
             });
 
+            // Mark all segments of sunk ships and render sprites
+            sunkShips.forEach(ship => {
+                ship.segments.forEach(seg => {
+                    this.enemyCellStates[seg.row][seg.col] = CELL.SUNK;
+                    this.refreshEnemyCellByState(seg.row, seg.col, CELL.SUNK);
+                });
+                this.renderEnemyShipSprite(ship);
+            });
+
             // Update game state
             this.updateShipStatus();
 
@@ -1025,6 +1364,7 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Apply all stored cell states to the current grid cells (used after resize).
+     * Week 6A: Also renders ship sprites after applying cell states.
      */
     applyGridStates() {
         const SIZE = GAME_CONSTANTS.GRID_SIZE;
@@ -1049,6 +1389,9 @@ export class GameScene extends Phaser.Scene {
                 this.applyEnemyCellColor(cell, state);
             });
         }
+
+        // Week 6A: Render ship sprites (one per ship, spanning multiple cells)
+        this.renderAllShipSprites();
     }
 
     /**
@@ -1091,6 +1434,7 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Apply color to a player grid cell based on its state.
+     * Week 6A: Ship sprites span entire ship, not per-cell
      * @param {Phaser.GameObjects.Rectangle} cell
      * @param {string} state
      * @param {number|null} shipColor
@@ -1098,7 +1442,9 @@ export class GameScene extends Phaser.Scene {
     applyPlayerCellColor(cell, state, shipColor) {
         switch (state) {
             case CELL.SHIP:
-                cell.setFillStyle(shipColor || 0x00aa00, 0.85);
+                // Make cell transparent to show ocean background
+                cell.setFillStyle(0x0088aa, 0.1);
+                // Ship sprites are rendered separately (whole ship, not per-cell)
                 break;
             case CELL.HIT:
                 cell.setFillStyle(CELL_COLORS.HIT, 0.9);
@@ -1112,6 +1458,159 @@ export class GameScene extends Phaser.Scene {
             default:
                 cell.setFillStyle(CELL_COLORS.PLAYER_EMPTY, 0.5);
         }
+    }
+
+    /**
+     * Render all player ship sprites (Week 6A: One sprite per ship, spanning multiple cells).
+     * Called after grid layout is ready.
+     */
+    renderAllShipSprites() {
+        if (!this.currentLayout) return;
+
+        // Render each ship sprite (spans entire ship length)
+        this.playerShipSprites.forEach(shipObj => {
+            const { ship, shipType, orientation } = shipObj;
+            const spriteKey = shipType.sprite;
+
+            if (!this.textures.exists(spriteKey)) {
+                console.warn(`Sprite not found: ${spriteKey}`);
+                return;
+            }
+
+            // Calculate ship's center position based on actual grid placement
+            const segments = ship.segments;
+            const firstSeg = segments[0];
+            const lastSeg = segments[segments.length - 1];
+            const cellSize = this.currentLayout.cellSize;
+
+            // Center = midpoint of first and last segment
+            const centerX = this.currentLayout.playerX + ((firstSeg.col + lastSeg.col + 1) / 2) * cellSize;
+            const centerY = this.currentLayout.playerY + ((firstSeg.row + lastSeg.row + 1) / 2) * cellSize;
+
+            // CORRECT FIX: All sprites are designed as VERTICAL (tall × narrow, up-down)
+            // Always calculate dimensions as vertical, then rotate for horizontal placement
+            const spriteWidth = cellSize * 0.8;                 // Narrow (1 cell width)
+            const spriteHeight = ship.length * cellSize * 0.9;  // Tall (ship length)
+
+            // Create sprite
+            const sprite = this.add.image(centerX, centerY, spriteKey);
+
+            // Set display size (always vertical dimensions matching sprite design)
+            sprite.setDisplaySize(spriteWidth, spriteHeight);
+
+            // Rotate 90° if ship is placed HORIZONTALLY (to lay it sideways)
+            if (orientation === 'horizontal') {
+                sprite.setAngle(90);
+            }
+
+            // Store sprite reference
+            shipObj.sprite = sprite;
+        });
+    }
+
+    /**
+     * Clear ship sprite for a specific ship (when sunk).
+     * @param {object} ship - Ship model object
+     */
+    clearShipSpriteByShip(ship) {
+        const shipObj = this.playerShipSprites.find(obj => obj.ship === ship);
+        if (shipObj && shipObj.sprite) {
+            shipObj.sprite.destroy();
+            shipObj.sprite = null;
+        }
+    }
+
+    /**
+     * Clear all ship sprites (used during resize/grid recreation).
+     */
+    clearAllShipSprites() {
+        this.playerShipSprites.forEach(shipObj => {
+            if (shipObj.sprite) {
+                shipObj.sprite.destroy();
+                shipObj.sprite = null;
+            }
+        });
+        this.enemyShipSprites.forEach(shipObj => {
+            if (shipObj.sprite) {
+                shipObj.sprite.destroy();
+                shipObj.sprite = null;
+            }
+        });
+    }
+
+    /**
+     * Render an enemy ship sprite when it's sunk (Week 6A).
+     * @param {object} ship - Sunk enemy ship object
+     */
+    renderEnemyShipSprite(ship) {
+        if (!this.currentLayout) return;
+
+        // Find ship type from ship properties
+        const shipType = Object.values(SHIP_TYPES).find(type =>
+            type.length === ship.length && type.name === ship.name
+        );
+
+        if (!shipType) {
+            console.warn(`renderEnemyShipSprite: Could not find ship type for ${ship.name}`);
+            return;
+        }
+
+        const spriteKey = shipType.sprite;
+        if (!this.textures.exists(spriteKey)) {
+            console.warn(`Sprite not found: ${spriteKey}`);
+            return;
+        }
+
+        // Calculate ship's center position based on actual grid placement
+        const segments = ship.segments;
+        const firstSeg = segments[0];
+        const lastSeg = segments[segments.length - 1];
+        const cellSize = this.currentLayout.cellSize;
+        const orientation = ship.orientation;
+
+        // Center = midpoint of first and last segment
+        const centerX = this.currentLayout.enemyX + ((firstSeg.col + lastSeg.col + 1) / 2) * cellSize;
+        const centerY = this.currentLayout.enemyY + ((firstSeg.row + lastSeg.row + 1) / 2) * cellSize;
+
+        // All sprites designed VERTICAL (tall × narrow)
+        const spriteWidth = cellSize * 0.8;                 // Narrow (1 cell width)
+        const spriteHeight = ship.length * cellSize * 0.9;  // Tall (ship length)
+
+        // Create sprite
+        const sprite = this.add.image(centerX, centerY, spriteKey);
+
+        // Set display size (always vertical dimensions matching sprite design)
+        sprite.setDisplaySize(spriteWidth, spriteHeight);
+
+        // Rotate 90° if ship is placed HORIZONTALLY (to lay it sideways)
+        if (orientation === 'horizontal') {
+            sprite.setAngle(90);
+        }
+
+        // Store sprite reference
+        this.enemyShipSprites.push({
+            ship: ship,
+            shipType: shipType,
+            orientation: orientation,
+            sprite: sprite
+        });
+    }
+
+    /**
+     * Get sprite key from ship color (reverse mapping).
+     * @param {number} shipColor
+     * @returns {string|null}
+     */
+    getSpriteKeyFromColor(shipColor) {
+        // Map colors to sprite keys based on SHIP_TYPES config
+        const colorMap = {
+            [SHIP_TYPES.CARRIER.color]: SHIP_TYPES.CARRIER.sprite,
+            [SHIP_TYPES.NUCLEAR_SUB.color]: SHIP_TYPES.NUCLEAR_SUB.sprite,
+            [SHIP_TYPES.CRUISER.color]: SHIP_TYPES.CRUISER.sprite,
+            [SHIP_TYPES.ATTACK_SUB.color]: SHIP_TYPES.ATTACK_SUB.sprite,
+            [SHIP_TYPES.DESTROYER.color]: SHIP_TYPES.DESTROYER.sprite
+        };
+        return colorMap[shipColor] || null;
     }
 
     /**
@@ -1597,10 +2096,22 @@ export class GameScene extends Phaser.Scene {
         const stackChanged = this.currentLayout &&
             this.currentLayout.shouldStack !== newLayout.shouldStack;
 
+        // Lower threshold from 15% to 5% to catch manual browser resizes
         const cellSizeChanged = this.currentLayout &&
-            Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.15;
+            Math.abs(this.currentLayout.cellSize - newLayout.cellSize) / this.currentLayout.cellSize > 0.05;
 
-        if (orientationChanged || stackChanged || cellSizeChanged || !this.currentLayout) {
+        // Also check if grid positions changed significantly (manual resize fix)
+        const gridPositionChanged = this.currentLayout && (
+            Math.abs(this.currentLayout.enemyX - newLayout.enemyX) > 10 ||
+            Math.abs(this.currentLayout.enemyY - newLayout.enemyY) > 10 ||
+            Math.abs(this.currentLayout.playerX - newLayout.playerX) > 10 ||
+            Math.abs(this.currentLayout.playerY - newLayout.playerY) > 10
+        );
+
+        if (orientationChanged || stackChanged || cellSizeChanged || gridPositionChanged || !this.currentLayout) {
+            // Destroy ship sprites first (Week 6: Graphics)
+            this.clearAllShipSprites();
+
             // Destroy old grids
             if (this.playerGrid) {
                 this.playerGrid.cells.clear(true, true);
@@ -1643,38 +2154,20 @@ export class GameScene extends Phaser.Scene {
                 .setFontSize(this.getStatusFontSize(width));
         }
 
-        // Reposition ship status panel
-        const statusY = height - 18;
-        if (this.uiElements.playerShipStatus) {
-            this.uiElements.playerShipStatus.setPosition(width * 0.25, statusY);
-        }
-        if (this.uiElements.enemyShipStatus) {
-            this.uiElements.enemyShipStatus.setPosition(width * 0.75, statusY);
-        }
+        // Destroy and recreate ship status panel on resize (Week 6A: Sprite-based status bar)
+        this.destroyShipStatusPanel();
+        this.createShipStatusPanel();
+        this.updateShipStatus();  // Restore sunk ship indicators
 
-        // Reposition ability buttons based on new layout
-        if (this.abilityButtons) {
-            let centerY;
-            if (newLayout.shouldStack) {
-                // Stacked layout: Position between grids
-                const playerBottom = newLayout.playerY + (GAME_CONSTANTS.GRID_SIZE * newLayout.cellSize) + newLayout.labelSpace;
-                const enemyTop = newLayout.enemyY - newLayout.titleH;
-                centerY = (playerBottom + enemyTop) / 2;
-            } else {
-                // Side-by-side: Vertical center
-                centerY = height / 2;
-            }
+        // Destroy and recreate ability buttons to fix size on resize
+        this.destroyAbilityButtons();
+        this.createAbilityButtons();
+        this.updateAbilityButtons();  // Restore button states
 
-            const buttonHeight = 44;
-            const spacing = 12;
-            const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
-            const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
-
-            this.abilityButtons.sonarBtn.setPosition(width / 2, sonarY);
-            this.abilityButtons.sonarText.setPosition(width / 2, sonarY);
-            this.abilityButtons.nukeBtn.setPosition(width / 2, nukeY);
-            this.abilityButtons.nukeText.setPosition(width / 2, nukeY);
-        }
+        // Destroy and recreate FIRE button to fix size on resize
+        this.destroyFireButton();
+        this.createFireButton();
+        this.updateFireButton();  // Restore button state
 
         this.currentLayout = newLayout;
     }
