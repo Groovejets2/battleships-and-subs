@@ -460,8 +460,21 @@ src/
 
 ---
 
-**Last Updated:** 2026-02-20 (Session End: Week 5 UX Features Complete + All Tests Passing)
-**Project Status:** 🚀 Week 5 UX Implementation COMPLETE
+**Last Updated:** 2026-03-01 (Opus 4.6 session: Round arcade buttons implemented)
+**Project Status:** 🔧 Round Arcade Buttons — layout fixes needed
+
+## ⚡ IMMEDIATE TASK FOR SONNET 4.6 (Kerry McGregor)
+
+**READ FIRST:** `doc/output/analysis/Round-Arcade-Buttons-Handover_Opus-4.6_2026-03-01.md`
+
+Tony Stark (Opus 4.6) replaced the 3 rectangular GameScene buttons (SONAR, NUKE, FIRE) with round arcade-style buttons. The implementation works but has **layout issues on some viewports** — buttons overlap or are off-screen on small portrait phones and appear squished on some landscape screens.
+
+**Tasks:**
+1. Fix button placement in `createArcadeButtons()` in `GameScene.js` so ALL 11 test viewports have perfect layout
+2. Update `HelpScene.js` text to describe the new round buttons (see handover doc for suggested text)
+3. Run `node tests/automated/game-scene-layout.test.js` and visually verify ALL screenshots
+
+**Do NOT start other work until these are resolved.** The handover doc has the root cause analysis and fix approach.
 **Branch Status:**
 - main: b2dc515 (tagged v1.4.1) - PRODUCTION
 - develop: 1212c60 - LATEST DEVELOPMENT

@@ -452,165 +452,239 @@ export class GameScene extends Phaser.Scene {
             fontWeight: 'bold'
         }).setOrigin(1, 0.5);
 
-        // Ability buttons (center between grids)
-        this.createAbilityButtons();
-
-        // Week 6B: FIRE button for attacking
-        this.createFireButton();
+        // Round arcade buttons (FIRE, SONAR, NUKE)
+        this.createArcadeButtons();
 
         // Ship status panel (below grids)
         this.createShipStatusPanel();
     }
 
+    // ─── Round Arcade Buttons (FIRE, SONAR, NUKE) ────────────────────────────
+
     /**
-     * Create special ability buttons (Sonar Ping + Row Nuke)
-     * Week 6A: Fixed positioning to avoid grid overlap on desktop
+     * Create three round arcade-cabinet-style buttons: FIRE (red), SONAR (blue), NUKE (orange).
+     * Icons are drawn with Phaser Graphics. Layout adapts:
+     *   Portrait  → horizontal row below enemy grid (above ship status bar)
+     *   Landscape → vertical stack between the two grids
      */
-    createAbilityButtons() {
+    createArcadeButtons() {
         const { width, height } = this.scale;
+        const layout = this.currentLayout;
+        const gridWidth = GAME_CONSTANTS.GRID_SIZE * layout.cellSize;
 
-        // Position buttons based on layout to avoid overlap with grids
-        let centerX, centerY;
-        const gridWidth = GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize;
+        // --- Determine button radius & positions ---
+        let r, positions; // r = radius
 
-        if (this.currentLayout.shouldStack) {
-            // Stacked layout (portrait): Position between the two grids vertically
-            const playerBottom = this.currentLayout.playerY + gridWidth + this.currentLayout.labelSpace;
-            const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
-            centerX = width / 2;
-            centerY = (playerBottom + enemyTop) / 2;
+        if (layout.shouldStack) {
+            // PORTRAIT: horizontal row below enemy grid labels
+            const enemyBottom = layout.enemyY + gridWidth + layout.labelSpace + 4;
+            const shipBarTop  = height - 30; // ship status bar lives at height-22
+            const availH = shipBarTop - enemyBottom;
+            r = Math.max(14, Math.min(26, availH * 0.42, width * 0.06));
+
+            const spacing = Math.min(r * 2.8, (width - 6 * r) / 2);
+            const cx = width / 2;
+            const cy = enemyBottom + availH / 2;
+            positions = [
+                { x: cx - spacing, y: cy },   // FIRE (left)
+                { x: cx,           y: cy },   // SONAR (center)
+                { x: cx + spacing, y: cy },   // NUKE (right)
+            ];
         } else {
-            // Side-by-side layout (landscape): Center between grid edges
-            const playerRight = this.currentLayout.playerX + gridWidth;
-            const enemyLeft = this.currentLayout.enemyX;
-            centerX = (playerRight + enemyLeft) / 2;
-            centerY = this.currentLayout.playerY + (gridWidth / 2);
+            // LANDSCAPE: vertical stack between the two grids
+            const playerRight = layout.playerX + gridWidth;
+            const enemyLeft   = layout.enemyX;
+            const gap = enemyLeft - playerRight;
+            r = Math.max(14, Math.min(30, gap * 0.28, (height - 160) * 0.08));
+
+            const cx = (playerRight + enemyLeft) / 2;
+            const gridMidY = layout.playerY + gridWidth / 2;
+            const spacing = Math.min(r * 2.8, (gridWidth - 6 * r) / 2);
+            positions = [
+                { x: cx, y: gridMidY - spacing },  // FIRE (top)
+                { x: cx, y: gridMidY },             // SONAR (middle)
+                { x: cx, y: gridMidY + spacing },   // NUKE (bottom)
+            ];
         }
 
-        // Make button width responsive to layout mode
-        const buttonWidth = this.currentLayout.shouldStack
-            ? Math.min(width * 0.22, 90)   // Portrait mode - wider % but smaller max
-            : Math.min(width * 0.18, 100); // Landscape mode
-        const buttonHeight = 44;
-        const spacing = 12;
+        // --- Helper: draw one round arcade button ---
+        const makeButton = (x, y, baseColor, rimColor, drawIcon, onDown) => {
+            const container = this.add.container(x, y);
+            container.setDepth(50);
 
-        // Sonar Ping button (top)
-        const sonarY = centerY - (buttonHeight / 2) - (spacing / 2);
-        const sonarBtn = this.add.rectangle(
-            centerX, sonarY, buttonWidth, buttonHeight, 0x2c3e50
+            // Outer rim (lighter ring for 3-D arcade look)
+            const rim = this.add.graphics();
+            rim.fillStyle(rimColor, 0.5);
+            rim.fillCircle(0, 0, r + 3);
+            container.add(rim);
+
+            // Main filled circle
+            const bg = this.add.graphics();
+            bg.fillStyle(baseColor, 1);
+            bg.fillCircle(0, 0, r);
+            container.add(bg);
+
+            // Inner highlight (glossy top)
+            const gloss = this.add.graphics();
+            gloss.fillStyle(0xffffff, 0.18);
+            gloss.fillEllipse(0, -r * 0.25, r * 1.1, r * 0.7);
+            container.add(gloss);
+
+            // Icon drawn by callback
+            const icon = this.add.graphics();
+            drawIcon(icon, r);
+            container.add(icon);
+
+            // Invisible hit area circle
+            const hitArea = this.add.circle(0, 0, r + 4, 0x000000, 0);
+            hitArea.setInteractive({ useHandCursor: true });
+            container.add(hitArea);
+
+            hitArea.on('pointerover', () => { bg.clear(); bg.fillStyle(rimColor, 1); bg.fillCircle(0, 0, r); });
+            hitArea.on('pointerout',  () => { bg.clear(); bg.fillStyle(baseColor, 1); bg.fillCircle(0, 0, r); });
+            hitArea.on('pointerdown', onDown);
+
+            return { container, bg, icon, hitArea, baseColor, rimColor };
+        };
+
+        // --- FIRE button (red, crosshair/sight icon) ---
+        const fireBtn = makeButton(
+            positions[0].x, positions[0].y,
+            0xcc0000, 0xff3333,
+            (g, r) => {
+                // Crosshair icon
+                const s = r * 0.55;
+                g.lineStyle(2, 0xffffff, 0.9);
+                g.strokeCircle(0, 0, s * 0.55);
+                g.beginPath(); g.moveTo(0, -s); g.lineTo(0, s); g.strokePath();
+                g.beginPath(); g.moveTo(-s, 0); g.lineTo(s, 0); g.strokePath();
+            },
+            () => {
+                if (this.hoveredTarget) {
+                    this.handlePlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col);
+                }
+            }
         );
-        sonarBtn.setStrokeStyle(3, 0x00ffff);
-        sonarBtn.setInteractive({ useHandCursor: true });
 
-        const sonarText = this.add.text(centerX, sonarY, 'SONAR', {
-            fontSize: '14px',
-            fontFamily: 'Arial Black',
-            fill: '#ffffff',
-            align: 'center'
-        }).setOrigin(0.5);
-
-        sonarBtn.on('pointerover', () => {
-            if (this.turnManager.sonarPingAvailable && this.attackMode === 'NORMAL') {
-                sonarBtn.setFillStyle(0x00ffff);
+        // --- SONAR button (blue, sonar sweep icon) ---
+        const sonarBtn = makeButton(
+            positions[1].x, positions[1].y,
+            0x0055aa, 0x00aaff,
+            (g, r) => {
+                // Sonar arcs
+                const s = r * 0.55;
+                g.lineStyle(2, 0xffffff, 0.9);
+                // Center dot
+                g.fillStyle(0xffffff, 0.9);
+                g.fillCircle(0, 0, s * 0.12);
+                // Two concentric arcs (top-right quadrant fan)
+                for (let i = 1; i <= 3; i++) {
+                    const arcR = s * (0.3 + i * 0.22);
+                    g.beginPath();
+                    g.arc(0, 0, arcR, -Math.PI * 0.4, Math.PI * 0.05, false);
+                    g.strokePath();
+                }
+            },
+            () => {
+                if (this.turnManager.sonarPingAvailable && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
+                    this.enterSonarMode();
+                }
             }
-        });
-
-        sonarBtn.on('pointerout', () => {
-            if (this.attackMode !== 'SONAR') {
-                sonarBtn.setFillStyle(0x2c3e50);
-            }
-        });
-
-        sonarBtn.on('pointerdown', () => {
-            if (this.turnManager.sonarPingAvailable && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
-                this.enterSonarMode();
-            }
-        });
-
-        // Row Nuke button (bottom)
-        const nukeY = centerY + (buttonHeight / 2) + (spacing / 2);
-        const nukeBtn = this.add.rectangle(
-            centerX, nukeY, buttonWidth, buttonHeight, 0x2c3e50
         );
-        nukeBtn.setStrokeStyle(3, 0xff00ff);
-        nukeBtn.setInteractive({ useHandCursor: true });
 
-        const nukeText = this.add.text(centerX, nukeY, 'NUKE', {
-            fontSize: '14px',
-            fontFamily: 'Arial Black',
-            fill: '#ffffff',
-            align: 'center'
-        }).setOrigin(0.5);
-
-        nukeBtn.on('pointerover', () => {
-            if (this.turnManager.rowNukeCharges > 0 && this.attackMode === 'NORMAL') {
-                nukeBtn.setFillStyle(0xff00ff);
+        // --- NUKE button (orange, radiation trefoil icon) ---
+        const nukeBtn = makeButton(
+            positions[2].x, positions[2].y,
+            0xdd6600, 0xff9933,
+            (g, r) => {
+                // Radiation trefoil (3 blade fan)
+                const s = r * 0.5;
+                g.fillStyle(0xffffff, 0.9);
+                g.fillCircle(0, 0, s * 0.18); // center dot
+                g.lineStyle(0);
+                for (let a = 0; a < 3; a++) {
+                    const angle = (a * 2 * Math.PI / 3) - Math.PI / 2;
+                    // Each blade: fat arc wedge
+                    g.fillStyle(0xffffff, 0.85);
+                    g.beginPath();
+                    g.arc(0, 0, s * 0.85, angle - 0.35, angle + 0.35, false);
+                    g.lineTo(Math.cos(angle) * s * 0.28, Math.sin(angle) * s * 0.28);
+                    g.closePath();
+                    g.fillPath();
+                }
+            },
+            () => {
+                if (this.turnManager.rowNukeCharges > 0 && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
+                    this.enterNukeMode();
+                }
             }
-        });
+        );
 
-        nukeBtn.on('pointerout', () => {
-            if (this.attackMode !== 'NUKE') {
-                nukeBtn.setFillStyle(0x2c3e50);
-            }
-        });
+        // Store references (backward-compatible with existing code that calls updateAbilityButtons)
+        this.abilityButtons = {
+            sonarBtn: sonarBtn.container,
+            sonarText: null,
+            nukeBtn: nukeBtn.container,
+            nukeText: null,
+            // New structured refs
+            _fire: fireBtn,
+            _sonar: sonarBtn,
+            _nuke: nukeBtn
+        };
+        this.fireButton = {
+            button: fireBtn.container,
+            text: null,
+            _ref: fireBtn
+        };
 
-        nukeBtn.on('pointerdown', () => {
-            if (this.turnManager.rowNukeCharges > 0 && !this.combatLocked && this.turnManager.currentTurn === 'PLAYER') {
-                this.enterNukeMode();
-            }
-        });
-
-        // Store references
-        this.abilityButtons = { sonarBtn, sonarText, nukeBtn, nukeText };
-
-        // Initial state update
+        // Apply initial states
         this.updateAbilityButtons();
+        this.updateFireButton();
     }
 
     /**
-     * Destroy ability buttons (used during resize)
+     * Destroy all three arcade buttons (used during resize).
      */
-    destroyAbilityButtons() {
+    destroyArcadeButtons() {
         if (this.abilityButtons) {
-            this.abilityButtons.sonarBtn?.destroy();
-            this.abilityButtons.sonarText?.destroy();
-            this.abilityButtons.nukeBtn?.destroy();
-            this.abilityButtons.nukeText?.destroy();
+            this.abilityButtons._fire?.container?.destroy();
+            this.abilityButtons._sonar?.container?.destroy();
+            this.abilityButtons._nuke?.container?.destroy();
             this.abilityButtons = null;
         }
+        if (this.fireButton) {
+            // Already destroyed above if same refs, but clear the ref
+            this.fireButton = null;
+        }
     }
 
+    /** @deprecated Use destroyArcadeButtons — kept for resize handler compat */
+    destroyAbilityButtons() { this.destroyArcadeButtons(); }
+    /** @deprecated Use destroyArcadeButtons — kept for resize handler compat */
+    destroyFireButton() { /* handled by destroyArcadeButtons */ }
+
     /**
-     * Update ability button states (enabled/disabled based on availability)
+     * Update ability button states (enabled/disabled based on availability).
      */
     updateAbilityButtons() {
         if (!this.abilityButtons) return;
+        const sonar = this.abilityButtons._sonar;
+        const nuke  = this.abilityButtons._nuke;
 
-        const { sonarBtn, sonarText, nukeBtn, nukeText } = this.abilityButtons;
+        if (sonar) sonar.container.setAlpha(this.turnManager.sonarPingAvailable ? 1.0 : 0.3);
+        if (nuke)  nuke.container.setAlpha(this.turnManager.rowNukeCharges > 0 ? 1.0 : 0.3);
+    }
 
-        // Sonar state
-        if (this.turnManager.sonarPingAvailable) {
-            sonarBtn.setAlpha(1.0);
-            sonarText.setAlpha(1.0);
-        } else {
-            sonarBtn.setAlpha(0.3);
-            sonarText.setAlpha(0.3);
-        }
+    /**
+     * Update FIRE button state based on hovered target.
+     */
+    updateFireButton() {
+        if (!this.fireButton) return;
+        const fire = this.abilityButtons?._fire;
+        if (!fire) return;
 
-        // Nuke state (show charge count if > 1)
-        if (this.turnManager.rowNukeCharges > 0) {
-            nukeBtn.setAlpha(1.0);
-            nukeText.setAlpha(1.0);
-            if (this.turnManager.rowNukeCharges > 1) {
-                nukeText.setText(`NUKE x${this.turnManager.rowNukeCharges}`);
-            } else {
-                nukeText.setText('NUKE');
-            }
-        } else {
-            nukeBtn.setAlpha(0.3);
-            nukeText.setAlpha(0.3);
-            nukeText.setText('NUKE');
-        }
+        const active = this.hoveredTarget && this.canPlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col);
+        fire.container.setAlpha(active ? 1.0 : 0.3);
     }
 
     /**
@@ -640,106 +714,6 @@ export class GameScene extends Phaser.Scene {
         if (this.uiElements.enemyShipStatusLabel) {
             this.uiElements.enemyShipStatusLabel.destroy();
             this.uiElements.enemyShipStatusLabel = null;
-        }
-    }
-
-    /**
-     * Create FIRE button for attacking (Week 6B).
-     * Alternative to clicking on cells - useful for mobile/touch screens.
-     */
-    createFireButton() {
-        const { width, height } = this.scale;
-
-        // Position FIRE button based on layout
-        let centerX, centerY;
-        const gridWidth = GAME_CONSTANTS.GRID_SIZE * this.currentLayout.cellSize;
-
-        if (this.currentLayout.shouldStack) {
-            // Stacked layout (portrait): Position between grids vertically
-            const playerBottom = this.currentLayout.playerY + gridWidth + this.currentLayout.labelSpace;
-            const enemyTop = this.currentLayout.enemyY - this.currentLayout.titleH;
-            centerX = width / 2;
-            centerY = (playerBottom + enemyTop) / 2;
-        } else {
-            // Side-by-side (landscape): Center between grid edges
-            const playerRight = this.currentLayout.playerX + gridWidth;
-            const enemyLeft = this.currentLayout.enemyX;
-            centerX = (playerRight + enemyLeft) / 2;
-            centerY = this.currentLayout.playerY + (gridWidth / 2);
-        }
-
-        // Make FIRE button width responsive to layout mode
-        const buttonWidth = this.currentLayout.shouldStack
-            ? Math.min(width * 0.24, 100)  // Portrait mode - wider % but smaller max
-            : Math.min(width * 0.20, 110); // Landscape mode
-        const buttonHeight = 50;
-
-        // FIRE button (below Row Nuke button)
-        const nukeBtn = this.abilityButtons?.nukeBtn;
-        const nukeY = nukeBtn ? nukeBtn.y : centerY;
-        const fireY = nukeY + (buttonHeight / 2) + 14;  // 14px spacing
-
-        const fireBtn = this.add.rectangle(
-            centerX, fireY, buttonWidth, buttonHeight, 0x8B0000  // Dark red
-        );
-        fireBtn.setStrokeStyle(3, 0xff0000);  // Red border
-        fireBtn.setInteractive({ useHandCursor: true });
-        fireBtn.setAlpha(0.3);  // Disabled by default
-
-        const fireText = this.add.text(centerX, fireY, 'FIRE', {
-            fontSize: '18px',
-            fontFamily: 'Arial Black',
-            fill: '#ffffff',
-            fontWeight: 'bold'
-        }).setOrigin(0.5);
-        fireText.setAlpha(0.3);  // Disabled by default
-
-        fireBtn.on('pointerover', () => {
-            if (this.hoveredTarget) {
-                fireBtn.setFillStyle(0xff0000);  // Bright red on hover
-            }
-        });
-
-        fireBtn.on('pointerout', () => {
-            fireBtn.setFillStyle(0x8B0000);  // Back to dark red
-        });
-
-        fireBtn.on('pointerdown', () => {
-            if (this.hoveredTarget) {
-                this.handlePlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col);
-            }
-        });
-
-        this.fireButton = { button: fireBtn, text: fireText };
-    }
-
-    /**
-     * Update FIRE button state based on hovered target.
-     */
-    updateFireButton() {
-        if (!this.fireButton) return;
-
-        const { button, text } = this.fireButton;
-
-        if (this.hoveredTarget && this.canPlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col)) {
-            // Enable button
-            button.setAlpha(1.0);
-            text.setAlpha(1.0);
-        } else {
-            // Disable button
-            button.setAlpha(0.3);
-            text.setAlpha(0.3);
-        }
-    }
-
-    /**
-     * Destroy FIRE button (used during resize)
-     */
-    destroyFireButton() {
-        if (this.fireButton) {
-            this.fireButton.button?.destroy();
-            this.fireButton.text?.destroy();
-            this.fireButton = null;
         }
     }
 
@@ -1160,7 +1134,8 @@ export class GameScene extends Phaser.Scene {
      */
     enterSonarMode() {
         this.attackMode = 'SONAR';
-        this.abilityButtons.sonarBtn.setFillStyle(0x00ffff); // Highlight active
+        // Highlight active sonar button (glow effect via scale)
+        if (this.abilityButtons?._sonar) this.abilityButtons._sonar.container.setScale(1.2);
         this.updateStatusDisplay('SONAR_MODE');
         console.log('GameScene: SONAR PING mode activated - click 3×3 zone');
     }
@@ -1176,7 +1151,7 @@ export class GameScene extends Phaser.Scene {
         // Mark sonar as used
         this.turnManager.sonarPingAvailable = false;
         this.attackMode = 'NORMAL';
-        this.abilityButtons.sonarBtn.setFillStyle(0x2c3e50); // Reset button
+        if (this.abilityButtons?._sonar) this.abilityButtons._sonar.container.setScale(1);
         this.updateAbilityButtons();
         this.updateStatusDisplay('PLAYER_TURN');
 
@@ -1250,7 +1225,8 @@ export class GameScene extends Phaser.Scene {
      */
     enterNukeMode() {
         this.attackMode = 'NUKE';
-        this.abilityButtons.nukeBtn.setFillStyle(0xff00ff); // Highlight active
+        // Highlight active nuke button (glow effect via scale)
+        if (this.abilityButtons?._nuke) this.abilityButtons._nuke.container.setScale(1.2);
         this.updateStatusDisplay('NUKE_MODE');
         console.log('GameScene: ROW NUKE mode activated - click any cell in target row');
     }
@@ -1266,7 +1242,7 @@ export class GameScene extends Phaser.Scene {
         // Consume one nuke charge
         this.turnManager.rowNukeCharges--;
         this.attackMode = 'NORMAL';
-        this.abilityButtons.nukeBtn.setFillStyle(0x2c3e50); // Reset button
+        if (this.abilityButtons?._nuke) this.abilityButtons._nuke.container.setScale(1);
         this.updateAbilityButtons();
         this.updateStatusDisplay('PLAYER_TURN');
         this.combatLocked = true;
@@ -2169,14 +2145,8 @@ export class GameScene extends Phaser.Scene {
         this.createShipStatusPanel();
         this.updateShipStatus();  // Restore sunk ship indicators
 
-        // Destroy and recreate ability buttons to fix size on resize
-        this.destroyAbilityButtons();
-        this.createAbilityButtons();
-        this.updateAbilityButtons();  // Restore button states
-
-        // Destroy and recreate FIRE button to fix size on resize
-        this.destroyFireButton();
-        this.createFireButton();
-        this.updateFireButton();  // Restore button state
+        // Destroy and recreate round arcade buttons on resize
+        this.destroyArcadeButtons();
+        this.createArcadeButtons();
     }
 }
