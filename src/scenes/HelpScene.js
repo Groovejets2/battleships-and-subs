@@ -55,15 +55,16 @@ export class HelpScene extends Phaser.Scene {
             '• MISS = turn switches to enemy',
             '• Sink 3 ships = unlock Row Nuke',
             '',
-            'SPECIAL ABILITIES',
-            '• SONAR - Reveal 3×3 zone (one use)',
-            '• NUKE - Attack entire row (earn by sinking ships)',
+            'ARCADE BUTTONS',
+            '• RED (FIRE) - Confirm attack on selected cell',
+            '• BLUE (SONAR) - Reveal 3x3 zone (one use)',
+            '• ORANGE (NUKE) - Attack entire row (sink 3 ships to earn)',
             '• Chain bonus - Multiple hits in a row = score multiplier',
             '',
             'CONTROLS',
-            '• Click/Tap cells to attack',
-            '• Use FIRE button for touch-friendly targeting',
-            '• SONAR and NUKE buttons for special attacks'
+            '• Click/Tap enemy grid cells to target',
+            '• Tap a cell then press FIRE to attack',
+            '• SONAR and NUKE activate special attack modes'
         ];
 
         const startY = 90;

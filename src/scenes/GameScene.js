@@ -343,7 +343,7 @@ export class GameScene extends Phaser.Scene {
             // Fixed pixel reserves for non-grid UI elements
             // TOP_UI: status text (y=15) + back button (y=45, h=30) + title (y=70, h~42) + gap
             const TOP_UI    = 120;  // Increased to account for COMBAT title at y=70 (42px font + 8px gap = 120)
-            const BOTTOM_UI = 24;   // ship status bar at bottom
+            const BOTTOM_UI = 84;   // ship status bar (22px) + arcade button zone (62px)
             const available = height - TOP_UI - BOTTOM_UI;
 
             // Adaptive spacing so grids scale down gracefully on tiny screens
