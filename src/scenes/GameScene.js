@@ -497,7 +497,8 @@ export class GameScene extends Phaser.Scene {
             const gap = enemyLeft - playerRight;
             r = Math.max(14, Math.min(30, gap * 0.28, (height - 160) * 0.08));
 
-            const cx = (playerRight + enemyLeft) / 2;
+            // Bias cx toward player side to clear enemy grid row labels (drawn at enemyLeft - 15)
+            const cx = Math.min((playerRight + enemyLeft) / 2, enemyLeft - r - 32);
             const gridMidY = layout.playerY + gridWidth / 2;
             const spacing = Math.min(r * 2.8, (gridWidth - 6 * r) / 2);
             positions = [
