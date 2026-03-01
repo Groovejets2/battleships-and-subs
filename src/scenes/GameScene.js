@@ -887,7 +887,7 @@ export class GameScene extends Phaser.Scene {
             ENEMY_TURN:  '#ff8800',
             GAME_OVER:   '#ff0000',
             SONAR_MODE:  '#00ffff',
-            NUKE_MODE:   '#ff00ff'
+            NUKE_MODE:   '#ff9900'
         };
 
         this.uiElements.statusText
@@ -1302,7 +1302,7 @@ export class GameScene extends Phaser.Scene {
             const text = this.add.text(width / 2, height / 2 - 60, `ROW NUKE!\n${totalHits} HITS, ${totalSinks} SUNK`, {
                 fontSize: '24px',
                 fontFamily: 'Arial Black',
-                fill: '#ff00ff',
+                fill: '#ff9900',
                 stroke: '#000000',
                 strokeThickness: 4,
                 align: 'center'
@@ -1748,14 +1748,14 @@ export class GameScene extends Phaser.Scene {
         const text = this.add.text(width / 2, height / 2, 'ROW NUKE EARNED!', {
             fontSize: Math.min(32, width * 0.05) + 'px',
             fontFamily: 'Arial Black',
-            fill: '#ff00ff', // Magenta for special unlock
+            fill: '#ff9900', // Orange to match NUKE button
             fontWeight: 'bold',
             stroke: '#000000',
             strokeThickness: 5,
             shadow: {
                 offsetX: 0,
                 offsetY: 0,
-                color: '#ff00ff',
+                color: '#ff9900',
                 blur: 16,
                 fill: true
             }
