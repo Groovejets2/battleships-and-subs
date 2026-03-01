@@ -147,6 +147,7 @@ Week 7 is now the **full graphics overhaul week** (moved from Week 6 to give it 
 | 7C | **Menu screen redesign** | Full naval themed title screen: underwater horizon scene, ocean surface with ship silhouette, depth indicators, sonar ping animation. "BATTLESHIPS & SUBS" title rendered like it's stencilled on a submarine hull. Replace current wave lines with immersive depth scene. |
 | 7D | **All-screen visual polish pass** | After all graphics are implemented, do a full visual polish pass: check consistency of colours, fonts, spacing, pipe thickness, button styles across all 5 scenes. Nothing should look like placeholder or unfinished. |
 | 7E | **Slick mechanics polish** | Audit every interaction for smoothness: no jank on clicks, no visual stutter on scene transition, no lingering old graphics after resize. Every click must give instant visual feedback. Principle: if it feels sticky or ugly, fix it. |
+| 7F | **Arcade button colour overhaul** | The round FIRE/SONAR/NUKE buttons need brighter, crisper, more "arcade cabinet" colours. Current NUKE button renders in a washed-out pink/grey (insufficient contrast). Goals: (1) FIRE = vivid saturated red, (2) SONAR = bright electric blue, (3) NUKE = bold orange — none should look muted or greyed-out. Also: increase rim brightness, boost gloss highlight opacity, and ensure disabled-state buttons still look intentional (dark tint, not accidental). Icons should be crisp white with higher line weight. |
 
 ---
 

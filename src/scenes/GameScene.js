@@ -736,7 +736,7 @@ export class GameScene extends Phaser.Scene {
         const playerLabelX = width * 0.25 - (iconSpacing * 2.5);
         this.uiElements.playerShipStatusLabel = this.add.text(
             playerLabelX, statusY,
-            'YOUR SHIPS:',
+            'ALLIES:',
             { fontSize, fontFamily: 'Arial', fill: '#00ff88', fontWeight: 'bold' }
         ).setOrigin(1, 0.5);
 
