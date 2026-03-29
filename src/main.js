@@ -4,7 +4,7 @@
  * @namespace BattleshipsGame
  */
 
-import { TitleScene } from './scenes/TitleScene.js';
+import { TitleScene } from './scenes/TitleSceneCinematic.js';
 import { GameScene } from './scenes/GameScene.js';
 import { SettingsScene } from './scenes/SettingsScene.js';
 import { HighScoresScene } from './scenes/HighScoresScene.js';

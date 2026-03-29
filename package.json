@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "http-server . -p 8080 -c-1"
+    "start": "http-server . -a 127.0.0.1 -p 5501 -c-1"
   },
   "keywords": [],
   "author": "",

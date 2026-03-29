@@ -1,7 +1,7 @@
 # Gitflow Skill - JH Standard Workflow
-**Version:** 1.0.0
+**Version:** 1.0.1
 **Created:** 2026-02-14
-**Last Modified:** 2026-02-14
+**Last Modified:** 2026-03-03
 **Author:** JH
 **Status:** Active
 
@@ -11,6 +11,7 @@
 
 | Version | Date | Changes | Author |
 |---------|------|---------|--------|
+| 1.0.1 | 2026-03-03 | Added Branch Protection Hook section (MERGE_HEAD pattern) | JH/Claude |
 | 1.0.0 | 2026-02-14 | Initial gitflow skill creation from battleships-and-subs project patterns | JH/Claude |
 
 ---
@@ -843,4 +844,48 @@ git commit -m "Rolled back gitflow skill to v{version}"
 
 ---
 
-**END OF GITFLOW SKILL v1.0.0**
+
+---
+
+## Branch Protection Hook
+
+### Overview
+
+A pre-commit hook pattern that blocks direct commits to protected branches (`main`, `develop`),
+while allowing all GitFlow merge commits to pass through automatically.
+
+The hook source lives in `.githooks/pre-commit` (tracked in version control).
+The active hook is installed to `.git/hooks/pre-commit` (not tracked, local only).
+
+### How It Works
+
+- **Blocked:** `git commit -m "..."` directly on `main` or `develop`
+- **Allowed:** All `git merge` operations (feature-finish, release-finish, hotfix-finish)
+
+Merge commits are detected via `.git/MERGE_HEAD`, which git creates whenever a `git merge`
+is in progress. The hook exits 0 immediately for merge operations.
+
+### Install
+
+```bash
+sh scripts/install-git-hooks.sh
+```
+
+Run once after a fresh clone. Copies `.githooks/*` to `.git/hooks/` and makes them executable.
+
+### Override (use sparingly, authorised users only)
+
+```bash
+ALLOW_DIRECT_COMMIT=1 git commit -m "..."
+```
+
+The hook will print a visible WARNING when the override is used.
+
+### Verify Hook Is Active
+
+```bash
+ls .git/hooks/pre-commit
+```
+
+
+**END OF GITFLOW SKILL v1.0.1**
