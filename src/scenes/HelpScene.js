@@ -4,6 +4,7 @@
  */
 
 import { GAME_CONSTANTS } from '../config/gameConfig.js';
+import { createRoundedMenuButton } from '../utils/uiButtons.js';
 
 /**
  * Help scene displaying brief core game rules
@@ -83,19 +84,15 @@ export class HelpScene extends Phaser.Scene {
             this.add.text(width / 2, startY + (index * lineHeight), line, style).setOrigin(0.5);
         });
 
-        // Back button
-        const backBtn = this.add.rectangle(width / 2, height - 40, 120, 40, 0x2c3e50)
-            .setStrokeStyle(2, 0xe74c3c)
-            .setInteractive({ useHandCursor: true });
-        const backText = this.add.text(width / 2, height - 40, 'BACK', {
-            fontSize: '16px',
-            fontFamily: 'Arial Black',
-            fill: '#ffffff'
-        }).setOrigin(0.5);
-
-        backBtn.on('pointerover', () => backBtn.setFillStyle(0xe74c3c));
-        backBtn.on('pointerout',  () => backBtn.setFillStyle(0x2c3e50));
-        backBtn.on('pointerdown', () => this.scene.start(this.returnScene));
+        createRoundedMenuButton(this, {
+            x: width / 2,
+            y: height - 40,
+            width: 140,
+            height: 42,
+            label: 'BACK',
+            fontSize: 16,
+            onClick: () => this.scene.start(this.returnScene)
+        });
 
         // ESC key to return
         this.input.keyboard.on('keydown-ESC', () => {

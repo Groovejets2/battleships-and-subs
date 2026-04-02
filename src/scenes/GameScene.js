@@ -10,6 +10,7 @@ import { FleetManager } from '../managers/FleetManager.js';
 import { AIManager } from '../managers/AIManager.js';
 import { TurnManager } from '../managers/TurnManager.js';
 import { Ship } from '../models/Ship.js';
+import { createRoundedMenuButton } from '../utils/uiButtons.js';
 
 /** Cell state constants */
 const CELL = {
@@ -430,19 +431,19 @@ export class GameScene extends Phaser.Scene {
 
         // Back button (top left)
         const buttonY = width < 450 ? 45 : 35;
-        const backBtn = this.add.rectangle(55, buttonY, 90, 30, 0x2c3e50)
-            .setStrokeStyle(2, 0xe74c3c)
-            .setInteractive({ useHandCursor: true });
-        const backText = this.add.text(55, buttonY, 'BACK', {
-            fontSize: '13px', fontFamily: 'Arial', fill: '#ffffff', fontWeight: 'bold'
-        }).setOrigin(0.5);
+        const backBtn = createRoundedMenuButton(this, {
+            x: 58,
+            y: buttonY,
+            width: 108,
+            height: 34,
+            label: 'BACK',
+            fontSize: 13,
+            depth: 25,
+            onClick: () => this.handleExitAttempt()
+        });
 
-        backBtn.on('pointerover', () => backBtn.setFillStyle(0xe74c3c));
-        backBtn.on('pointerout',  () => backBtn.setFillStyle(0x2c3e50));
-        backBtn.on('pointerdown', () => this.handleExitAttempt());
-
-        this.uiElements.backButton = backBtn;
-        this.uiElements.backText   = backText;
+        this.uiElements.backButton = backBtn.container;
+        this.uiElements.backText   = null;
 
         // Score display (top right)
         this.uiElements.scoreText = this.add.text(width - 10, 15, 'SCORE: 0', {
@@ -2133,8 +2134,7 @@ export class GameScene extends Phaser.Scene {
                 .setPosition(width / 2, 15)
                 .setFontSize(this.getStatusFontSize(width));
         }
-        if (this.uiElements.backButton) this.uiElements.backButton.setPosition(55, buttonY);
-        if (this.uiElements.backText)   this.uiElements.backText.setPosition(55, buttonY);
+        if (this.uiElements.backButton) this.uiElements.backButton.setPosition(58, buttonY);
         if (this.uiElements.scoreText) {
             this.uiElements.scoreText
                 .setPosition(width - 10, 15)

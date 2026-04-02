@@ -5,6 +5,7 @@
  */
 
 import { GAME_CONSTANTS } from '../config/gameConfig.js';
+import { createRoundedMenuButton } from '../utils/uiButtons.js';
 
 /**
  * Game over scene showing victory or defeat with final stats and options.
@@ -245,26 +246,15 @@ export class GameOverScene extends Phaser.Scene {
         buttons.forEach((btn, i) => {
             const x = startX + i * (btnW + 16);
 
-            const rect = this.add.rectangle(x, btnY, btnW, btnH, btn.color)
-                .setStrokeStyle(2, 0xffffff, 0.6)
-                .setInteractive({ useHandCursor: true });
-
-            const text = this.add.text(x, btnY, btn.label, {
-                fontSize: btnFontSize,
-                fontFamily: 'Arial',
-                fill: '#ffffff',
-                fontWeight: 'bold'
-            }).setOrigin(0.5);
-
-            rect.on('pointerover', () => {
-                rect.setFillStyle(btn.hoverColor);
-                this.tweens.add({ targets: [rect, text], scaleX: 1.05, scaleY: 1.05, duration: 100 });
+            createRoundedMenuButton(this, {
+                x,
+                y: btnY,
+                width: btnW,
+                height: btnH,
+                label: btn.label,
+                fontSize: parseInt(btnFontSize, 10),
+                onClick: btn.action
             });
-            rect.on('pointerout', () => {
-                rect.setFillStyle(btn.color);
-                this.tweens.add({ targets: [rect, text], scaleX: 1, scaleY: 1, duration: 100 });
-            });
-            rect.on('pointerdown', btn.action);
         });
     }
 

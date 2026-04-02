@@ -20,8 +20,12 @@ export class TitleScene extends Phaser.Scene {
     }
 
     preload() {
-        if (!this.textures.exists('title-background-art')) {
-            this.load.image('title-background-art', 'src/images/battleships-and-subs-title-screen-01.png');
+        if (!this.textures.exists('title-background-art-landscape')) {
+            this.load.image('title-background-art-landscape', 'src/images/battleships-and-subs-title-screen-01.png');
+        }
+        if (!this.textures.exists('title-background-art-portrait')) {
+            // Portrait-specific artwork can replace this file later without code changes.
+            this.load.image('title-background-art-portrait', 'src/images/battleships-and-subs-title-screen-01.png');
         }
     }
 
@@ -50,22 +54,28 @@ export class TitleScene extends Phaser.Scene {
     createBackground(width, height) {
         this.cameras.main.setBackgroundColor(0x09131f);
 
-        const bg = this.add.image(width / 2, height / 2, 'title-background-art').setDepth(-100);
+        const isPortrait = height > width;
+        const backgroundKey = isPortrait ? 'title-background-art-portrait' : 'title-background-art-landscape';
+        const bg = this.add.image(width / 2, height / 2, backgroundKey).setDepth(-100);
         const scale = Math.max(width / bg.width, height / bg.height);
         bg.setScale(scale);
 
         const topShade = this.add.graphics().setDepth(-99);
-        topShade.fillGradientStyle(0x071018, 0x071018, 0x0b1620, 0x0b1620, 0.68);
-        topShade.fillRect(0, 0, width, height * 0.42);
+        topShade.fillGradientStyle(0x071018, 0x071018, 0x0b1620, 0x0b1620, 0.5);
+        topShade.fillRect(0, 0, width, height * 0.28);
 
-        const sideShade = this.add.graphics().setDepth(-98);
-        sideShade.fillStyle(0x02070b, 0.22);
-        sideShade.fillRect(0, 0, width * 0.13, height);
-        sideShade.fillRect(width * 0.87, 0, width * 0.13, height);
+        const vignette = this.add.graphics().setDepth(-98);
+        vignette.fillStyle(0x02070b, 0.16);
+        vignette.fillEllipse(width * 0.03, height * 0.52, width * 0.24, height * 1.1);
+        vignette.fillEllipse(width * 0.97, height * 0.52, width * 0.24, height * 1.1);
 
-        const lowerShade = this.add.graphics().setDepth(-97);
-        lowerShade.fillGradientStyle(0x05090d, 0x05090d, 0x05090d, 0x05090d, 0.46);
-        lowerShade.fillRect(0, height * 0.68, width, height * 0.32);
+        const lowerFade = this.add.graphics().setDepth(-97);
+        lowerFade.fillStyle(0x05090d, 0.14);
+        lowerFade.fillEllipse(width * 0.5, height * 0.92, width * 1.15, height * 0.36);
+
+        const titleGlow = this.add.graphics().setDepth(-96);
+        titleGlow.fillStyle(0xffffff, 0.05);
+        titleGlow.fillEllipse(width * 0.5, height * 0.17, width * 0.42, height * 0.11);
 
     }
 
@@ -196,9 +206,9 @@ export class TitleScene extends Phaser.Scene {
         const plateHeight = stackHeight + (platePaddingY * 2);
 
         const menuPlate = this.add.graphics().setDepth(21);
-        menuPlate.fillStyle(0x081019, 0.42);
+        menuPlate.fillStyle(0x081019, 0.28);
         menuPlate.fillRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 26);
-        menuPlate.lineStyle(2, 0xc5d0d7, 0.28);
+        menuPlate.lineStyle(2, 0xc5d0d7, 0.2);
         menuPlate.strokeRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 26);
 
         buttonConfig.forEach((config, index) => {
@@ -234,12 +244,24 @@ export class TitleScene extends Phaser.Scene {
         shadow.fillStyle(0x04070a, 0.35);
         shadow.fillRoundedRect(-width / 2 + 4, -height / 2 + 6, width, height, 18);
 
-        const panel = this.add.graphics();
-        this.drawButtonPanel(panel, width, height, 0x3e4953, config.accent, 0x141b22);
-
-        const gloss = this.add.graphics();
-        gloss.fillStyle(0xffffff, 0.12);
-        gloss.fillRoundedRect(-width * 0.42, -height * 0.32, width * 0.84, height * 0.28, 12);
+        const normalTexture = this.ensureButtonTexture(
+            `${config.key}-normal`,
+            width,
+            height,
+            0x3e4953,
+            config.accent,
+            0x141b22
+        );
+        const hoverTexture = this.ensureButtonTexture(
+            `${config.key}-hover`,
+            width,
+            height,
+            0x66727c,
+            0xf3f6f9,
+            0x1e252b
+        );
+        const panel = this.add.image(0, 0, normalTexture);
+        panel.setDisplaySize(width, height);
 
         const text = this.add.text(0, 0, config.text, {
             fontSize: Math.min(height * 0.38, 20) + 'px',
@@ -248,24 +270,13 @@ export class TitleScene extends Phaser.Scene {
             fontWeight: 'bold',
             letterSpacing: 1
         }).setOrigin(0.5);
+        text.setResolution(3);
 
         const hitArea = this.add.zone(0, 0, width, height).setInteractive({ useHandCursor: true });
-        container.add([shadow, panel, gloss, text, hitArea]);
-
-        const setState = (isHover) => {
-            panel.clear();
-            this.drawButtonPanel(
-                panel,
-                width,
-                height,
-                isHover ? 0x66727c : 0x3e4953,
-                isHover ? 0xf3f6f9 : config.accent,
-                isHover ? 0x1e252b : 0x141b22
-            );
-        };
+        container.add([shadow, panel, text, hitArea]);
 
         hitArea.on('pointerover', () => {
-            setState(true);
+            panel.setTexture(hoverTexture);
             this.tweens.add({
                 targets: container,
                 scaleX: 1.03,
@@ -276,7 +287,7 @@ export class TitleScene extends Phaser.Scene {
         });
 
         hitArea.on('pointerout', () => {
-            setState(false);
+            panel.setTexture(normalTexture);
             this.tweens.add({
                 targets: container,
                 scaleX: 1,
@@ -292,21 +303,52 @@ export class TitleScene extends Phaser.Scene {
     }
 
     /**
-     * Draw the rounded metallic button panel.
-     * @param {Phaser.GameObjects.Graphics} graphics
+     * Build a high-resolution texture for a rounded metallic button.
+     * @param {string} stateKey
      * @param {number} width
      * @param {number} height
      * @param {number} fill
      * @param {number} accent
      * @param {number} inset
+     * @returns {string}
      */
-    drawButtonPanel(graphics, width, height, fill, accent, inset) {
+    ensureButtonTexture(stateKey, width, height, fill, accent, inset) {
+        const textureKey = `title-button-${stateKey}-${Math.round(width)}x${Math.round(height)}`;
+        if (this.textures.exists(textureKey)) {
+            return textureKey;
+        }
+
+        const scale = 3;
+        const texWidth = Math.round(width * scale);
+        const texHeight = Math.round(height * scale);
+        const radius = 18 * scale;
+        const innerInset = 5 * scale;
+
+        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
         graphics.fillStyle(fill, 1);
-        graphics.fillRoundedRect(-width / 2, -height / 2, width, height, 18);
-        graphics.lineStyle(3, accent, 0.95);
-        graphics.strokeRoundedRect(-width / 2, -height / 2, width, height, 18);
-        graphics.lineStyle(2, inset, 0.85);
-        graphics.strokeRoundedRect(-width / 2 + 5, -height / 2 + 5, width - 10, height - 10, 14);
+        graphics.fillRoundedRect(0, 0, texWidth, texHeight, radius);
+        graphics.lineStyle(3 * scale, accent, 0.98);
+        graphics.strokeRoundedRect(0, 0, texWidth, texHeight, radius);
+        graphics.lineStyle(2 * scale, inset, 0.92);
+        graphics.strokeRoundedRect(
+            innerInset,
+            innerInset,
+            texWidth - (innerInset * 2),
+            texHeight - (innerInset * 2),
+            radius - (innerInset * 0.7)
+        );
+        graphics.fillStyle(0xffffff, 0.12);
+        graphics.fillRoundedRect(
+            texWidth * 0.08,
+            texHeight * 0.12,
+            texWidth * 0.84,
+            texHeight * 0.28,
+            12 * scale
+        );
+        graphics.generateTexture(textureKey, texWidth, texHeight);
+        graphics.destroy();
+
+        return textureKey;
     }
 
     /**

@@ -5,6 +5,7 @@
  */
 
 import { GAME_CONSTANTS } from '../config/gameConfig.js';
+import { createRoundedMenuButton } from '../utils/uiButtons.js';
 
 /**
  * Settings scene class with audio and visual controls
@@ -338,45 +339,18 @@ export class SettingsScene extends Phaser.Scene {
         const buttonWidth = Math.min(width * 0.4, 200);
         const buttonHeight = 50;
 
-        this.backButton = this.add.rectangle(
-            width / 2, buttonY, buttonWidth, buttonHeight, 0x2c3e50
-        );
-        this.backButton.setStrokeStyle(3, 0xe74c3c);
-        this.backButton.setInteractive({ useHandCursor: true });
-
-        this.backText = this.add.text(width / 2, buttonY, 'BACK', {
-            fontSize: '20px',
-            fontFamily: 'Arial',
-            fill: '#ffffff',
-            fontWeight: 'bold'
-        }).setOrigin(0.5);
-
-        const button = this.backButton;
-        const text = this.backText;
-
-        button.on('pointerover', () => {
-            button.setFillStyle(0xe74c3c);
-            this.tweens.add({
-                targets: [button, text],
-                scaleX: 1.05,
-                scaleY: 1.05,
-                duration: 150
-            });
+        const button = createRoundedMenuButton(this, {
+            x: width / 2,
+            y: buttonY,
+            width: buttonWidth,
+            height: buttonHeight,
+            label: 'BACK',
+            fontSize: 20,
+            onClick: () => this.scene.start('TitleScene')
         });
 
-        button.on('pointerout', () => {
-            button.setFillStyle(0x2c3e50);
-            this.tweens.add({
-                targets: [button, text],
-                scaleX: 1,
-                scaleY: 1,
-                duration: 150
-            });
-        });
-
-        button.on('pointerdown', () => {
-            this.scene.start('TitleScene');
-        });
+        this.backButton = button.container;
+        this.backText = button.text;
     }
 
     /**
