@@ -83,9 +83,6 @@ export class GameScene extends Phaser.Scene {
         this.gunsightCursor = null;
         this.hoveredTarget = null;  // {row, col} of currently hovered enemy cell
         this.fireButton = null;  // FIRE button UI element
-        this.gameBackground = null;
-        this.backgroundOverlay = null;
-        this.backgroundAnimationEvent = null;
     }
 
     /**
@@ -111,7 +108,6 @@ export class GameScene extends Phaser.Scene {
 
         // Week 6B: Simple ship icon for status bar indicators (basic boat outline)
         this.load.image('ship-status-icon', 'assets/ui/simple-ship-icon.png');
-        this.load.image('game-waves', 'src/images/battleships-and-subs-game-screen-waves-01.png');
 
         // Week 6B: Gunsight cursor for targeting
         this.load.image('gunsight', 'assets/ui/gunsight.png');
@@ -252,7 +248,6 @@ export class GameScene extends Phaser.Scene {
         const { GRID_SIZE, COLORS } = GAME_CONSTANTS;
 
         this.cameras.main.setBackgroundColor(COLORS.BACKGROUND);
-        this.createGameBackground(width, height);
 
         const layout = this.calculateLayout(width, height);
         this.currentLayout = layout;
@@ -290,91 +285,6 @@ export class GameScene extends Phaser.Scene {
 
         // Week 6B: Create gunsight cursor for targeting
         this.createGunsightCursor();
-    }
-
-    /**
-     * Create or refresh the animated waves background for the combat scene.
-     * @param {number} width
-     * @param {number} height
-     */
-    createGameBackground(width, height) {
-        const w = Math.max(Math.round(width), 64);
-        const h = Math.max(Math.round(height), 64);
-
-        if (!this.gameBackground) {
-            this.gameBackground = this.add.tileSprite(0, 0, w, h, 'game-waves')
-                .setOrigin(0)
-                .setDepth(-90)
-                .setScrollFactor(0);
-        } else {
-            this.gameBackground.setSize(w, h);
-        }
-
-        this.gameBackground.setDisplaySize(w, h);
-        this.gameBackground.setTileScale(1.2);
-        this.redrawGameBackgroundOverlay(w, h);
-        this.ensureBackgroundAnimation();
-    }
-
-    /**
-     * Draw the overlay layers that soften the tiled background.
-     * @param {number} width
-     * @param {number} height
-     */
-    redrawGameBackgroundOverlay(width, height) {
-        if (!this.backgroundOverlay) {
-            this.backgroundOverlay = this.add.graphics();
-            this.backgroundOverlay.setDepth(-70);
-        }
-
-        this.backgroundOverlay.clear();
-
-        this.backgroundOverlay.fillGradientStyle(0x050f1b, 0x041027, 0x030f1b, 0x02080f, 0.6);
-        this.backgroundOverlay.fillRect(0, 0, width, height);
-
-        const bandHeight = height * 0.28;
-        const bandY = height * 0.45 - (bandHeight / 2);
-        this.backgroundOverlay.fillStyle(0x010409, 0.25);
-        this.backgroundOverlay.fillRect(0, bandY, width, bandHeight);
-
-        this.backgroundOverlay.fillGradientStyle(0xffffff, 0x0f1a2b, 0x0f1a2b, 0xffffff, 0.12);
-        this.backgroundOverlay.fillEllipse(width / 2, height * 0.28, width * 0.9, height * 0.36);
-    }
-
-    /**
-     * Ensure the background tile animation is running.
-     */
-    ensureBackgroundAnimation() {
-        if (this.backgroundAnimationEvent) return;
-
-        this.backgroundAnimationEvent = this.time.addEvent({
-            delay: 32,
-            loop: true,
-            callback: () => {
-                if (this.gameBackground) {
-                    this.gameBackground.tilePositionX += 0.55;
-                    this.gameBackground.tilePositionY += 0.18;
-                }
-            }
-        });
-    }
-
-    /**
-     * Update background elements to match a new viewport size.
-     * @param {number} width
-     * @param {number} height
-     */
-    updateGameBackground(width, height) {
-        if (!this.gameBackground && !this.backgroundOverlay) return;
-
-        const w = Math.max(Math.round(width), 64);
-        const h = Math.max(Math.round(height), 64);
-
-        if (this.gameBackground) {
-            this.gameBackground.setSize(w, h);
-            this.gameBackground.setDisplaySize(w, h);
-        }
-        this.redrawGameBackgroundOverlay(w, h);
     }
 
     /**
@@ -2162,7 +2072,6 @@ export class GameScene extends Phaser.Scene {
      * @param {number} height
      */
     handleResize(width, height) {
-        this.updateGameBackground(width, height);
         const newLayout = this.calculateLayout(width, height);
 
         // UPDATE LAYOUT FIRST - buttons and other elements need current layout data

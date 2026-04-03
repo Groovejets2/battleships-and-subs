@@ -17,7 +17,6 @@ export class TitleScene extends Phaser.Scene {
         this.heroElements = [];
         this.titleElements = [];
         this.tagline = null;
-        this.menuPlate = null;
     }
 
     preload() {
@@ -38,10 +37,6 @@ export class TitleScene extends Phaser.Scene {
         this.heroElements = [];
         this.titleElements = [];
         this.tagline = null;
-        if (this.menuPlate) {
-            this.menuPlate.destroy();
-            this.menuPlate = null;
-        }
 
         this.createBackground(width, height);
         this.createHeroScene(width, height);
@@ -66,21 +61,21 @@ export class TitleScene extends Phaser.Scene {
         bg.setScale(scale);
 
         const topShade = this.add.graphics().setDepth(-99);
-        topShade.fillGradientStyle(0x0f2445, 0x0f2445, 0x162f58, 0x162f58, 0.55);
-        topShade.fillRect(0, 0, width, height * 0.32);
+        topShade.fillGradientStyle(0x071018, 0x071018, 0x0b1620, 0x0b1620, 0.5);
+        topShade.fillRect(0, 0, width, height * 0.28);
 
-        const sideGlow = this.add.graphics().setDepth(-98);
-        sideGlow.fillGradientStyle(0x000811, 0x000811, 0x080f1d, 0x080f1d, 0.12);
-        sideGlow.fillEllipse(width * 0.03, height * 0.52, width * 0.26, height * 1.1);
-        sideGlow.fillEllipse(width * 0.97, height * 0.52, width * 0.26, height * 1.1);
+        const vignette = this.add.graphics().setDepth(-98);
+        vignette.fillStyle(0x02070b, 0.16);
+        vignette.fillEllipse(width * 0.03, height * 0.52, width * 0.24, height * 1.1);
+        vignette.fillEllipse(width * 0.97, height * 0.52, width * 0.24, height * 1.1);
 
         const lowerFade = this.add.graphics().setDepth(-97);
-        lowerFade.fillStyle(0x040b17, 0.08);
-        lowerFade.fillEllipse(width * 0.5, height * 0.92, width * 1.15, height * 0.34);
+        lowerFade.fillStyle(0x05090d, 0.14);
+        lowerFade.fillEllipse(width * 0.5, height * 0.92, width * 1.15, height * 0.36);
 
         const titleGlow = this.add.graphics().setDepth(-96);
-        titleGlow.fillStyle(0xffffff, 0.04);
-        titleGlow.fillEllipse(width * 0.5, height * 0.17, width * 0.42, height * 0.12);
+        titleGlow.fillStyle(0xffffff, 0.05);
+        titleGlow.fillEllipse(width * 0.5, height * 0.17, width * 0.42, height * 0.11);
 
     }
 
@@ -107,42 +102,6 @@ export class TitleScene extends Phaser.Scene {
             repeat: -1,
             ease: 'Sine.InOut'
         });
-
-        const heroBaseY = height * 0.42;
-        const heroHead = this.add.circle(width * 0.5, heroBaseY, width * 0.05, 0xdbdbdd).setDepth(-42);
-        const binocularLeft = this.add.ellipse(width * 0.47, heroBaseY - width * 0.01, width * 0.025, width * 0.045, 0x2f3642).setDepth(-41);
-        const binocularRight = this.add.ellipse(width * 0.53, heroBaseY - width * 0.01, width * 0.025, width * 0.045, 0x2f3642).setDepth(-41);
-        const binocularConnector = this.add.rectangle(width * 0.5, heroBaseY - width * 0.01, width * 0.035, width * 0.012, 0x2f3642).setDepth(-41);
-        const commanderCap = this.add.rectangle(width * 0.5, heroBaseY - width * 0.05, width * 0.14, width * 0.04, 0x10131a).setDepth(-41);
-
-        this.heroElements.push(heroHead, binocularLeft, binocularRight, binocularConnector, commanderCap);
-
-        const battleshipHull = this.add.rectangle(width * 0.26, height * 0.68, width * 0.28, height * 0.06, 0x111825).setDepth(-44);
-        const battleshipDeck = this.add.rectangle(width * 0.26, height * 0.66, width * 0.18, height * 0.02, 0xb2becd).setDepth(-43);
-        const cannonFlash = this.add.rectangle(width * 0.26 + width * 0.18, height * 0.66, width * 0.09, height * 0.01, 0xf6f5f2, 0.8).setDepth(-43);
-        this.heroElements.push(battleshipHull, battleshipDeck, cannonFlash);
-
-        this.tweens.add({
-            targets: cannonFlash,
-            scaleX: 1.4,
-            alpha: 0,
-            duration: 600,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.Out'
-        });
-
-        const subHull = this.add.ellipse(width * 0.74, height * 0.7, width * 0.2, height * 0.05, 0x0c111a).setDepth(-44);
-        const subConningTower = this.add.rectangle(width * 0.74, height * 0.66, width * 0.06, height * 0.03, 0x1d2530).setDepth(-43);
-        const torpedo = this.add.rectangle(width * 0.9, height * 0.71, width * 0.16, height * 0.015, 0xdfe3e8).setDepth(-42);
-        const torpedoTrail = this.add.graphics().setDepth(-41);
-        torpedoTrail.lineStyle(3, 0xdfe3e8, 0.5);
-        torpedoTrail.beginPath();
-        torpedoTrail.moveTo(width * 0.88, height * 0.71);
-        torpedoTrail.lineTo(width * 1.05, height * 0.71);
-        torpedoTrail.strokePath();
-
-        this.heroElements.push(subHull, subConningTower, torpedo, torpedoTrail);
     }
 
     /**
@@ -236,28 +195,21 @@ export class TitleScene extends Phaser.Scene {
         const buttonWidth = Math.min(Math.max(width * 0.28, 210), 300);
         const buttonHeight = Math.max(46, Math.min(58, height * 0.075));
         const spacing = buttonHeight + 16;
-        const baseStartY = height * 0.63;
-        const maxStartY = Math.max(height - (buttonConfig.length * spacing) - 38, height * 0.5);
-        const startY = Math.min(baseStartY, maxStartY);
+        const startY = Math.max(height * 0.58, height - (buttonConfig.length * spacing) - 32);
         const buttonX = width * 0.5;
         const platePaddingX = 34;
-        const platePaddingY = 26;
-
-        const buttonTop = startY - (buttonHeight / 2);
-        const buttonBottom = startY + (buttonConfig.length - 1) * spacing + (buttonHeight / 2);
-        const plateTop = buttonTop - platePaddingY;
-        const plateHeight = (buttonBottom - buttonTop) + (platePaddingY * 2);
+        const platePaddingY = 28;
+        const stackHeight = ((buttonConfig.length - 1) * spacing) + buttonHeight;
+        const plateTop = startY - (buttonHeight / 2) - platePaddingY;
+        const plateLeft = buttonX - (buttonWidth / 2) - platePaddingX;
         const plateWidth = buttonWidth + (platePaddingX * 2);
-        const plateLeft = buttonX - (plateWidth / 2);
+        const plateHeight = stackHeight + (platePaddingY * 2);
 
-        if (this.menuPlate) {
-            this.menuPlate.destroy();
-        }
-        this.menuPlate = this.add.graphics().setDepth(21);
-        this.menuPlate.fillStyle(0x0b1322, 0.24);
-        this.menuPlate.fillRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 32);
-        this.menuPlate.lineStyle(2, 0xd3dce1, 0.4);
-        this.menuPlate.strokeRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 32);
+        const menuPlate = this.add.graphics().setDepth(21);
+        menuPlate.fillStyle(0x081019, 0.28);
+        menuPlate.fillRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 26);
+        menuPlate.lineStyle(2, 0xc5d0d7, 0.2);
+        menuPlate.strokeRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 26);
 
         buttonConfig.forEach((config, index) => {
             const y = startY + (index * spacing);
@@ -318,7 +270,7 @@ export class TitleScene extends Phaser.Scene {
             fontWeight: 'bold',
             letterSpacing: 1
         }).setOrigin(0.5);
-        text.setResolution(4);
+        text.setResolution(3);
 
         const hitArea = this.add.zone(0, 0, width, height).setInteractive({ useHandCursor: true });
         container.add([shadow, panel, text, hitArea]);
@@ -366,7 +318,7 @@ export class TitleScene extends Phaser.Scene {
             return textureKey;
         }
 
-        const scale = 4;
+        const scale = 3;
         const texWidth = Math.round(width * scale);
         const texHeight = Math.round(height * scale);
         const radius = 18 * scale;
