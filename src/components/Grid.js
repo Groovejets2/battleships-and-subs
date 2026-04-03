@@ -8,6 +8,7 @@
  * @param {number} gridSize - The number of cells along one side of the square grid (e.g., 10 for 10x10).
  * @param {number} cellSize - The size of an individual cell in pixels.
  * @param {string} gridType - A string indicating the type of grid ('PLAYER' or 'ENEMY').
+ * @param {object} [options] - Optional visual overrides for the grid styling.
  * @returns {object} An object containing the grid cells group, graphics, labels, and grid properties.
  * @property {Phaser.GameObjects.Group} cells - A Phaser group containing all interactive grid cells.
  * @property {Phaser.GameObjects.Graphics} graphics - The graphics object for grid lines.
@@ -18,9 +19,14 @@
  * @property {number} cellSize - The size of each cell.
  * @property {string} type - The type of the grid.
  */
-export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType) {
+export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType, options = {}) {
     const gridWidth = gridSize * cellSize;
     const gridHeight = gridSize * cellSize;
+    const {
+        oceanAlpha = 1,
+        cellAlpha = 0.2,
+        lineAlpha = 1
+    } = options;
 
     // Add ocean background gradient
     const graphics = scene.add.graphics();
@@ -29,11 +35,11 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
     const oceanTopColor = gridType === 'PLAYER' ? 0x0066aa : 0x004488;  // Player: lighter blue, Enemy: darker blue
     const oceanBottomColor = gridType === 'PLAYER' ? 0x004488 : 0x002255;  // Darker gradient
 
-    graphics.fillGradientStyle(oceanTopColor, oceanTopColor, oceanBottomColor, oceanBottomColor, 1);
+    graphics.fillGradientStyle(oceanTopColor, oceanTopColor, oceanBottomColor, oceanBottomColor, oceanAlpha);
     graphics.fillRect(xOffset, yOffset, gridWidth, gridHeight);
 
     // Draw grid lines (thicker, lighter for better visibility on ocean background)
-    graphics.lineStyle(2, 0x000000, 1);
+    graphics.lineStyle(2, 0x000000, lineAlpha);
 
     for (let i = 0; i <= gridSize; i++) {
         graphics.moveTo(xOffset + i * cellSize, yOffset);
@@ -87,7 +93,7 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
                 cellSize,
                 cellSize,
                 gridType === 'PLAYER' ? 0x0088aa : 0x006688,  // Light cyan for player, darker for enemy
-                0.2  // More transparent to show ocean gradient
+                cellAlpha  // More transparent to show ocean gradient/background
             );
             cell.setOrigin(0, 0);
             cell.setInteractive();

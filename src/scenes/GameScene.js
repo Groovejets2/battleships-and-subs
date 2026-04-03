@@ -83,6 +83,8 @@ export class GameScene extends Phaser.Scene {
         this.gunsightCursor = null;
         this.hoveredTarget = null;  // {row, col} of currently hovered enemy cell
         this.fireButton = null;  // FIRE button UI element
+        this.backgroundTile = null;
+        this.boardBackdrop = null;
     }
 
     /**
@@ -108,6 +110,7 @@ export class GameScene extends Phaser.Scene {
 
         // Week 6B: Simple ship icon for status bar indicators (basic boat outline)
         this.load.image('ship-status-icon', 'assets/ui/simple-ship-icon.png');
+        this.load.image('game-wave-tile', 'src/images/battleships-and-subs-game-screen-01.jpg');
 
         // Week 6B: Gunsight cursor for targeting
         this.load.image('gunsight', 'assets/ui/gunsight.png');
@@ -251,10 +254,19 @@ export class GameScene extends Phaser.Scene {
 
         const layout = this.calculateLayout(width, height);
         this.currentLayout = layout;
+        this.createWaveBackground(layout);
 
         // Create both grids
-        this.playerGrid = createGrid(this, layout.playerX, layout.playerY, GRID_SIZE, layout.cellSize, 'PLAYER');
-        this.enemyGrid  = createGrid(this, layout.enemyX,  layout.enemyY,  GRID_SIZE, layout.cellSize, 'ENEMY');
+        this.playerGrid = createGrid(this, layout.playerX, layout.playerY, GRID_SIZE, layout.cellSize, 'PLAYER', {
+            oceanAlpha: 0.6,
+            cellAlpha: 0.12,
+            lineAlpha: 0.85
+        });
+        this.enemyGrid  = createGrid(this, layout.enemyX,  layout.enemyY,  GRID_SIZE, layout.cellSize, 'ENEMY', {
+            oceanAlpha: 0.58,
+            cellAlpha: 0.1,
+            lineAlpha: 0.85
+        });
 
         // Grid titles - use adaptive titleH from layout to avoid overlap with top UI
         const titleH    = layout.titleH || 20;
@@ -285,6 +297,46 @@ export class GameScene extends Phaser.Scene {
 
         // Week 6B: Create gunsight cursor for targeting
         this.createGunsightCursor();
+    }
+
+    /**
+     * Create or update the repeated wave tile background behind the combat layout.
+     * @param {object} layout
+     */
+    createWaveBackground(layout) {
+        const { width, height } = layout;
+        const boardMargin = Math.max(18, layout.cellSize * 0.55);
+        const boardWidth = (GAME_CONSTANTS.GRID_SIZE * layout.cellSize) + (boardMargin * 2);
+        const boardHeight = (GAME_CONSTANTS.GRID_SIZE * layout.cellSize) + (boardMargin * 2);
+
+        if (!this.backgroundTile || !this.backgroundTile.active) {
+            this.backgroundTile = this.add.tileSprite(0, 0, width, height, 'game-wave-tile');
+            this.backgroundTile.setOrigin(0, 0);
+            this.backgroundTile.setDepth(-100);
+        } else {
+            this.backgroundTile.setPosition(0, 0);
+            this.backgroundTile.setSize(width, height);
+        }
+
+        // Smaller tile scale makes the wave pattern feel farther away.
+        this.backgroundTile.setTileScale(0.5, 0.5);
+
+        if (!this.boardBackdrop || !this.boardBackdrop.active) {
+            this.boardBackdrop = this.add.graphics().setDepth(-90);
+        }
+
+        const playerBoardX = layout.playerX - boardMargin;
+        const playerBoardY = layout.playerY - boardMargin;
+        const enemyBoardX = layout.enemyX - boardMargin;
+        const enemyBoardY = layout.enemyY - boardMargin;
+
+        this.boardBackdrop.clear();
+        this.boardBackdrop.fillStyle(0x02080d, 0.45);
+        this.boardBackdrop.fillRoundedRect(playerBoardX, playerBoardY, boardWidth, boardHeight, 18);
+        this.boardBackdrop.fillRoundedRect(enemyBoardX, enemyBoardY, boardWidth, boardHeight, 18);
+        this.boardBackdrop.lineStyle(2, 0xd7e1ea, 0.16);
+        this.boardBackdrop.strokeRoundedRect(playerBoardX, playerBoardY, boardWidth, boardHeight, 18);
+        this.boardBackdrop.strokeRoundedRect(enemyBoardX, enemyBoardY, boardWidth, boardHeight, 18);
     }
 
     /**
@@ -2077,6 +2129,7 @@ export class GameScene extends Phaser.Scene {
         // UPDATE LAYOUT FIRST - buttons and other elements need current layout data
         const oldLayout = this.currentLayout;
         this.currentLayout = newLayout;
+        this.createWaveBackground(newLayout);
 
         const orientationChanged = oldLayout &&
             (oldLayout.width > oldLayout.height) !== (width > height);
