@@ -71,6 +71,7 @@ export class GameScene extends Phaser.Scene {
 
         // Layout state
         this.currentLayout = null;
+        this.lastAbilityAvailability = { sonar: null, nuke: null };
 
         // Combat lock (prevent double-clicks during AI turn)
         this.combatLocked = false;
@@ -108,8 +109,9 @@ export class GameScene extends Phaser.Scene {
         // this.load.image('ship-carrier-h', 'assets/ships/Carrier/ShipCarrierHull_Horizontal.png');
         // this.load.image('ship-carrier-v', 'assets/ships/Carrier/ShipCarrierHull_Vertical.png');
 
-        // Week 6B: Simple ship icon for status bar indicators (basic boat outline)
-        this.load.image('ship-status-icon', 'assets/ui/simple-ship-icon.png');
+        // Ship status icons for fleet indicators
+        this.load.image('ship-status-safe', 'src/images/Ship-Icon-01-Safe.png');
+        this.load.image('ship-status-hit', 'src/images/Ship-Icon-02-Hit.png');
         this.load.image('game-wave-tile', 'src/images/battleships-and-subs-game-screen-01.jpg');
 
         // Week 6B: Gunsight cursor for targeting
@@ -258,35 +260,51 @@ export class GameScene extends Phaser.Scene {
 
         // Create both grids
         this.playerGrid = createGrid(this, layout.playerX, layout.playerY, GRID_SIZE, layout.cellSize, 'PLAYER', {
-            oceanAlpha: 0.6,
-            cellAlpha: 0.12,
-            lineAlpha: 0.85
+            oceanAlpha: 0.08,
+            cellAlpha: 0.035,
+            lineAlpha: 0.12,
+            labelFontFamily: 'Copperplate, "Palatino Linotype", Georgia, serif',
+            labelColor: '#f2f5f7'
         });
         this.enemyGrid  = createGrid(this, layout.enemyX,  layout.enemyY,  GRID_SIZE, layout.cellSize, 'ENEMY', {
-            oceanAlpha: 0.58,
-            cellAlpha: 0.1,
-            lineAlpha: 0.85
+            oceanAlpha: 0.08,
+            cellAlpha: 0.035,
+            lineAlpha: 0.12,
+            labelFontFamily: 'Copperplate, "Palatino Linotype", Georgia, serif',
+            labelColor: '#f2f5f7'
         });
 
         // Grid titles - use adaptive titleH from layout to avoid overlap with top UI
         const titleH    = layout.titleH || 20;
-        const titleSize = Math.max(10, Math.min(titleH - 2, width * 0.028));
+        const titleSize = this.getBoardTitleFontSize(layout);
+        const chrome = this.getBoardChromeMetrics(layout);
         const titleStyle = {
-            font: `bold ${titleSize}px Arial`,
-            fill: COLORS.TEXT
+            fontSize: `${titleSize}px`,
+            fontFamily: 'Copperplate, "Palatino Linotype", Georgia, serif',
+            fill: '#f2f5f7',
+            fontStyle: 'bold',
+            stroke: '#11181f',
+            strokeThickness: 3,
+            shadow: {
+                offsetX: 0,
+                offsetY: 1,
+                color: '#000000',
+                blur: 6,
+                fill: true
+            }
         };
 
         const gridWidth = GRID_SIZE * layout.cellSize;
 
         const playerTitle = this.add.text(
             layout.playerX + gridWidth / 2,
-            layout.playerY - titleH + 1,   // Sits just above the grid, within the reserved titleH space
+            chrome.titleBarY + chrome.titleBarHeight / 2 - 1,
             'YOUR FLEET', titleStyle
         ).setOrigin(0.5);
 
         const enemyTitle = this.add.text(
             layout.enemyX + gridWidth / 2,
-            layout.enemyY - titleH + 1,
+            chrome.enemyTitleBarY + chrome.titleBarHeight / 2 - 1,
             'ENEMY WATERS', titleStyle
         ).setOrigin(0.5);
 
@@ -305,9 +323,7 @@ export class GameScene extends Phaser.Scene {
      */
     createWaveBackground(layout) {
         const { width, height } = layout;
-        const boardMargin = Math.max(18, layout.cellSize * 0.55);
-        const boardWidth = (GAME_CONSTANTS.GRID_SIZE * layout.cellSize) + (boardMargin * 2);
-        const boardHeight = (GAME_CONSTANTS.GRID_SIZE * layout.cellSize) + (boardMargin * 2);
+        const chrome = this.getBoardChromeMetrics(layout);
 
         if (!this.backgroundTile || !this.backgroundTile.active) {
             this.backgroundTile = this.add.tileSprite(0, 0, width, height, 'game-wave-tile');
@@ -325,18 +341,77 @@ export class GameScene extends Phaser.Scene {
             this.boardBackdrop = this.add.graphics().setDepth(-90);
         }
 
-        const playerBoardX = layout.playerX - boardMargin;
-        const playerBoardY = layout.playerY - boardMargin;
-        const enemyBoardX = layout.enemyX - boardMargin;
-        const enemyBoardY = layout.enemyY - boardMargin;
-
         this.boardBackdrop.clear();
-        this.boardBackdrop.fillStyle(0x02080d, 0.45);
-        this.boardBackdrop.fillRoundedRect(playerBoardX, playerBoardY, boardWidth, boardHeight, 18);
-        this.boardBackdrop.fillRoundedRect(enemyBoardX, enemyBoardY, boardWidth, boardHeight, 18);
-        this.boardBackdrop.lineStyle(2, 0xd7e1ea, 0.16);
-        this.boardBackdrop.strokeRoundedRect(playerBoardX, playerBoardY, boardWidth, boardHeight, 18);
-        this.boardBackdrop.strokeRoundedRect(enemyBoardX, enemyBoardY, boardWidth, boardHeight, 18);
+        [chrome.playerBoard, chrome.enemyBoard].forEach((board) => {
+            this.boardBackdrop.fillStyle(0x04090e, 0.46);
+            this.boardBackdrop.fillRoundedRect(board.x, board.y, board.width, board.height, 20);
+
+            this.boardBackdrop.lineStyle(5, 0x77818a, 0.38);
+            this.boardBackdrop.strokeRoundedRect(board.x + 1, board.y + 1, board.width - 2, board.height - 2, 20);
+
+            this.boardBackdrop.lineStyle(2, 0xe8edf2, 0.62);
+            this.boardBackdrop.strokeRoundedRect(board.x + 4, board.y + 4, board.width - 8, board.height - 8, 17);
+
+            this.boardBackdrop.lineStyle(2, 0x151d25, 0.95);
+            this.boardBackdrop.strokeRoundedRect(board.x + 8, board.y + 8, board.width - 16, board.height - 16, 14);
+
+            this.boardBackdrop.fillStyle(0xffffff, 0.07);
+            this.boardBackdrop.fillRoundedRect(board.x + 14, board.y + 10, board.width - 28, Math.max(12, layout.cellSize * 0.18), 10);
+
+            this.boardBackdrop.fillStyle(0x3e4953, 0.94);
+            this.boardBackdrop.fillRoundedRect(board.x + 18, board.titleBarY, board.width - 36, chrome.titleBarHeight, 11);
+
+            this.boardBackdrop.lineStyle(2, 0xcdd4da, 0.95);
+            this.boardBackdrop.strokeRoundedRect(board.x + 18, board.titleBarY, board.width - 36, chrome.titleBarHeight, 11);
+
+            this.boardBackdrop.lineStyle(2, 0x141b22, 0.92);
+            this.boardBackdrop.strokeRoundedRect(board.x + 22, board.titleBarY + 4, board.width - 44, chrome.titleBarHeight - 8, 8);
+
+            this.boardBackdrop.fillStyle(0xffffff, 0.12);
+            this.boardBackdrop.fillRoundedRect(board.x + 26, board.titleBarY + 3, board.width - 52, Math.max(6, chrome.titleBarHeight * 0.28), 8);
+
+            this.boardBackdrop.fillStyle(0x7d8a96, 0.16);
+            this.boardBackdrop.fillRoundedRect(board.x + 22, board.y + board.height - 14, board.width - 44, 4, 2);
+        });
+    }
+
+    /**
+     * Shared board chrome geometry so the metallic frame and title text stay aligned.
+     * @param {object} layout
+     * @returns {object}
+     */
+    getBoardChromeMetrics(layout) {
+        const sideMargin = Math.max(18, layout.cellSize * 0.55);
+        const topMargin = Math.max(sideMargin + 12, layout.cellSize * 0.92);
+        const bottomMargin = Math.max(18, layout.cellSize * 0.5);
+        const boardWidth = (GAME_CONSTANTS.GRID_SIZE * layout.cellSize) + (sideMargin * 2);
+        const boardHeight = (GAME_CONSTANTS.GRID_SIZE * layout.cellSize) + topMargin + bottomMargin;
+        const titleBarHeight = Math.max(16, layout.cellSize * 0.42);
+        const titleBarInsetY = Math.max(10, Math.round(topMargin * 0.24));
+        const playerBoardX = layout.playerX - sideMargin;
+        const playerBoardY = layout.playerY - topMargin;
+        const enemyBoardX = layout.enemyX - sideMargin;
+        const enemyBoardY = layout.enemyY - topMargin;
+
+        return {
+            titleBarHeight,
+            titleBarY: playerBoardY + titleBarInsetY,
+            enemyTitleBarY: enemyBoardY + titleBarInsetY,
+            playerBoard: {
+                x: playerBoardX,
+                y: playerBoardY,
+                width: boardWidth,
+                height: boardHeight,
+                titleBarY: playerBoardY + titleBarInsetY
+            },
+            enemyBoard: {
+                x: enemyBoardX,
+                y: enemyBoardY,
+                width: boardWidth,
+                height: boardHeight,
+                titleBarY: enemyBoardY + titleBarInsetY
+            }
+        };
     }
 
     /**
@@ -363,16 +438,23 @@ export class GameScene extends Phaser.Scene {
      */
     createSceneTitle() {
         const { width, height } = this.scale;
-        // Fixed position: below back button (y=45, height=30) with 10px gap = y=70
-        // This ensures no overlap with status text (y=15) or back button (y=30-60)
-        const titleY = Math.min(70, height * 0.12); // Use percentage fallback for very short screens
+        const layout = this.currentLayout || this.calculateLayout(width, height);
+        const titleMetrics = this.getSceneTitleMetrics(width, height, layout.shouldStack);
 
-        this.sceneTitle = this.add.text(width / 2, titleY, 'COMBAT', {
-            fontSize: Math.min(width * 0.06, 42) + 'px',
-            fontFamily: 'Arial Black',
-            fill: '#ffffff',
-            stroke: '#000000',
-            strokeThickness: 4
+        this.sceneTitle = this.add.text(width / 2, titleMetrics.y, 'COMBAT', {
+            fontSize: `${titleMetrics.fontSize}px`,
+            fontFamily: 'Copperplate, "Palatino Linotype", Georgia, serif',
+            fill: '#f5f7fa',
+            fontStyle: 'bold',
+            stroke: '#12181f',
+            strokeThickness: titleMetrics.strokeThickness,
+            shadow: {
+                offsetX: 0,
+                offsetY: 2,
+                color: '#000000',
+                blur: 8,
+                fill: true
+            }
         }).setOrigin(0.5).setDepth(10);
     }
 
@@ -394,30 +476,30 @@ export class GameScene extends Phaser.Scene {
 
         if (shouldStack) {
             // Fixed pixel reserves for non-grid UI elements
-            // TOP_UI: status text (y=15) + back button (y=45, h=30) + title (y=70, h~42) + gap
-            const TOP_UI    = 120;  // Increased to account for COMBAT title at y=70 (42px font + 8px gap = 120)
+            // Keep portrait breathing room without letting the header dominate.
+            const TOP_UI    = width < 500 ? 102 : 110;
             const BOTTOM_UI = 84;   // ship status bar (22px) + arcade button zone (62px)
             const available = height - TOP_UI - BOTTOM_UI;
 
             // Adaptive spacing so grids scale down gracefully on tiny screens
             // and look spacious on larger portrait screens (e.g. tablet)
             if (available < 380) {
-                titleH     = 13;
-                gridSpacing = 8;
-                labelSpace  = 18;
+                titleH      = 11;
+                gridSpacing = 10;
+                labelSpace  = 16;
             } else if (available < 460) {
-                titleH     = 15;
-                gridSpacing = 12;
-                labelSpace  = 22;
+                titleH      = 13;
+                gridSpacing = 14;
+                labelSpace  = 20;
             } else if (available < 700) {
-                titleH     = 18;
-                gridSpacing = 18;
-                labelSpace  = 28;
+                titleH      = 16;
+                gridSpacing = 20;
+                labelSpace  = 26;
             } else {
                 // Large portrait (e.g. tablet 768×1024) — roomier spacing
-                titleH     = 24;
-                gridSpacing = 30;
-                labelSpace  = 35;
+                titleH      = 20;
+                gridSpacing = 28;
+                labelSpace  = 32;
             }
 
             // Solve for cellSize so both grids fit in available height:
@@ -452,7 +534,7 @@ export class GameScene extends Phaser.Scene {
             const gridWidth = GRID_SIZE * cellSize;
             const totalW    = gridWidth * 2 + GRID_SPACING;
             const startX    = Math.max(MARGIN, (width - totalW) / 2);
-            const centerY   = Math.max(MARGIN, (height - gridWidth - TITLE_SPACE) / 2);
+            const centerY   = Math.max(MARGIN + 18, (height - gridWidth - TITLE_SPACE) / 2 + 18);
 
             playerX = startX;
             playerY = centerY + TITLE_SPACE;
@@ -472,10 +554,11 @@ export class GameScene extends Phaser.Scene {
     createUI() {
         const { width, height } = this.scale;
         const C = GAME_CONSTANTS.COLORS;
+        const statusFontSize = this.getStatusFontSize(width);
 
         // Turn status text (top center)
         this.uiElements.statusText = this.add.text(width / 2, 15, 'YOUR TURN', {
-            fontSize: this.getStatusFontSize(width),
+            fontSize: statusFontSize,
             fontFamily: 'Arial',
             fill: '#ffff00',
             fontWeight: 'bold'
@@ -499,7 +582,7 @@ export class GameScene extends Phaser.Scene {
 
         // Score display (top right)
         this.uiElements.scoreText = this.add.text(width - 10, 15, 'SCORE: 0', {
-            fontSize: this.getStatusFontSize(width),
+            fontSize: statusFontSize,
             fontFamily: 'Arial',
             fill: C.TEXT,
             fontWeight: 'bold'
@@ -524,42 +607,8 @@ export class GameScene extends Phaser.Scene {
         const { width, height } = this.scale;
         const layout = this.currentLayout;
         const gridWidth = GAME_CONSTANTS.GRID_SIZE * layout.cellSize;
-
-        // --- Determine button radius & positions ---
-        let r, positions; // r = radius
-
-        if (layout.shouldStack) {
-            // PORTRAIT: horizontal row below enemy grid labels
-            const enemyBottom = layout.enemyY + gridWidth + layout.labelSpace + 4;
-            const shipBarTop  = height - 30; // ship status bar lives at height-22
-            const availH = shipBarTop - enemyBottom;
-            r = Math.max(14, Math.min(26, availH * 0.42, width * 0.06));
-
-            const spacing = Math.min(r * 2.8, (width - 6 * r) / 2);
-            const cx = width / 2;
-            const cy = enemyBottom + availH / 2;
-            positions = [
-                { x: cx - spacing, y: cy },   // FIRE (left)
-                { x: cx,           y: cy },   // SONAR (center)
-                { x: cx + spacing, y: cy },   // NUKE (right)
-            ];
-        } else {
-            // LANDSCAPE: vertical stack between the two grids
-            const playerRight = layout.playerX + gridWidth;
-            const enemyLeft   = layout.enemyX;
-            const gap = enemyLeft - playerRight;
-            r = Math.max(14, Math.min(30, gap * 0.28, (height - 160) * 0.08));
-
-            // Bias cx toward player side to clear enemy grid row labels (drawn at enemyLeft - 15)
-            const cx = Math.min((playerRight + enemyLeft) / 2, enemyLeft - r - 32);
-            const gridMidY = layout.playerY + gridWidth / 2;
-            const spacing = Math.min(r * 2.8, (gridWidth - 6 * r) / 2);
-            positions = [
-                { x: cx, y: gridMidY - spacing },  // FIRE (top)
-                { x: cx, y: gridMidY },             // SONAR (middle)
-                { x: cx, y: gridMidY + spacing },   // NUKE (bottom)
-            ];
-        }
+        const buttonLayout = this.getArcadeButtonLayout(layout, width, height, gridWidth);
+        const { radius: r, positions } = buttonLayout;
 
         // --- Helper: draw one round arcade button ---
         const makeButton = (x, y, baseColor, rimColor, drawIcon, onDown) => {
@@ -697,6 +746,56 @@ export class GameScene extends Phaser.Scene {
     }
 
     /**
+     * Compute responsive layout for the combat action buttons.
+     * Portrait and tighter landscapes use a bottom row for easier reach.
+     * Wide desktop keeps a smaller vertical stack in the center gap.
+     * @param {object} layout
+     * @param {number} width
+     * @param {number} height
+     * @param {number} gridWidth
+     * @returns {{radius:number, positions:Array<{x:number,y:number}>}}
+     */
+    getArcadeButtonLayout(layout, width, height, gridWidth) {
+        const enemyBottom = layout.enemyY + gridWidth + layout.labelSpace + 4;
+        const shipBarTop = height - 30;
+        const playerRight = layout.playerX + gridWidth;
+        const enemyLeft = layout.enemyX;
+        const gap = enemyLeft - playerRight;
+        const useBottomRow = true;
+
+        if (useBottomRow) {
+            const availableHeight = Math.max(44, shipBarTop - enemyBottom);
+            const radius = Math.max(18, Math.min(34, availableHeight * 0.42, width * 0.065));
+            const spacing = Math.max(radius * 2.2, Math.min(radius * 2.85, (width - 7 * radius) / 2));
+            const cx = width / 2;
+            const cy = enemyBottom + (availableHeight * (layout.shouldStack ? 0.6 : 0.52));
+
+            return {
+                radius,
+                positions: [
+                    { x: cx - spacing, y: cy },
+                    { x: cx, y: cy },
+                    { x: cx + spacing, y: cy }
+                ]
+            };
+        }
+
+        const radius = Math.max(18, Math.min(30, gap * 0.24, height * 0.05));
+        const cx = Math.min((playerRight + enemyLeft) / 2, enemyLeft - radius - 24);
+        const clusterCenterY = layout.playerY + (gridWidth * 0.64);
+        const spacing = Math.max(radius * 2.2, Math.min(radius * 2.55, (gridWidth - 6 * radius) / 3));
+
+        return {
+            radius,
+            positions: [
+                { x: cx, y: clusterCenterY - spacing },
+                { x: cx, y: clusterCenterY },
+                { x: cx, y: clusterCenterY + spacing }
+            ]
+        };
+    }
+
+    /**
      * Destroy all three arcade buttons (used during resize).
      */
     destroyArcadeButtons() {
@@ -724,9 +823,23 @@ export class GameScene extends Phaser.Scene {
         if (!this.abilityButtons) return;
         const sonar = this.abilityButtons._sonar;
         const nuke  = this.abilityButtons._nuke;
+        const sonarAvailable = this.turnManager.sonarPingAvailable;
+        const nukeAvailable = this.turnManager.rowNukeCharges > 0;
 
-        if (sonar) sonar.container.setAlpha(this.turnManager.sonarPingAvailable ? 1.0 : 0.3);
-        if (nuke)  nuke.container.setAlpha(this.turnManager.rowNukeCharges > 0 ? 1.0 : 0.3);
+        if (sonar) sonar.container.setAlpha(sonarAvailable ? 1.0 : 0.3);
+        if (nuke)  nuke.container.setAlpha(nukeAvailable ? 1.0 : 0.3);
+
+        if (sonarAvailable && this.lastAbilityAvailability.sonar === false && sonar) {
+            this.playAbilityReadyAnimation(sonar.container, 'SONAR READY', 0x33ccff);
+        }
+        if (nukeAvailable && this.lastAbilityAvailability.nuke === false && nuke) {
+            this.playAbilityReadyAnimation(nuke.container, 'NUKE READY', 0xffaa33);
+        }
+
+        this.lastAbilityAvailability = {
+            sonar: sonarAvailable,
+            nuke: nukeAvailable
+        };
     }
 
     /**
@@ -739,6 +852,67 @@ export class GameScene extends Phaser.Scene {
 
         const active = this.hoveredTarget && this.canPlayerAttack(this.hoveredTarget.row, this.hoveredTarget.col);
         fire.container.setAlpha(active ? 1.0 : 0.3);
+    }
+
+    /**
+     * Play a short arcade-style burst to highlight an ability becoming ready or active.
+     * @param {Phaser.GameObjects.Container} target
+     * @param {string} label
+     * @param {number} color
+     */
+    playAbilityReadyAnimation(target, label, color) {
+        if (!target || !target.active) return;
+
+        const { x, y } = target;
+        const burst = this.add.circle(x, y, 12, color, 0.35).setDepth(49);
+        const ring = this.add.circle(x, y, 10, color, 0).setDepth(49);
+        ring.setStrokeStyle(3, color, 0.9);
+
+        const text = this.add.text(x, y - 30, label, {
+            fontSize: '14px',
+            fontFamily: 'Arial Black',
+            fill: '#f6fbff',
+            stroke: '#081018',
+            strokeThickness: 4
+        }).setOrigin(0.5).setDepth(60);
+
+        this.tweens.add({
+            targets: target,
+            scaleX: 1.2,
+            scaleY: 1.2,
+            duration: 130,
+            yoyo: true,
+            repeat: 1
+        });
+
+        this.tweens.add({
+            targets: burst,
+            scaleX: 4.4,
+            scaleY: 4.4,
+            alpha: 0,
+            duration: 520,
+            ease: 'Cubic.Out',
+            onComplete: () => burst.destroy()
+        });
+
+        this.tweens.add({
+            targets: ring,
+            scaleX: 3.2,
+            scaleY: 3.2,
+            alpha: 0,
+            duration: 560,
+            ease: 'Cubic.Out',
+            onComplete: () => ring.destroy()
+        });
+
+        this.tweens.add({
+            targets: text,
+            y: y - 52,
+            alpha: 0,
+            duration: 820,
+            ease: 'Quad.Out',
+            onComplete: () => text.destroy()
+        });
     }
 
     /**
@@ -773,7 +947,7 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Create ship health status display below the grids.
-     * Week 6A: Uses ship outline sprites (patrol boat) tinted with ship colors.
+     * Uses the provided safe/hit icon artwork for both allied and enemy status.
      */
     createShipStatusPanel() {
         const { width, height } = this.scale;
@@ -781,7 +955,9 @@ export class GameScene extends Phaser.Scene {
         const enemyShipCount = 5;  // Always 5 enemy ships
 
         const statusY = height - 22;
-        const fontSize = Math.max(10, Math.min(13, width * 0.016)) + 'px';
+        const baseFontPx = Math.max(10, Math.min(13, width * 0.016));
+        const fontSize = `${baseFontPx}px`;
+        const labelFontSize = `${baseFontPx + 2}px`;
         const iconSize = Math.min(24, width * 0.025);  // Ship icon size
         const iconSpacing = iconSize + 4;  // Space between icons
 
@@ -790,7 +966,14 @@ export class GameScene extends Phaser.Scene {
         this.uiElements.playerShipStatusLabel = this.add.text(
             playerLabelX, statusY,
             'ALLIES:',
-            { fontSize, fontFamily: 'Arial', fill: '#00ff88', fontWeight: 'bold' }
+            {
+                fontSize: labelFontSize,
+                fontFamily: 'Copperplate, "Palatino Linotype", Georgia, serif',
+                fill: '#f5f7fa',
+                fontWeight: 'bold',
+                stroke: '#12181f',
+                strokeThickness: 3
+            }
         ).setOrigin(1, 0.5);
 
         // Create ship status sprites for each player ship
@@ -798,23 +981,9 @@ export class GameScene extends Phaser.Scene {
         playerShips.forEach((ship, index) => {
             const iconX = playerLabelX + 10 + (index * iconSpacing);
 
-            // Ship outline sprite (green to match "YOUR SHIPS" label)
-            const sprite = this.add.image(iconX, statusY, 'ship-status-icon');
+            const sprite = this.add.image(iconX, statusY, 'ship-status-safe');
             sprite.setDisplaySize(iconSize, iconSize);
-            sprite.setTint(0x00ff88);  // Green (same as label)
-
-            // Red cross sprite (hidden initially, shown when sunk)
-            const crossSprite = this.add.graphics();
-            crossSprite.lineStyle(2, 0xff0000, 1);
-            crossSprite.beginPath();
-            crossSprite.moveTo(iconX - iconSize * 0.35, statusY - iconSize * 0.35);
-            crossSprite.lineTo(iconX + iconSize * 0.35, statusY + iconSize * 0.35);
-            crossSprite.moveTo(iconX + iconSize * 0.35, statusY - iconSize * 0.35);
-            crossSprite.lineTo(iconX - iconSize * 0.35, statusY + iconSize * 0.35);
-            crossSprite.strokePath();
-            crossSprite.setVisible(false);
-
-            this.playerShipStatusSprites.push({ sprite, crossSprite, ship });
+            this.playerShipStatusSprites.push({ sprite, ship });
         });
 
         // === ENEMY FLEET STATUS ===
@@ -822,31 +991,24 @@ export class GameScene extends Phaser.Scene {
         this.uiElements.enemyShipStatusLabel = this.add.text(
             enemyLabelX, statusY,
             'ENEMY:',
-            { fontSize, fontFamily: 'Arial', fill: '#ff8800', fontWeight: 'bold' }
+            {
+                fontSize: labelFontSize,
+                fontFamily: 'Copperplate, "Palatino Linotype", Georgia, serif',
+                fill: '#f5f7fa',
+                fontWeight: 'bold',
+                stroke: '#12181f',
+                strokeThickness: 3
+            }
         ).setOrigin(1, 0.5);
 
-        // Create 5 enemy ship status sprites (all same color)
+        // Create 5 enemy ship status sprites
         this.enemyShipStatusSprites = [];
         for (let i = 0; i < enemyShipCount; i++) {
             const iconX = enemyLabelX + 10 + (i * iconSpacing);
 
-            // Ship outline sprite (orange for enemy)
-            const sprite = this.add.image(iconX, statusY, 'ship-status-icon');
+            const sprite = this.add.image(iconX, statusY, 'ship-status-safe');
             sprite.setDisplaySize(iconSize, iconSize);
-            sprite.setTint(0xff8800);  // Orange
-
-            // Red cross sprite (hidden initially)
-            const crossSprite = this.add.graphics();
-            crossSprite.lineStyle(2, 0xff0000, 1);
-            crossSprite.beginPath();
-            crossSprite.moveTo(iconX - iconSize * 0.35, statusY - iconSize * 0.35);
-            crossSprite.lineTo(iconX + iconSize * 0.35, statusY + iconSize * 0.35);
-            crossSprite.moveTo(iconX + iconSize * 0.35, statusY - iconSize * 0.35);
-            crossSprite.lineTo(iconX - iconSize * 0.35, statusY + iconSize * 0.35);
-            crossSprite.strokePath();
-            crossSprite.setVisible(false);
-
-            this.enemyShipStatusSprites.push({ sprite, crossSprite });
+            this.enemyShipStatusSprites.push({ sprite });
         }
     }
 
@@ -876,29 +1038,19 @@ export class GameScene extends Phaser.Scene {
 
     /**
      * Update ship status panel after each attack.
-     * Week 6A: Updates sprite-based status bar with red X overlays on sunk ships.
+     * Swaps between safe/hit icon art based on ship state.
      */
     updateShipStatus() {
         // Update player ship status sprites
-        this.playerShipStatusSprites.forEach(({ sprite, crossSprite, ship }) => {
-            if (ship.isSunk) {
-                // Show red X over sunk ship (ship sprite remains visible)
-                crossSprite.setVisible(true);
-            } else {
-                crossSprite.setVisible(false);
-            }
+        this.playerShipStatusSprites.forEach(({ sprite, ship }) => {
+            sprite.setTexture(ship.isSunk ? 'ship-status-hit' : 'ship-status-safe');
         });
 
         // Update enemy ship status sprites
         const enemyShips = this.enemyFleet.getAllShips();
-        const sunkEnemyShips = enemyShips.filter(s => s.isSunk);
-        this.enemyShipStatusSprites.forEach(({ sprite, crossSprite }, index) => {
-            if (index < sunkEnemyShips.length) {
-                // Show red X over sunk ships
-                crossSprite.setVisible(true);
-            } else {
-                crossSprite.setVisible(false);
-            }
+        this.enemyShipStatusSprites.forEach(({ sprite }, index) => {
+            const ship = enemyShips[index];
+            sprite.setTexture(ship?.isSunk ? 'ship-status-hit' : 'ship-status-safe');
         });
 
         // Update score
@@ -913,9 +1065,46 @@ export class GameScene extends Phaser.Scene {
      * @returns {string}
      */
     getStatusFontSize(width) {
-        if (width < 400) return '12px';
-        if (width < 600) return '14px';
+        if (width < 400) return '11px';
+        if (width < 520) return '12px';
+        if (width < 760) return '14px';
         return '16px';
+    }
+
+    /**
+     * Get scaled board title size without letting narrow stacked layouts feel crowded.
+     * @param {object} layout
+     * @returns {number}
+     */
+    getBoardTitleFontSize(layout) {
+        if (layout.shouldStack) {
+            return Math.max(10, Math.min(15, layout.cellSize * 0.32));
+        }
+
+        return Math.max(12, Math.min(18, layout.cellSize * 0.38));
+    }
+
+    /**
+     * Compute scene title position and scale for current viewport.
+     * @param {number} width
+     * @param {number} height
+     * @param {boolean} shouldStack
+     * @returns {{y:number,fontSize:number,strokeThickness:number}}
+     */
+    getSceneTitleMetrics(width, height, shouldStack) {
+        if (shouldStack) {
+            return {
+                y: Math.min(64, height * 0.105),
+                fontSize: Math.max(24, Math.min(34, width * 0.05)),
+                strokeThickness: 4
+            };
+        }
+
+        return {
+            y: Math.min(58, height * 0.095),
+            fontSize: Math.max(28, Math.min(40, width * 0.055)),
+            strokeThickness: 5
+        };
     }
 
     /**
@@ -1190,6 +1379,7 @@ export class GameScene extends Phaser.Scene {
         this.attackMode = 'SONAR';
         // Highlight active sonar button (glow effect via scale)
         if (this.abilityButtons?._sonar) this.abilityButtons._sonar.container.setScale(1.2);
+        if (this.abilityButtons?._sonar) this.playAbilityReadyAnimation(this.abilityButtons._sonar.container, 'SONAR ONLINE', 0x33ccff);
         this.updateStatusDisplay('SONAR_MODE');
         console.log('GameScene: SONAR PING mode activated - click 3×3 zone');
     }
@@ -1281,6 +1471,7 @@ export class GameScene extends Phaser.Scene {
         this.attackMode = 'NUKE';
         // Highlight active nuke button (glow effect via scale)
         if (this.abilityButtons?._nuke) this.abilityButtons._nuke.container.setScale(1.2);
+        if (this.abilityButtons?._nuke) this.playAbilityReadyAnimation(this.abilityButtons._nuke.container, 'NUKE ARMED', 0xffaa33);
         this.updateStatusDisplay('NUKE_MODE');
         console.log('GameScene: ROW NUKE mode activated - click any cell in target row');
     }
@@ -1489,7 +1680,7 @@ export class GameScene extends Phaser.Scene {
                 cell.setFillStyle(CELL_COLORS.SUNK, 0.9);
                 break;
             case CELL.MISS:
-                cell.setFillStyle(CELL_COLORS.MISS, 0.7);
+                cell.setFillStyle(CELL_COLORS.MISS, 0.45);
                 break;
             default:
                 cell.setFillStyle(CELL_COLORS.PLAYER_EMPTY, 0.5);
@@ -1663,7 +1854,7 @@ export class GameScene extends Phaser.Scene {
                 cell.setFillStyle(CELL_COLORS.SUNK, 0.9);
                 break;
             case CELL.MISS:
-                cell.setFillStyle(CELL_COLORS.MISS, 0.7);
+                cell.setFillStyle(0xffffff, 0);
                 break;
             default:
                 cell.setFillStyle(CELL_COLORS.ENEMY_EMPTY, 0.5);
@@ -2175,9 +2366,10 @@ export class GameScene extends Phaser.Scene {
 
         // Update scene title position
         if (this.sceneTitle) {
-            const titleY = Math.min(70, height * 0.12);
-            this.sceneTitle.setPosition(width / 2, titleY);
-            this.sceneTitle.setFontSize(Math.min(width * 0.06, 42) + 'px');
+            const titleMetrics = this.getSceneTitleMetrics(width, height, newLayout.shouldStack);
+            this.sceneTitle.setPosition(width / 2, titleMetrics.y);
+            this.sceneTitle.setFontSize(`${titleMetrics.fontSize}px`);
+            this.sceneTitle.setStroke('#12181f', titleMetrics.strokeThickness);
         }
 
         // Update UI positions

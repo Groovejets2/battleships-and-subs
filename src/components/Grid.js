@@ -25,21 +25,23 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
     const {
         oceanAlpha = 1,
         cellAlpha = 0.2,
-        lineAlpha = 1
+        lineAlpha = 1,
+        labelFontFamily = 'Copperplate, "Palatino Linotype", Georgia, serif',
+        labelColor = '#f1f4f7'
     } = options;
 
     // Add ocean background gradient
     const graphics = scene.add.graphics();
 
     // Create ocean gradient (deeper blue at bottom, lighter at top)
-    const oceanTopColor = gridType === 'PLAYER' ? 0x0066aa : 0x004488;  // Player: lighter blue, Enemy: darker blue
-    const oceanBottomColor = gridType === 'PLAYER' ? 0x004488 : 0x002255;  // Darker gradient
+    const oceanTopColor = 0x0b1821;
+    const oceanBottomColor = 0x050b10;
 
     graphics.fillGradientStyle(oceanTopColor, oceanTopColor, oceanBottomColor, oceanBottomColor, oceanAlpha);
     graphics.fillRect(xOffset, yOffset, gridWidth, gridHeight);
 
-    // Draw grid lines (thicker, lighter for better visibility on ocean background)
-    graphics.lineStyle(2, 0x000000, lineAlpha);
+    // Draw broader translucent grid lines so the board still reads while the waves show through.
+    graphics.lineStyle(3, 0x8e9ca5, lineAlpha);
 
     for (let i = 0; i <= gridSize; i++) {
         graphics.moveTo(xOffset + i * cellSize, yOffset);
@@ -50,13 +52,16 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
     graphics.strokePath();
 
     // Add coordinate labels (arcade style)
+    const labelFontSize = Math.max(13, Math.min(18, cellSize * 0.46));
+    const labelOffset = Math.max(5, Math.round(cellSize * 0.16));
+    const bottomLabelOffset = Math.max(10, Math.round(cellSize * 0.24));
     const labelStyle = {
-        fontSize: '18px',
-        fontFamily: 'Arial Black',
-        fill: '#ffffff',
+        fontSize: `${labelFontSize}px`,
+        fontFamily: labelFontFamily,
+        fill: labelColor,
         fontWeight: 'bold',
-        stroke: '#000000',
-        strokeThickness: 2
+        stroke: '#0f151b',
+        strokeThickness: 3
     };
     const labels = [];
 
@@ -64,7 +69,7 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
     for (let i = 0; i < gridSize; i++) {
         const label = scene.add.text(
             xOffset + i * cellSize + cellSize / 2,
-            yOffset + gridHeight + 15,
+            yOffset + gridHeight + bottomLabelOffset,
             String.fromCharCode(65 + i),
             labelStyle
         ).setOrigin(0.5);
@@ -74,7 +79,7 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
     // Row labels (1-10)
     for (let i = 0; i < gridSize; i++) {
         const label = scene.add.text(
-            xOffset - 15,
+            xOffset - labelOffset,
             yOffset + i * cellSize + cellSize / 2,
             (i + 1).toString(),
             labelStyle
@@ -92,8 +97,8 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
                 yOffset + row * cellSize,
                 cellSize,
                 cellSize,
-                gridType === 'PLAYER' ? 0x0088aa : 0x006688,  // Light cyan for player, darker for enemy
-                cellAlpha  // More transparent to show ocean gradient/background
+                0xf3f7fa,
+                cellAlpha
             );
             cell.setOrigin(0, 0);
             cell.setInteractive();
