@@ -17,12 +17,19 @@ export class HighScoresScene extends Phaser.Scene {
         super({ key: 'HighScoresScene' });
         this.highScores = [];
         this.maxScores = 5; // Old-school arcade style - top 5 only
-        this.backgroundGraphics = null;
+        this.backgroundGraphics = null; // legacy
+        this.backgroundTile = null;
+        this.backgroundOverlay = null;
     }
 
     preload() {
         // Load high scores from localStorage
         this.loadHighScores();
+
+        // Match Game/Help/Settings wave background
+        if (!this.textures.exists('help-wave-tile')) {
+            this.load.image('help-wave-tile', 'src/images/battleships-and-subs-game-screen-01.jpg');
+        }
     }
 
     create() {
@@ -30,6 +37,8 @@ export class HighScoresScene extends Phaser.Scene {
 
         // Clear old references (important when scene is restarted)
         this.backgroundGraphics = null;
+        this.backgroundTile = null;
+        this.backgroundOverlay = null;
 
         // Create background
         this.createBackground();
@@ -57,16 +66,26 @@ export class HighScoresScene extends Phaser.Scene {
         const w = width !== undefined ? width : this.scale.width;
         const h = height !== undefined ? height : this.scale.height;
 
-        // Create or reuse background graphics
-        if (!this.backgroundGraphics) {
-            this.backgroundGraphics = this.add.graphics();
-            this.backgroundGraphics.setDepth(-100);
+        this.cameras.main.setBackgroundColor(0x09131f);
+
+        if (!this.backgroundTile || !this.backgroundTile.active) {
+            this.backgroundTile = this.add.tileSprite(0, 0, w, h, 'help-wave-tile')
+                .setOrigin(0, 0)
+                .setDepth(-100);
+            // Smaller tile scale makes the wave pattern feel farther away.
+            this.backgroundTile.setTileScale(0.5, 0.5);
+        } else {
+            this.backgroundTile.setPosition(0, 0);
+            this.backgroundTile.setSize(w, h);
         }
 
-        // Clear and redraw background
-        this.backgroundGraphics.clear();
-        this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        this.backgroundGraphics.fillRect(0, 0, w, h);
+        if (!this.backgroundOverlay || !this.backgroundOverlay.active) {
+            this.backgroundOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0xffffff, 0.08)
+                .setDepth(-99);
+        } else {
+            this.backgroundOverlay.setPosition(w / 2, h / 2);
+            this.backgroundOverlay.setSize(w, h);
+        }
     }
 
     /**

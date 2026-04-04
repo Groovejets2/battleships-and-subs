@@ -27,6 +27,8 @@ export class SettingsScene extends Phaser.Scene {
         this.toggles = [];
         this.difficultyButtons = []; // NEW
         this.backgroundGraphics = null;
+        this.backgroundTile = null;
+        this.backgroundOverlay = null;
 
         // Store all UI element references for repositioning
         this.titleText = null;
@@ -39,6 +41,11 @@ export class SettingsScene extends Phaser.Scene {
     preload() {
         // Load settings from localStorage if available
         this.loadSettings();
+
+        // Match Help/Game tiled wave background
+        if (!this.textures.exists('help-wave-tile')) {
+            this.load.image('help-wave-tile', 'src/images/battleships-and-subs-game-screen-01.jpg');
+        }
     }
 
     create() {
@@ -50,6 +57,14 @@ export class SettingsScene extends Phaser.Scene {
         if (this.backgroundGraphics) {
             this.backgroundGraphics.destroy();
             this.backgroundGraphics = null;
+        }
+        if (this.backgroundTile) {
+            this.backgroundTile.destroy();
+            this.backgroundTile = null;
+        }
+        if (this.backgroundOverlay) {
+            this.backgroundOverlay.destroy();
+            this.backgroundOverlay = null;
         }
 
         // Reset arrays for fresh population
@@ -89,16 +104,26 @@ export class SettingsScene extends Phaser.Scene {
         const w = width !== undefined ? width : this.scale.width;
         const h = height !== undefined ? height : this.scale.height;
 
-        // Don't destroy during resize - just clear and redraw
-        if (!this.backgroundGraphics) {
-            this.backgroundGraphics = this.add.graphics();
-            this.backgroundGraphics.setDepth(-100);
+        this.cameras.main.setBackgroundColor(0x09131f);
+
+        if (!this.backgroundTile || !this.backgroundTile.active) {
+            this.backgroundTile = this.add.tileSprite(0, 0, w, h, 'help-wave-tile')
+                .setOrigin(0, 0)
+                .setDepth(-100);
+            // Match GameScene/HelpScene scale so the pattern reads consistently.
+            this.backgroundTile.setTileScale(0.5, 0.5);
+        } else {
+            this.backgroundTile.setPosition(0, 0);
+            this.backgroundTile.setSize(w, h);
         }
 
-        // Clear and redraw
-        this.backgroundGraphics.clear();
-        this.backgroundGraphics.fillGradientStyle(0x1e3c72, 0x1e3c72, 0x2a5298, 0x2a5298, 1);
-        this.backgroundGraphics.fillRect(0, 0, w, h);
+        if (!this.backgroundOverlay || !this.backgroundOverlay.active) {
+            this.backgroundOverlay = this.add.rectangle(w / 2, h / 2, w, h, 0xffffff, 0.08)
+                .setDepth(-99);
+        } else {
+            this.backgroundOverlay.setPosition(w / 2, h / 2);
+            this.backgroundOverlay.setSize(w, h);
+        }
     }
 
     /**
