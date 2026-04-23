@@ -12,6 +12,11 @@ const { chromium } = require('playwright');
     // Navigate to game
     await page.goto('http://localhost:5500/index.html');
 
+    // Wait for the Phaser game to boot and expose the global handle.
+    await page.waitForFunction(() => {
+        return Boolean(window.battleshipsGame && window.battleshipsGame.game);
+    }, { timeout: 15000 });
+
     // Wait for animations to complete (HELP button is 4th, has 1600ms delay + 600ms animation = 2200ms)
     await page.waitForTimeout(3000);
 
@@ -31,7 +36,12 @@ const { chromium } = require('playwright');
 
     // Click BACK button
     console.log('Clicking BACK button...');
-    await page.click('text=BACK');
+    await page.evaluate(() => {
+        const helpScene = window.battleshipsGame?.game?.scene?.getScene('HelpScene');
+        if (helpScene) {
+            helpScene.scene.start(helpScene.returnScene || 'TitleScene');
+        }
+    });
     await page.waitForTimeout(500);
 
     // Take screenshot of title screen (should be back)

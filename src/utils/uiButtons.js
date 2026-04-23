@@ -22,8 +22,13 @@ export function createRoundedMenuButton(scene, options) {
         inset = 0x141b22,
         hoverAccent = 0xf3f6f9,
         hoverInset = 0x1e252b,
+        fontFamily = 'Arial Black',
+        textFill = '#f5f7fa',
+        letterSpacing = 1,
         fontSize = 18,
-        depth = 25
+        depth = 25,
+        interactive = true,
+        useHandCursor = true
     } = options;
 
     const container = scene.add.container(x, y).setDepth(depth);
@@ -53,50 +58,54 @@ export function createRoundedMenuButton(scene, options) {
 
     const text = scene.add.text(0, 0, label, {
         fontSize: `${fontSize}px`,
-        fontFamily: 'Arial Black',
-        fill: '#f5f7fa',
+        fontFamily,
+        fill: textFill,
         fontWeight: 'bold',
-        letterSpacing: 1
+        letterSpacing
     }).setOrigin(0.5);
-    text.setResolution(3);
+    text.setResolution(4);
 
-    const hitArea = scene.add.zone(0, 0, width, height).setInteractive({ useHandCursor: true });
+    const hitArea = scene.add.zone(0, 0, width, height);
     container.add([shadow, panel, text, hitArea]);
 
-    hitArea.on('pointerover', () => {
-        panel.setTexture(hoverTexture);
-        scene.tweens.add({
-            targets: container,
-            scaleX: 1.03,
-            scaleY: 1.03,
-            duration: 140,
-            ease: 'Sine.Out'
-        });
-    });
+    if (interactive) {
+        hitArea.setInteractive({ useHandCursor });
 
-    hitArea.on('pointerout', () => {
-        panel.setTexture(normalTexture);
-        scene.tweens.add({
-            targets: container,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 140,
-            ease: 'Sine.Out'
+        hitArea.on('pointerover', () => {
+            panel.setTexture(hoverTexture);
+            scene.tweens.add({
+                targets: container,
+                scaleX: 1.03,
+                scaleY: 1.03,
+                duration: 140,
+                ease: 'Sine.Out'
+            });
         });
-    });
 
-    hitArea.on('pointerdown', () => {
-        scene.tweens.add({
-            targets: container,
-            scaleX: 0.97,
-            scaleY: 0.97,
-            duration: 100,
-            yoyo: true
+        hitArea.on('pointerout', () => {
+            panel.setTexture(normalTexture);
+            scene.tweens.add({
+                targets: container,
+                scaleX: 1,
+                scaleY: 1,
+                duration: 140,
+                ease: 'Sine.Out'
+            });
         });
-        if (onClick) {
-            onClick();
-        }
-    });
+
+        hitArea.on('pointerdown', () => {
+            scene.tweens.add({
+                targets: container,
+                scaleX: 0.97,
+                scaleY: 0.97,
+                duration: 100,
+                yoyo: true
+            });
+            if (onClick) {
+                onClick();
+            }
+        });
+    }
 
     return { container, panel, text, hitArea };
 }
