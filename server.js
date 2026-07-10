@@ -3,6 +3,15 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3000;
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'running',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development'
+    });
+});
+
 // Serve static files from the root directory
 app.use(express.static(path.join(__dirname)));
 
@@ -22,9 +31,10 @@ app.use((err, req, res, next) => {
     res.status(500).send('Something broke!');
 });
 
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`Battleships and Subs app running at http://localhost:${port}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`Health check available at http://localhost:${port}/health`);
     console.log(`Press Ctrl+C to stop the server`);
 });
 
