@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en-NZ">
 <head>
     <link rel="icon" type="image/png" href="/assets/images/favicon.png">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Battleships & Subs</title>
     <style>
         html, body {
@@ -12,9 +14,9 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            overflow: hidden;
         }
         body {
-            /* Remove fixed height and use min-height for flexibility */
             min-height: 100vh;
             min-width: 100vw;
             width: 100vw;
@@ -23,8 +25,8 @@
             justify-content: center;
             align-items: center;
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            overflow: hidden;
             font-family: 'Arial', sans-serif;
+            touch-action: manipulation;
         }
         #game-container {
             position: relative;
@@ -35,8 +37,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-            border-radius: 8px;
             overflow: hidden;
         }
         canvas {
@@ -46,6 +46,7 @@
             max-width: 100vw;
             max-height: 100vh;
             object-fit: contain;
+            image-rendering: pixelated;
         }
         #loading {
             position: absolute;
@@ -55,6 +56,12 @@
             color: white;
             font-size: 18px;
             z-index: 1000;
+            text-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        @media (max-width: 768px) {
+            #loading {
+                font-size: 16px;
+            }
         }
     </style>
 </head>
@@ -62,12 +69,9 @@
     <div id="game-container">
         <div id="loading">Loading Battleships & Subs...</div>
     </div>
-    
-    <!-- Load Phaser locally so the app works in offline and sandboxed environments -->
+
+    <!-- Load Phaser locally -->
     <script src="./node_modules/phaser/dist/phaser.min.js"></script>
-    <!-- PASS -- script type="module">import './src/models/Ship.test.js';</script -->
-    <!-- PASS -- script type="module">import './src/utils/gridValidation.test.js';</script -->
-    <!-- PASS -- script type="module">import './src/managers/FleetManager.test.js';</script -->
     <script type="module" src="src/main.js"></script>
 </body>
 </html>
