@@ -204,7 +204,7 @@ export class SettingsScene extends Phaser.Scene {
     createAudioControls(width, height) {
         const compact = width < 430 && height < 760;
         const startY = compact ? 108 : 122;
-        const spacing = compact ? 64 : 82;
+        const spacing = compact ? 64 : 92;
         const MAX_LEVEL = 8;
         const rowWidth = Math.min(width * (compact ? 0.78 : 0.74), 640);
         const rowHeight = compact ? 48 : 60;
@@ -313,7 +313,7 @@ export class SettingsScene extends Phaser.Scene {
      */
     createVisualControls(width, height) {
         const compact = width < 430 && height < 760;
-        const startY = compact ? 286 : 318;
+        const startY = compact ? 286 : 380;
         const sectionWidth = Math.min(width * (compact ? 0.78 : 0.76), 640);
         const sectionLeft = width / 2 - (sectionWidth / 2);
         const difficultyHeight = compact ? 70 : 84;
@@ -453,67 +453,6 @@ export class SettingsScene extends Phaser.Scene {
             this.toggles.push({ toggleBg, key: control.key, drawToggle });
         });
 
-        const statusY = toggleStartY + (compact ? 120 : 172);
-        const statusFrameHeight = compact ? 86 : 122;
-        const statusFrame = this.add.graphics().setDepth(-10);
-        statusFrame.fillStyle(0x434b53, 0.34);
-        statusFrame.fillRoundedRect(sectionLeft - 6, statusY - 14, sectionWidth + 12, statusFrameHeight, 18);
-        statusFrame.fillStyle(0xe8edf1, 0.95);
-        statusFrame.fillRoundedRect(sectionLeft, statusY - 10, sectionWidth, statusFrameHeight - 8, 16);
-        statusFrame.fillGradientStyle(0xf8fbfd, 0xe8edf1, 0xb6bdc4, 0x8d969d, 1);
-        statusFrame.fillRoundedRect(sectionLeft + 2, statusY - 8, sectionWidth - 4, statusFrameHeight - 12, 14);
-        statusFrame.lineStyle(3, 0xffffff, 0.18);
-        statusFrame.strokeRoundedRect(sectionLeft, statusY - 10, sectionWidth, statusFrameHeight - 8, 16);
-        statusFrame.lineStyle(2, 0x5f6871, 0.4);
-        statusFrame.strokeRoundedRect(sectionLeft + 3, statusY - 7, sectionWidth - 6, statusFrameHeight - 14, 14);
-        this.sectionPanels.push(statusFrame);
-
-        this.add.text(sectionLeft + 24, statusY + 2, 'CONSOLE STATUS', {
-            fontSize: compact ? '12px' : '15px',
-            fontFamily: 'Arial Black',
-            fill: '#0f151b',
-            fontWeight: '900',
-            letterSpacing: 1,
-            stroke: '#ffffff',
-            strokeThickness: 2
-        }).setOrigin(0, 0.5);
-
-        const statusItems = [
-            { label: 'AUDIO BUS', active: this.settings.masterVolume > 0 },
-            { label: 'VISUAL BUS', active: this.settings.visualEffects },
-            { label: 'MOTION BUS', active: this.settings.animations }
-        ];
-
-        const statusSpacing = sectionWidth / statusItems.length;
-        statusItems.forEach((item, index) => {
-            const cx = sectionLeft + (statusSpacing * index) + (statusSpacing / 2);
-            const light = this.add.graphics().setDepth(29);
-            light.fillStyle(item.active ? 0xcfd7de : 0x8f989f, 1);
-            const lightOffset = compact ? 0 : 26;
-            const lightY = statusY + (compact ? 24 : 36);
-            const labelY = statusY + (compact ? 40 : 27);
-            const valueY = statusY + (compact ? 56 : 51);
-            light.fillCircle(cx - lightOffset, lightY, compact ? 6 : 8);
-            light.lineStyle(2, item.active ? 0xffffff : 0x5f6871, 0.85);
-            light.strokeCircle(cx - lightOffset, lightY, compact ? 6 : 8);
-            this.sectionPanels.push(light);
-
-            this.add.text(cx - (compact ? 0 : 10), labelY, item.label, {
-                fontSize: compact ? '9px' : '13px',
-                fontFamily: 'Arial Black',
-                fill: '#0f151b',
-                fontWeight: '900',
-                letterSpacing: 1
-            }).setOrigin(compact ? 0.5 : 0, 0.5);
-
-            this.add.text(cx - (compact ? 0 : 10), valueY, item.active ? 'ACTIVE' : 'STANDBY', {
-                fontSize: compact ? '9px' : '12px',
-                fontFamily: 'Arial Black',
-                fill: item.active ? '#5c6b74' : '#7c848b',
-                fontWeight: '900',
-                letterSpacing: 1
-            }).setOrigin(compact ? 0.5 : 0, 0.5);
-        });
     }
 
     /**
@@ -541,7 +480,7 @@ export class SettingsScene extends Phaser.Scene {
      */
     createBackButton(width, height) {
         const compact = width < 430 && height < 760;
-        const calculatedY = compact ? height - 46 : 475;
+        const calculatedY = compact ? height - 46 : Math.min(height - 85, 650);
         const buttonY = Math.min(calculatedY, height - (compact ? 44 : 80));
         const buttonWidth = Math.min(width * (compact ? 0.38 : 0.4), 200);
         const buttonHeight = compact ? 38 : 50;
