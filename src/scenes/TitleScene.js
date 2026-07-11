@@ -138,10 +138,18 @@ export class TitleScene extends Phaser.Scene {
 
         // Version or tagline
         this.tagline = this.add.text(width / 2, height * 0.38, 'Navigate • Strategise • Dominate', {
-            fontSize: Math.min(width * 0.025, 16) + 'px',
+            fontSize: Math.min(width * 0.03, 19) + 'px',
             fontFamily: 'Arial',
             fill: '#a0c4ff',
-            fontStyle: 'italic'
+            fontStyle: 'italic',
+            shadow: {
+                offsetX: 0,
+                offsetY: 11,
+                color: '#000102',
+                blur: 60,
+                fill: true,
+                alpha: 0.98
+            }
         }).setOrigin(0.5);
 
         // Decorative separator lines flanking the tagline

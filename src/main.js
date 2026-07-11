@@ -35,11 +35,23 @@ export class BattleshipsGame {
     init() {
         if (this.isInitialized) return;
 
+        const devicePixelRatio = window.devicePixelRatio || 1;
+        const renderResolution = Math.min(Math.max(devicePixelRatio, 1.5), 3);
+
         const config = {
             type: Phaser.AUTO,
             width: window.innerWidth,
             height: window.innerHeight,
             parent: 'game-container',
+            resolution: renderResolution,
+            antialias: true,
+            autoRound: false,
+            pixelArt: false,
+            render: {
+                antialias: true,
+                antialiasGL: true,
+                roundPixels: false
+            },
             scene: [
                 TitleScene,
                 GameScene,

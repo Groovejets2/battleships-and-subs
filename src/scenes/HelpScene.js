@@ -26,14 +26,35 @@ function ensureHelpAssets(scene) {
     if (!scene.textures.exists('ship-carrier')) {
         scene.load.image('ship-carrier', 'assets/ships/Carrier/ShipCarrierHull.png');
     }
+    if (!scene.textures.exists('ship-carrier-h')) {
+        scene.load.image('ship-carrier-h', 'assets/ships/Carrier/ShipCarrierHull_Horizontal.png');
+    }
     if (!scene.textures.exists('ship-cruiser')) {
         scene.load.image('ship-cruiser', 'assets/ships/Cruiser/ShipCruiserHull.png');
+    }
+    if (!scene.textures.exists('ship-cruiser-h')) {
+        scene.load.image('ship-cruiser-h', 'assets/ships/Cruiser/ShipCruiserHull_Horizontal.png');
+    }
+    if (!scene.textures.exists('ship-nuclear-sub')) {
+        scene.load.image('ship-nuclear-sub', 'assets/ships/Submarine/ShipNuclearSubHull.png');
+    }
+    if (!scene.textures.exists('ship-nuclear-sub-h')) {
+        scene.load.image('ship-nuclear-sub-h', 'assets/ships/Submarine/ShipNuclearSubHull_Horizontal.png');
+    }
+    if (!scene.textures.exists('ship-attack-sub')) {
+        scene.load.image('ship-attack-sub', 'assets/ships/Submarine/ShipAttackSubHull.png');
+    }
+    if (!scene.textures.exists('ship-attack-sub-h')) {
+        scene.load.image('ship-attack-sub-h', 'assets/ships/Submarine/ShipAttackSubHull_Horizontal.png');
     }
     if (!scene.textures.exists('ship-submarine')) {
         scene.load.image('ship-submarine', 'assets/ships/Submarine/ShipSubMarineHull.png');
     }
     if (!scene.textures.exists('ship-destroyer')) {
         scene.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
+    }
+    if (!scene.textures.exists('ship-destroyer-h')) {
+        scene.load.image('ship-destroyer-h', 'assets/ships/Destroyer/ShipDestroyerHull_Horizontal.png');
     }
 }
 
@@ -222,6 +243,10 @@ function fitImageToBox(image, boxWidth, boxHeight, rotated = false) {
     image.setScale(scale);
 }
 
+function getHelpShipPreviewKey(baseKey, orientation = 'horizontal') {
+    return orientation === 'horizontal' ? `${baseKey}-h` : baseKey;
+}
+
 function shrinkTextToFit(text, maxBottomY, minFontSize = 18) {
     if (!text) return;
     const getSize = () => {
@@ -238,6 +263,10 @@ function shrinkTextToFit(text, maxBottomY, minFontSize = 18) {
         text.setLineSpacing(Math.round(fontSize * 0.34));
         attempts += 1;
     }
+}
+
+function clamp(value, min, max) {
+    return Math.min(max, Math.max(min, value));
 }
 
 export class HelpScene extends Phaser.Scene {
@@ -446,119 +475,479 @@ export class HelpFleetScene extends HelpBaseSectionScene {
             ({ panelX, panelY, panelWidth, panelHeight, padding, contentX, contentWidth, body }) => {
                 const { width, height } = this.scale;
                 const phonePortrait = isPhonePortrait(this);
+                const wideLandscape = !phonePortrait && width >= 1500;
 
-                if (phonePortrait) {
-                    // Mobile portrait - prioritise readability and keep all elements inside the panel.
-                    body.setText([
-                        'FLEET LINE-UP'
-                    ].join('\n'));
-                    body.setFontSize(18);
+                if (wideLandscape) {
+                    body.setText('FLEET LINE-UP');
+                    body.setFontSize(22);
                     body.setLineSpacing(4);
                     sharpenHelpText(body);
 
                     const panelBottom = panelY + panelHeight - padding;
+                    const previewWidth = Math.round(Math.min(280, panelWidth * 0.22));
+                    const previewHeight = Math.round(Math.min(280, panelHeight - (padding * 2) - 36));
+                    const previewX = Math.round(panelX + panelWidth - padding - previewWidth);
+                    const previewY = Math.round(panelY + padding + 22);
 
-                    // Status row (safe / hit) at the bottom of the panel.
-                    const iconBox = Math.round(Math.min(56, Math.max(44, height * 0.06)));
-                    const iconSize = Math.round(iconBox * 0.92);
-                    const statusIconY = Math.round(panelBottom - Math.max(42, iconBox + 4));
+                    const leftWidth = previewX - contentX - 24;
+                    const titleY = Math.round(body.y + body.height + 6);
 
-                    const colGap = Math.round(Math.max(18, width * 0.06));
-                    const leftX = Math.round(panelX + panelWidth / 2 - colGap / 2 - iconBox);
-                    const rightX = Math.round(panelX + panelWidth / 2 + colGap / 2);
+                    const sectionLead = this.add.text(contentX, titleY, 'Five ships. Five roles.', {
+                        fontSize: '18px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 3
+                    }).setOrigin(0, 0).setDepth(10);
+                    sharpenHelpText(sectionLead);
+                    sectionLead.setShadow(0, 2, '#000000', 8, true, true);
 
-                    const safe = this.add.image(leftX + iconBox / 2, statusIconY, 'ship-icon-safe').setOrigin(0.5).setDepth(10);
-                    const hit = this.add.image(rightX + iconBox / 2, statusIconY, 'ship-icon-hit').setOrigin(0.5).setDepth(10);
-                    safe.setDisplaySize(iconSize, iconSize);
-                    hit.setDisplaySize(iconSize, iconSize);
+                    const lineup = [
+                        { key: getHelpShipPreviewKey('ship-carrier'), label: 'CARRIER', cells: 5, note: '' },
+                        { key: getHelpShipPreviewKey('ship-nuclear-sub'), label: 'NUCLEAR SUB', cells: 3, note: 'SONAR ABILITY' },
+                        { key: getHelpShipPreviewKey('ship-cruiser'), label: 'CRUISER', cells: 3, note: 'ROW NUKE ABILITY' },
+                        { key: getHelpShipPreviewKey('ship-attack-sub'), label: 'ATTACK SUB', cells: 2, note: '' },
+                        { key: getHelpShipPreviewKey('ship-destroyer'), label: 'DESTROYER', cells: 2, note: '' }
+                    ];
 
-                    const labelStyle = {
+                    const gridGapX = 16;
+                    const gridGapY = 14;
+                    const columns = 3;
+                    const cardWidth = Math.floor((leftWidth - (gridGapX * 2)) / columns);
+                    const statusRowY = panelBottom - 44;
+                    const cardsTop = Math.round(sectionLead.y + sectionLead.height + 10);
+                    const cardsBottom = statusRowY - 16;
+                    const cardHeight = Math.max(82, Math.floor((cardsBottom - cardsTop - gridGapY) / 2));
+                    const lineupObjects = [sectionLead];
+
+                    for (let i = 0; i < lineup.length; i++) {
+                        const item = lineup[i];
+                        const row = i < 3 ? 0 : 1;
+                        const col = i < 3 ? i : i - 3;
+                        const secondRowCount = 2;
+                        const secondRowWidth = (secondRowCount * cardWidth) + ((secondRowCount - 1) * gridGapX);
+                        const secondRowStartX = Math.round(contentX + (leftWidth - secondRowWidth) / 2);
+                        const cardX = row === 0
+                            ? Math.round(contentX + col * (cardWidth + gridGapX))
+                            : Math.round(secondRowStartX + col * (cardWidth + gridGapX));
+                        const cardY = Math.round(cardsTop + row * (cardHeight + gridGapY));
+
+                        const card = this.add.graphics().setDepth(9);
+                        card.fillStyle(0x04090e, 0.26);
+                        card.fillRoundedRect(cardX, cardY, cardWidth, cardHeight, 18);
+                        card.lineStyle(2, HELP_CHROME_ACCENT, 0.35);
+                        card.strokeRoundedRect(cardX, cardY, cardWidth, cardHeight, 18);
+                        lineupObjects.push(card);
+
+                        const sprite = this.add.image(cardX + cardWidth / 2, cardY + 24, item.key)
+                            .setOrigin(0.5)
+                            .setDepth(10);
+                        fitImageToBox(sprite, cardWidth * 0.7, 18);
+                        lineupObjects.push(sprite);
+
+                        const label = this.add.text(cardX + cardWidth / 2, cardY + 42, item.label, {
+                            fontSize: '14px',
+                            fontFamily: HELP_FONT_FAMILY,
+                            fill: HELP_TEXT_FILL,
+                            stroke: HELP_TEXT_STROKE,
+                            strokeThickness: 2,
+                            letterSpacing: 1
+                        }).setOrigin(0.5, 0).setDepth(10);
+                        sharpenHelpText(label);
+                        label.setShadow(0, 2, '#000000', 7, true, true);
+                        lineupObjects.push(label);
+
+                        const meta = item.note
+                            ? `${item.cells} CELLS - ${item.note}`
+                            : `${item.cells} CELLS`;
+                        const cells = this.add.text(cardX + cardWidth / 2, cardY + 62, meta, {
+                            fontSize: '10px',
+                            fontFamily: HELP_FONT_FAMILY,
+                            fill: HELP_TEXT_FILL,
+                            stroke: HELP_TEXT_STROKE,
+                            strokeThickness: 2,
+                            letterSpacing: 0
+                        }).setOrigin(0.5, 0).setDepth(10);
+                        sharpenHelpText(cells);
+                        cells.setShadow(0, 2, '#000000', 7, true, true);
+                        lineupObjects.push(cells);
+                    }
+
+                    const statusTitle = this.add.text(contentX, statusRowY - 30, 'SHIP STATUS', {
                         fontSize: '16px',
                         fontFamily: HELP_FONT_FAMILY,
                         fill: HELP_TEXT_FILL,
                         stroke: HELP_TEXT_STROKE,
-                        strokeThickness: 3,
-                        letterSpacing: 1
-                    };
+                        strokeThickness: 3
+                    }).setOrigin(0, 0.5).setDepth(10);
+                    sharpenHelpText(statusTitle);
+                    statusTitle.setShadow(0, 2, '#000000', 8, true, true);
 
-                    const safeLabel = this.add.text(safe.x, safe.y + iconBox * 0.62, 'SAFE', labelStyle).setOrigin(0.5).setDepth(10);
-                    const hitLabel = this.add.text(hit.x, hit.y + iconBox * 0.62, 'HIT', labelStyle).setOrigin(0.5).setDepth(10);
+                    const statusCardWidth = 320;
+                    const statusCardHeight = 72;
+                    const statusCardGap = 14;
+                    const safeCardX = contentX + 20;
+                    const safeCardY = statusRowY - 18;
+                    const hitCardX = safeCardX;
+                    const hitCardY = safeCardY + statusCardHeight + statusCardGap;
+
+                    const safeCard = this.add.graphics().setDepth(9);
+                    safeCard.fillStyle(0x04090e, 0.22);
+                    safeCard.fillRoundedRect(safeCardX, safeCardY, statusCardWidth, statusCardHeight, 16);
+                    safeCard.lineStyle(2, HELP_CHROME_ACCENT, 0.28);
+                    safeCard.strokeRoundedRect(safeCardX, safeCardY, statusCardWidth, statusCardHeight, 16);
+
+                    const hitCard = this.add.graphics().setDepth(9);
+                    hitCard.fillStyle(0x04090e, 0.22);
+                    hitCard.fillRoundedRect(hitCardX, hitCardY, statusCardWidth, statusCardHeight, 16);
+                    hitCard.lineStyle(2, HELP_CHROME_ACCENT, 0.28);
+                    hitCard.strokeRoundedRect(hitCardX, hitCardY, statusCardWidth, statusCardHeight, 16);
+
+                    const safeIconY = safeCardY + statusCardHeight / 2;
+                    const hitIconY = hitCardY + statusCardHeight / 2;
+                    const safe = this.add.image(safeCardX + 18, safeIconY, 'ship-icon-safe').setOrigin(0, 0.5).setDepth(10);
+                    const hit = this.add.image(hitCardX + 18, hitIconY, 'ship-icon-hit').setOrigin(0, 0.5).setDepth(10);
+                    const largeIconSize = 56;
+                    safe.setDisplaySize(largeIconSize, largeIconSize);
+                    hit.setDisplaySize(largeIconSize, largeIconSize);
+
+                    const safeLabel = this.add.text(safeCardX + 92, safeIconY - 10, 'SAFE', {
+                        fontSize: '16px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 3
+                    }).setOrigin(0, 0.5).setDepth(10);
+                    const hitLabel = this.add.text(hitCardX + 92, hitIconY - 10, 'HIT', {
+                        fontSize: '16px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 3
+                    }).setOrigin(0, 0.5).setDepth(10);
+                    const safeDesc = this.add.text(safeCardX + 92, safeIconY + 10, 'Ship still operational', {
+                        fontSize: '12px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 2
+                    }).setOrigin(0, 0.5).setDepth(10);
+                    const hitDesc = this.add.text(hitCardX + 92, hitIconY + 10, 'Ship has taken damage', {
+                        fontSize: '12px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 2
+                    }).setOrigin(0, 0.5).setDepth(10);
                     sharpenHelpText(safeLabel);
                     sharpenHelpText(hitLabel);
+                    sharpenHelpText(safeDesc);
+                    sharpenHelpText(hitDesc);
                     safeLabel.setShadow(0, 2, '#000000', 7, true, true);
                     hitLabel.setShadow(0, 2, '#000000', 7, true, true);
+                    safeDesc.setShadow(0, 2, '#000000', 6, true, true);
+                    hitDesc.setShadow(0, 2, '#000000', 6, true, true);
 
-                    // Ship line-up grid (2 columns, 3 rows - all 5 ships shown).
-                    const lineup = [
-                        { key: 'ship-carrier', label: 'CARRIER', cells: 5 },
-                        { key: 'ship-submarine', label: 'NUCLEAR SUB', cells: 3 },
-                        { key: 'ship-cruiser', label: 'CRUISER', cells: 3 },
-                        { key: 'ship-submarine', label: 'ATTACK SUB', cells: 2 },
-                        { key: 'ship-destroyer', label: 'DESTROYER', cells: 2 }
+                    const frame = this.add.graphics().setDepth(9);
+                    frame.fillStyle(0x04090e, 0.34);
+                    frame.fillRoundedRect(previewX - 12, previewY - 14, previewWidth + 24, previewHeight + 28, 16);
+                    frame.lineStyle(2, 0xcdd4da, 0.65);
+                    frame.strokeRoundedRect(previewX - 12, previewY - 14, previewWidth + 24, previewHeight + 28, 16);
+
+                    const grid = this.add.graphics().setDepth(10);
+                    grid.fillStyle(0x0b3d2d, 0.18);
+                    grid.fillRect(previewX, previewY, previewWidth, previewHeight);
+                    const previewCell = Math.min(previewWidth, previewHeight) / 10;
+                    grid.lineStyle(1, 0xe8edf2, 0.25);
+                    for (let i = 0; i <= 10; i++) {
+                        const gx = Math.round(previewX + i * previewCell);
+                        const gy = Math.round(previewY + i * previewCell);
+                        grid.lineBetween(gx, previewY, gx, previewY + (previewCell * 10));
+                        grid.lineBetween(previewX, gy, previewX + (previewCell * 10), gy);
+                    }
+
+                    const previewShips = [
+                        { key: getHelpShipPreviewKey('ship-carrier'), gx: 1, gy: 1, len: 5, horizontal: true },
+                        { key: getHelpShipPreviewKey('ship-nuclear-sub', 'vertical'), gx: 7, gy: 2, len: 3, horizontal: false },
+                        { key: getHelpShipPreviewKey('ship-cruiser'), gx: 2, gy: 6, len: 3, horizontal: true },
+                        { key: getHelpShipPreviewKey('ship-attack-sub', 'vertical'), gx: 8, gy: 7, len: 2, horizontal: false },
+                        { key: getHelpShipPreviewKey('ship-destroyer'), gx: 5, gy: 8, len: 2, horizontal: true }
                     ];
 
-                    const gap = Math.round(Math.max(14, Math.min(20, width * 0.04)));
-                    const columns = 2;
-                    const rows = 3;
-                    const gridInset = Math.round(Math.max(6, gap * 0.4));
-                    const gridWidth = contentWidth - (gridInset * 2);
-                    const cardWidth = Math.floor((gridWidth - gap) / 2);
-                    const lineupTop = Math.round(body.y + body.height + 10);
-                    const lineupBottom = Math.round(statusIconY - iconBox / 2 - 8);
-                    const availableLineupHeight = lineupBottom - lineupTop;
-                    const cardHeight = Math.floor((availableLineupHeight - ((rows - 1) * gap)) / rows);
+                    const previewObjects = [frame, grid];
+                    previewShips.forEach((item) => {
+                        const sprite = this.add.image(
+                            previewX + ((item.gx + (item.horizontal ? item.len / 2 : 0.5)) * previewCell),
+                            previewY + ((item.gy + (item.horizontal ? 0.5 : item.len / 2)) * previewCell),
+                            item.key
+                        ).setOrigin(0.5).setDepth(11);
 
-                    const lineupObjects = [];
-                    for (let i = 0; i < lineup.length; i++) {
-                        const item = lineup[i];
-                        const col = i % columns;
-                        const row = Math.floor(i / columns);
-                        const isLastSingle = i === lineup.length - 1 && row === 2 && col === 0;
+                        if (item.horizontal) {
+                            sprite.setDisplaySize(item.len * previewCell * 0.9, previewCell * 0.72);
+                        } else {
+                            sprite.setDisplaySize(previewCell * 0.72, item.len * previewCell * 0.9);
+                        }
+                        previewObjects.push(sprite);
+                    });
 
-                        const cardX = isLastSingle
-                            ? Math.round(contentX + (contentWidth - cardWidth) / 2)
-                            : Math.round(contentX + gridInset + col * (cardWidth + gap));
-                        const cardY = Math.round(lineupTop + row * (cardHeight + gap));
+                    const previewLabel = this.add.text(previewX + previewWidth / 2, previewY - 16, 'PLACEMENT EXAMPLE', {
+                        fontSize: '16px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 3
+                    }).setOrigin(0.5).setDepth(12);
+                    sharpenHelpText(previewLabel);
+                    previewLabel.setShadow(0, 2, '#000000', 7, true, true);
+                    previewObjects.push(previewLabel);
+
+                    animateFlyInFromLeft(
+                        this,
+                        [...lineupObjects, statusTitle, safeCard, hitCard, safe, hit, safeLabel, hitLabel, safeDesc, hitDesc, ...previewObjects].filter(Boolean),
+                        240
+                    );
+                    return;
+                }
+
+                if (phonePortrait) {
+                    body.setText('FLEET LINE-UP');
+                    body.setFontSize(18);
+                    body.setLineSpacing(4);
+                    sharpenHelpText(body);
+
+                    const viewportY = Math.round(body.y + body.height + 12);
+                    const viewportHeight = Math.round(panelY + panelHeight - padding - viewportY - 8);
+                    const viewportWidth = contentWidth;
+
+                    const maskGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+                    maskGraphics.fillStyle(0xffffff, 1);
+                    maskGraphics.fillRect(contentX, viewportY, viewportWidth, viewportHeight);
+                    const contentMask = maskGraphics.createGeometryMask();
+
+                    const scrollContainer = this.add.container(0, 0).setDepth(9);
+                    scrollContainer.setMask(contentMask);
+
+                    const lineup = [
+                        { key: getHelpShipPreviewKey('ship-carrier'), label: 'CARRIER', cells: 5, note: '' },
+                        { key: getHelpShipPreviewKey('ship-nuclear-sub'), label: 'NUCLEAR SUB', cells: 3, note: 'SONAR ABILITY' },
+                        { key: getHelpShipPreviewKey('ship-cruiser'), label: 'CRUISER', cells: 3, note: 'ROW NUKE ABILITY' },
+                        { key: getHelpShipPreviewKey('ship-attack-sub'), label: 'ATTACK SUB', cells: 2, note: '' },
+                        { key: getHelpShipPreviewKey('ship-destroyer'), label: 'DESTROYER', cells: 2, note: '' }
+                    ];
+
+                    const scrollObjects = [];
+                    let cursorY = viewportY;
+
+                    const lead = this.add.text(contentX, cursorY, 'Scroll to view the full fleet guide.', {
+                        fontSize: '16px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 3
+                    }).setOrigin(0, 0).setDepth(10);
+                    sharpenHelpText(lead);
+                    lead.setShadow(0, 2, '#000000', 7, true, true);
+                    scrollObjects.push(lead);
+                    cursorY += Math.round(lead.height + 14);
+
+                    const cardWidth = viewportWidth - 8;
+                    const cardHeight = 116;
+
+                    lineup.forEach((item) => {
+                        const cardX = contentX;
+                        const cardY = cursorY;
 
                         const card = this.add.graphics().setDepth(9);
                         card.fillStyle(0x04090e, 0.28);
-                        card.fillRoundedRect(cardX, cardY, cardWidth, cardHeight, 16);
+                        card.fillRoundedRect(cardX, cardY, cardWidth, cardHeight, 18);
                         card.lineStyle(2, HELP_CHROME_ACCENT, 0.35);
-                        card.strokeRoundedRect(cardX, cardY, cardWidth, cardHeight, 16);
-                        lineupObjects.push(card);
+                        card.strokeRoundedRect(cardX, cardY, cardWidth, cardHeight, 18);
+                        scrollObjects.push(card);
 
-                        const sprite = this.add.image(cardX + cardWidth / 2, cardY + cardHeight * 0.33, item.key)
+                        const sprite = this.add.image(cardX + cardWidth / 2, cardY + 28, item.key)
                             .setOrigin(0.5)
                             .setDepth(10);
-                        sprite.setAngle(90);
-                        fitImageToBox(sprite, cardWidth * 0.84, cardHeight * 0.26, true);
+                        fitImageToBox(sprite, cardWidth * 0.74, 24);
+                        scrollObjects.push(sprite);
 
-                        const tag = this.add.text(cardX + cardWidth / 2, cardY + cardHeight * 0.58, item.label, {
-                            fontSize: '12px',
+                        const label = this.add.text(cardX + cardWidth / 2, cardY + 50, item.label, {
+                            fontSize: '18px',
                             fontFamily: HELP_FONT_FAMILY,
                             fill: HELP_TEXT_FILL,
                             stroke: HELP_TEXT_STROKE,
                             strokeThickness: 3,
                             letterSpacing: 1
-                        }).setOrigin(0.5).setDepth(10);
-                        sharpenHelpText(tag);
-                        tag.setShadow(0, 2, '#000000', 7, true, true);
+                        }).setOrigin(0.5, 0).setDepth(10);
+                        sharpenHelpText(label);
+                        label.setShadow(0, 2, '#000000', 7, true, true);
+                        scrollObjects.push(label);
 
-                        const cells = this.add.text(cardX + cardWidth / 2, cardY + cardHeight * 0.76, `${item.cells} CELLS`, {
-                            fontSize: '11px',
+                        const meta = item.note
+                            ? `${item.cells} CELLS - ${item.note}`
+                            : `${item.cells} CELLS`;
+                        const cells = this.add.text(cardX + cardWidth / 2, cardY + 82, meta, {
+                            fontSize: '14px',
                             fontFamily: HELP_FONT_FAMILY,
                             fill: HELP_TEXT_FILL,
                             stroke: HELP_TEXT_STROKE,
                             strokeThickness: 3,
-                            letterSpacing: 1
-                        }).setOrigin(0.5).setDepth(10);
+                            letterSpacing: 0
+                        }).setOrigin(0.5, 0).setDepth(10);
                         sharpenHelpText(cells);
                         cells.setShadow(0, 2, '#000000', 7, true, true);
+                        scrollObjects.push(cells);
 
-                        lineupObjects.push(sprite, tag, cells);
+                        cursorY += cardHeight + 14;
+                    });
+
+                    const statusTitle = this.add.text(contentX, cursorY + 4, 'SHIP STATUS', {
+                        fontSize: '18px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 3
+                    }).setOrigin(0, 0).setDepth(10);
+                    sharpenHelpText(statusTitle);
+                    statusTitle.setShadow(0, 2, '#000000', 7, true, true);
+                    scrollObjects.push(statusTitle);
+                    cursorY += statusTitle.height + 14;
+
+                    const statusRows = [
+                        { key: 'ship-icon-safe', title: 'SAFE', desc: 'Ship still operational' },
+                        { key: 'ship-icon-hit', title: 'HIT', desc: 'Ship has taken damage' }
+                    ];
+
+                    statusRows.forEach((item) => {
+                        const rowCard = this.add.graphics().setDepth(9);
+                        rowCard.fillStyle(0x04090e, 0.22);
+                        rowCard.fillRoundedRect(contentX, cursorY, cardWidth, 76, 16);
+                        rowCard.lineStyle(2, HELP_CHROME_ACCENT, 0.28);
+                        rowCard.strokeRoundedRect(contentX, cursorY, cardWidth, 76, 16);
+                        scrollObjects.push(rowCard);
+
+                        const icon = this.add.image(contentX + 16, cursorY + 38, item.key).setOrigin(0, 0.5).setDepth(10);
+                        icon.setDisplaySize(56, 56);
+                        scrollObjects.push(icon);
+
+                        const label = this.add.text(contentX + 88, cursorY + 24, item.title, {
+                            fontSize: '17px',
+                            fontFamily: HELP_FONT_FAMILY,
+                            fill: HELP_TEXT_FILL,
+                            stroke: HELP_TEXT_STROKE,
+                            strokeThickness: 3
+                        }).setOrigin(0, 0.5).setDepth(10);
+                        const desc = this.add.text(contentX + 88, cursorY + 50, item.desc, {
+                            fontSize: '13px',
+                            fontFamily: HELP_FONT_FAMILY,
+                            fill: HELP_TEXT_FILL,
+                            stroke: HELP_TEXT_STROKE,
+                            strokeThickness: 2
+                        }).setOrigin(0, 0.5).setDepth(10);
+                        sharpenHelpText(label);
+                        sharpenHelpText(desc);
+                        label.setShadow(0, 2, '#000000', 7, true, true);
+                        desc.setShadow(0, 2, '#000000', 6, true, true);
+                        scrollObjects.push(label, desc);
+
+                        cursorY += 90;
+                    });
+
+                    const previewTitle = this.add.text(contentX, cursorY + 4, 'PLACEMENT EXAMPLE', {
+                        fontSize: '18px',
+                        fontFamily: HELP_FONT_FAMILY,
+                        fill: HELP_TEXT_FILL,
+                        stroke: HELP_TEXT_STROKE,
+                        strokeThickness: 3
+                    }).setOrigin(0, 0).setDepth(10);
+                    sharpenHelpText(previewTitle);
+                    previewTitle.setShadow(0, 2, '#000000', 7, true, true);
+                    scrollObjects.push(previewTitle);
+                    cursorY += previewTitle.height + 14;
+
+                    const previewSize = Math.round(Math.min(cardWidth - 8, 260));
+                    const previewX = Math.round(contentX + (viewportWidth - previewSize) / 2);
+                    const previewY = cursorY;
+                    const previewCell = previewSize / 10;
+
+                    const frame = this.add.graphics().setDepth(9);
+                    frame.fillStyle(0x04090e, 0.34);
+                    frame.fillRoundedRect(previewX - 12, previewY - 14, previewSize + 24, previewSize + 28, 16);
+                    frame.lineStyle(2, 0xcdd4da, 0.65);
+                    frame.strokeRoundedRect(previewX - 12, previewY - 14, previewSize + 24, previewSize + 28, 16);
+                    scrollObjects.push(frame);
+
+                    const grid = this.add.graphics().setDepth(10);
+                    grid.fillStyle(0x0b3d2d, 0.18);
+                    grid.fillRect(previewX, previewY, previewSize, previewSize);
+                    grid.lineStyle(1, 0xe8edf2, 0.25);
+                    for (let i = 0; i <= 10; i++) {
+                        const p = Math.round(previewX + i * previewCell);
+                        const q = Math.round(previewY + i * previewCell);
+                        grid.lineBetween(p, previewY, p, previewY + previewSize);
+                        grid.lineBetween(previewX, q, previewX + previewSize, q);
                     }
+                    scrollObjects.push(grid);
 
-                    animateFlyInFromLeft(this, [...lineupObjects, safe, hit, safeLabel, hitLabel].filter(Boolean), 240);
+                    const previewShips = [
+                        { key: getHelpShipPreviewKey('ship-carrier'), gx: 1, gy: 1, len: 5, horizontal: true },
+                        { key: getHelpShipPreviewKey('ship-nuclear-sub', 'vertical'), gx: 7, gy: 2, len: 3, horizontal: false },
+                        { key: getHelpShipPreviewKey('ship-cruiser'), gx: 2, gy: 6, len: 3, horizontal: true },
+                        { key: getHelpShipPreviewKey('ship-attack-sub', 'vertical'), gx: 8, gy: 7, len: 2, horizontal: false },
+                        { key: getHelpShipPreviewKey('ship-destroyer'), gx: 5, gy: 8, len: 2, horizontal: true }
+                    ];
+                    previewShips.forEach((item) => {
+                        const sprite = this.add.image(
+                            previewX + ((item.gx + (item.horizontal ? item.len / 2 : 0.5)) * previewCell),
+                            previewY + ((item.gy + (item.horizontal ? 0.5 : item.len / 2)) * previewCell),
+                            item.key
+                        ).setOrigin(0.5).setDepth(11);
+                        if (item.horizontal) {
+                            sprite.setDisplaySize(item.len * previewCell * 0.9, previewCell * 0.72);
+                        } else {
+                            sprite.setDisplaySize(previewCell * 0.72, item.len * previewCell * 0.9);
+                        }
+                        scrollObjects.push(sprite);
+                    });
+
+                    cursorY += previewSize + 26;
+                    const totalContentHeight = cursorY - viewportY;
+                    const maxScroll = Math.max(0, totalContentHeight - viewportHeight);
+                    let scrollOffset = 0;
+                    let dragStartY = 0;
+                    let dragStartOffset = 0;
+
+                    scrollObjects.forEach((obj) => {
+                        scrollContainer.add(obj);
+                    });
+                    animateFlyInFromLeft(this, scrollContainer, 240);
+
+                    const applyScroll = (nextOffset) => {
+                        scrollOffset = clamp(nextOffset, 0, maxScroll);
+                        scrollContainer.setY(-scrollOffset);
+                    };
+
+                    const scrollZone = this.add.zone(contentX, viewportY, viewportWidth, viewportHeight)
+                        .setOrigin(0, 0)
+                        .setDepth(40)
+                        .setInteractive({ useHandCursor: false, draggable: true });
+
+                    scrollZone.on('wheel', (_pointer, _dx, dy) => {
+                        applyScroll(scrollOffset + (dy * 0.8));
+                    });
+
+                    scrollZone.on('pointerdown', (pointer) => {
+                        dragStartY = pointer.y;
+                        dragStartOffset = scrollOffset;
+                    });
+
+                    scrollZone.on('pointermove', (pointer) => {
+                        if (!pointer.isDown) return;
+                        applyScroll(dragStartOffset - (pointer.y - dragStartY));
+                    });
+
+                    this.input.on('pointerup', () => {
+                        dragStartOffset = scrollOffset;
+                    });
                     return;
                 }
 
@@ -569,11 +958,11 @@ export class HelpFleetScene extends HelpBaseSectionScene {
 
                 /** @type {{key: string, label: string, cells: number}[]} */
                 const lineup = [
-                    { key: 'ship-carrier', label: 'CARRIER', cells: 5 },
-                    { key: 'ship-submarine', label: 'NUCLEAR SUB', cells: 3 },
-                    { key: 'ship-cruiser', label: 'CRUISER', cells: 3 },
-                    { key: 'ship-submarine', label: 'ATTACK SUB', cells: 2 },
-                    { key: 'ship-destroyer', label: 'DESTROYER', cells: 2 }
+                    { key: getHelpShipPreviewKey('ship-carrier'), label: 'CARRIER', cells: 5 },
+                    { key: getHelpShipPreviewKey('ship-nuclear-sub'), label: 'NUCLEAR SUB', cells: 3 },
+                    { key: getHelpShipPreviewKey('ship-cruiser'), label: 'CRUISER', cells: 3 },
+                    { key: getHelpShipPreviewKey('ship-attack-sub'), label: 'ATTACK SUB', cells: 2 },
+                    { key: getHelpShipPreviewKey('ship-destroyer'), label: 'DESTROYER', cells: 2 }
                 ];
 
                 const lineupObjects = [];
@@ -608,8 +997,7 @@ export class HelpFleetScene extends HelpBaseSectionScene {
                         const sprite = this.add.image(cardX + cardWidth / 2, cardY + cardHeight * 0.42, item.key)
                             .setOrigin(0.5)
                             .setDepth(10);
-                        sprite.setAngle(90);
-                        fitImageToBox(sprite, cardWidth * 0.82, cardHeight * 0.22, true);
+                        fitImageToBox(sprite, cardWidth * 0.82, cardHeight * 0.22);
 
                         const tag = this.add.text(cardX + cardWidth / 2, cardY + cardHeight * 0.74, item.label, {
                             fontSize: `${phonePortrait ? 13 : 14}px`,

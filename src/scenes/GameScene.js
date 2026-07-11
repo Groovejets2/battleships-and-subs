@@ -11,6 +11,7 @@ import { AIManager } from '../managers/AIManager.js';
 import { TurnManager } from '../managers/TurnManager.js';
 import { Ship } from '../models/Ship.js';
 import { createRoundedMenuButton } from '../utils/uiButtons.js';
+import { applyTextQuality } from '../utils/textQuality.js';
 
 /** Cell state constants */
 const CELL = {
@@ -92,22 +93,30 @@ export class GameScene extends Phaser.Scene {
      * Preload ship sprite assets
      */
     preload() {
-        // Load ship sprites (Kenney.nl CC0 assets)
-        // Base sprites (horizontal orientation)
+        // Load high-resolution ship sprites in both orientations to avoid rotation blur.
         this.load.image('ship-carrier', 'assets/ships/Carrier/ShipCarrierHull.png');
-        this.load.image('ship-battleship', 'assets/ships/Battleship/ShipBattleshipHull.png');
-        this.load.image('ship-cruiser', 'assets/ships/Cruiser/ShipCruiserHull.png');
-        this.load.image('ship-submarine', 'assets/ships/Submarine/ShipSubMarineHull.png');
-        this.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
+        this.load.image('ship-carrier-h', 'assets/ships/Carrier/ShipCarrierHull_Horizontal.png');
+        this.load.image('ship-carrier-v', 'assets/ships/Carrier/ShipCarrierHull_Vertical.png');
 
-        // Week 6A FIX: Horizontal and vertical sprite variants (no rotation artifacts)
-        // Battleship (has both H/V variants)
+        this.load.image('ship-battleship', 'assets/ships/Battleship/ShipBattleshipHull.png');
         this.load.image('ship-battleship-h', 'assets/ships/Battleship/ShipBattleshipHull_Horizontal.png');
         this.load.image('ship-battleship-v', 'assets/ships/Battleship/ShipBattleshipHull_Vertical.png');
 
-        // TODO: Create vertical variants for other ships (currently fallback to rotation)
-        // this.load.image('ship-carrier-h', 'assets/ships/Carrier/ShipCarrierHull_Horizontal.png');
-        // this.load.image('ship-carrier-v', 'assets/ships/Carrier/ShipCarrierHull_Vertical.png');
+        this.load.image('ship-cruiser', 'assets/ships/Cruiser/ShipCruiserHull.png');
+        this.load.image('ship-cruiser-h', 'assets/ships/Cruiser/ShipCruiserHull_Horizontal.png');
+        this.load.image('ship-cruiser-v', 'assets/ships/Cruiser/ShipCruiserHull_Vertical.png');
+
+        this.load.image('ship-nuclear-sub', 'assets/ships/Submarine/ShipNuclearSubHull.png');
+        this.load.image('ship-nuclear-sub-h', 'assets/ships/Submarine/ShipNuclearSubHull_Horizontal.png');
+        this.load.image('ship-nuclear-sub-v', 'assets/ships/Submarine/ShipNuclearSubHull_Vertical.png');
+
+        this.load.image('ship-attack-sub', 'assets/ships/Submarine/ShipAttackSubHull.png');
+        this.load.image('ship-attack-sub-h', 'assets/ships/Submarine/ShipAttackSubHull_Horizontal.png');
+        this.load.image('ship-attack-sub-v', 'assets/ships/Submarine/ShipAttackSubHull_Vertical.png');
+
+        this.load.image('ship-destroyer', 'assets/ships/Destroyer/ShipDestroyerHull.png');
+        this.load.image('ship-destroyer-h', 'assets/ships/Destroyer/ShipDestroyerHull_Horizontal.png');
+        this.load.image('ship-destroyer-v', 'assets/ships/Destroyer/ShipDestroyerHull_Vertical.png');
 
         // Ship status icons for fleet indicators
         this.load.image('ship-status-safe', 'src/images/Ship-Icon-01-Safe.png');
@@ -116,6 +125,25 @@ export class GameScene extends Phaser.Scene {
 
         // Week 6B: Gunsight cursor for targeting
         this.load.image('gunsight', 'assets/ui/gunsight.png');
+    }
+
+    getOrientedShipTextureKey(baseKey, orientation) {
+        const variantKey = orientation === 'horizontal' ? `${baseKey}-h` : `${baseKey}-v`;
+        return this.textures.exists(variantKey) ? variantKey : baseKey;
+    }
+
+    getShipDisplaySize(shipLength, cellSize, orientation) {
+        if (orientation === 'horizontal') {
+            return {
+                width: shipLength * cellSize * 0.92,
+                height: cellSize * 0.82
+            };
+        }
+
+        return {
+            width: cellSize * 0.82,
+            height: shipLength * cellSize * 0.92
+        };
     }
 
     create() {
@@ -307,6 +335,7 @@ export class GameScene extends Phaser.Scene {
             chrome.enemyTitleBarY + chrome.titleBarHeight / 2 - 1,
             'ENEMY WATERS', titleStyle
         ).setOrigin(0.5);
+        applyTextQuality([playerTitle, enemyTitle], 5);
 
         this.gridTitles = [playerTitle, enemyTitle];
 
@@ -456,6 +485,7 @@ export class GameScene extends Phaser.Scene {
                 fill: true
             }
         }).setOrigin(0.5).setDepth(10);
+        applyTextQuality(this.sceneTitle, 5);
     }
 
     /**
@@ -526,8 +556,8 @@ export class GameScene extends Phaser.Scene {
                 (width - MARGIN * 2 - LABEL_SPACE * 2 - GRID_SPACING) / (GRID_SIZE * 2),
                 (height - MARGIN * 2 - TITLE_SPACE * 2 - 100) / GRID_SIZE
             );
-            // Allow larger cells on big screens (use MAX_CELL_SIZE instead of CELL_SIZE)
-            cellSize   = Math.max(20, Math.min(GAME_CONSTANTS.MAX_CELL_SIZE, maxCell));
+            // Tight phone landscape needs smaller cells so labels, counters, and buttons stay visible.
+            cellSize   = Math.max(15, Math.min(GAME_CONSTANTS.MAX_CELL_SIZE, maxCell));
             titleH     = 20;
             labelSpace = LABEL_SPACE;
 
@@ -563,6 +593,7 @@ export class GameScene extends Phaser.Scene {
             fill: '#ffff00',
             fontWeight: 'bold'
         }).setOrigin(0.5);
+        applyTextQuality(this.uiElements.statusText, 5);
 
         // Back button (top left)
         const buttonY = width < 450 ? 45 : 35;
@@ -587,6 +618,7 @@ export class GameScene extends Phaser.Scene {
             fill: C.TEXT,
             fontWeight: 'bold'
         }).setOrigin(1, 0.5);
+        applyTextQuality(this.uiElements.scoreText, 5);
 
         // Round arcade buttons (FIRE, SONAR, NUKE)
         this.createArcadeButtons();
@@ -757,18 +789,18 @@ export class GameScene extends Phaser.Scene {
      */
     getArcadeButtonLayout(layout, width, height, gridWidth) {
         const enemyBottom = layout.enemyY + gridWidth + layout.labelSpace + 4;
-        const shipBarTop = height - 30;
+        const shipBarTop = height - (layout.shouldStack ? 42 : 34);
         const playerRight = layout.playerX + gridWidth;
         const enemyLeft = layout.enemyX;
         const gap = enemyLeft - playerRight;
-        const useBottomRow = true;
+        const useBottomRow = layout.shouldStack || width >= 1200 || gap < 88;
 
         if (useBottomRow) {
             const availableHeight = Math.max(44, shipBarTop - enemyBottom);
-            const radius = Math.max(18, Math.min(34, availableHeight * 0.42, width * 0.065));
+            const radius = Math.max(15, Math.min(34, availableHeight * 0.36, width * 0.065));
             const spacing = Math.max(radius * 2.2, Math.min(radius * 2.85, (width - 7 * radius) / 2));
             const cx = width / 2;
-            const cy = enemyBottom + (availableHeight * (layout.shouldStack ? 0.6 : 0.52));
+            const cy = enemyBottom + (availableHeight * (layout.shouldStack ? 0.45 : 0.52));
 
             return {
                 radius,
@@ -780,7 +812,7 @@ export class GameScene extends Phaser.Scene {
             };
         }
 
-        const radius = Math.max(18, Math.min(30, gap * 0.24, height * 0.05));
+        const radius = Math.max(15, Math.min(28, gap * 0.24, height * 0.055));
         const cx = Math.min((playerRight + enemyLeft) / 2, enemyLeft - radius - 24);
         const clusterCenterY = layout.playerY + (gridWidth * 0.64);
         const spacing = Math.max(radius * 2.2, Math.min(radius * 2.55, (gridWidth - 6 * radius) / 3));
@@ -1697,7 +1729,7 @@ export class GameScene extends Phaser.Scene {
         // Render each ship sprite (spans entire ship length)
         this.playerShipSprites.forEach(shipObj => {
             const { ship, shipType, orientation } = shipObj;
-            const spriteKey = shipType.sprite;
+            const spriteKey = this.getOrientedShipTextureKey(shipType.sprite, orientation);
 
             if (!this.textures.exists(spriteKey)) {
                 console.warn(`Sprite not found: ${spriteKey}`);
@@ -1716,8 +1748,7 @@ export class GameScene extends Phaser.Scene {
 
             // CORRECT FIX: All sprites are designed as VERTICAL (tall × narrow, up-down)
             // Always calculate dimensions as vertical, then rotate for horizontal placement
-            const spriteWidth = cellSize * 0.8;                 // Narrow (1 cell width)
-            const spriteHeight = ship.length * cellSize * 0.9;  // Tall (ship length)
+            const { width: spriteWidth, height: spriteHeight } = this.getShipDisplaySize(ship.length, cellSize, orientation);
 
             // Create sprite
             const sprite = this.add.image(centerX, centerY, spriteKey);
@@ -1726,9 +1757,6 @@ export class GameScene extends Phaser.Scene {
             sprite.setDisplaySize(spriteWidth, spriteHeight);
 
             // Rotate 90° if ship is placed HORIZONTALLY (to lay it sideways)
-            if (orientation === 'horizontal') {
-                sprite.setAngle(90);
-            }
 
             // Store sprite reference
             shipObj.sprite = sprite;
@@ -1782,7 +1810,8 @@ export class GameScene extends Phaser.Scene {
             return;
         }
 
-        const spriteKey = shipType.sprite;
+        const orientation = ship.orientation;
+        const spriteKey = this.getOrientedShipTextureKey(shipType.sprite, orientation);
         if (!this.textures.exists(spriteKey)) {
             console.warn(`Sprite not found: ${spriteKey}`);
             return;
@@ -1793,15 +1822,13 @@ export class GameScene extends Phaser.Scene {
         const firstSeg = segments[0];
         const lastSeg = segments[segments.length - 1];
         const cellSize = this.currentLayout.cellSize;
-        const orientation = ship.orientation;
 
         // Center = midpoint of first and last segment
         const centerX = this.currentLayout.enemyX + ((firstSeg.col + lastSeg.col + 1) / 2) * cellSize;
         const centerY = this.currentLayout.enemyY + ((firstSeg.row + lastSeg.row + 1) / 2) * cellSize;
 
         // All sprites designed VERTICAL (tall × narrow)
-        const spriteWidth = cellSize * 0.8;                 // Narrow (1 cell width)
-        const spriteHeight = ship.length * cellSize * 0.9;  // Tall (ship length)
+        const { width: spriteWidth, height: spriteHeight } = this.getShipDisplaySize(ship.length, cellSize, orientation);
 
         // Create sprite
         const sprite = this.add.image(centerX, centerY, spriteKey);
@@ -1810,9 +1837,6 @@ export class GameScene extends Phaser.Scene {
         sprite.setDisplaySize(spriteWidth, spriteHeight);
 
         // Rotate 90° if ship is placed HORIZONTALLY (to lay it sideways)
-        if (orientation === 'horizontal') {
-            sprite.setAngle(90);
-        }
 
         // Store sprite reference
         this.enemyShipSprites.push({

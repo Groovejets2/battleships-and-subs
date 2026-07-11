@@ -6,7 +6,7 @@
     for the Battleships and Subs game.
 .NOTES
     File Name      : Start-GameServer.ps1
-    Author         : Aider
+    Author         : Project team
     Prerequisite   : Node.js must be installed
 #>
 
@@ -62,7 +62,7 @@ Write-Host "Server will be available at http://localhost:3000" -ForegroundColor 
 Write-Host "Press Ctrl+C to stop the server" -ForegroundColor Gray
 
 try {
-    npm run dev
+    npm start
 } catch {
     Write-Host "Failed to start server: $_" -ForegroundColor Red
     exit 1

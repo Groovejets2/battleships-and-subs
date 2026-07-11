@@ -1,3 +1,5 @@
+import { applyTextQuality } from './textQuality.js';
+
 /**
  * Shared rounded menu button styling for scene-level navigation and actions.
  */
@@ -63,7 +65,7 @@ export function createRoundedMenuButton(scene, options) {
         fontWeight: 'bold',
         letterSpacing
     }).setOrigin(0.5);
-    text.setResolution(4);
+    applyTextQuality(text, 5);
 
     const hitArea = scene.add.zone(0, 0, width, height);
     container.add([shadow, panel, text, hitArea]);
@@ -123,7 +125,7 @@ function ensureRoundedButtonTexture(scene, options) {
         return textureKey;
     }
 
-    const scale = 3;
+    const scale = 4;
     const texWidth = Math.round(width * scale);
     const texHeight = Math.round(height * scale);
     const radius = 18 * scale;

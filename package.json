@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "NODE_ENV=production node server.js",
-    "dev": "NODE_ENV=development nodemon server.js",
-    "serve": "http-server . -a 127.0.0.1 -p 5501 -c-1",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "serve": "http-server . -a 127.0.0.1 -p 5500 -c-1",
     "build": "echo 'Build process would go here'",
-    "test": "playwright test",
+    "test": "node src/models/Ship.test.js && node src/utils/gridValidation.test.js && node src/managers/FleetManager.test.js && node src/managers/AIManager.test.js && node src/managers/TurnManager.test.js",
+    "test:visual": "node tests/automated/game-scene-layout.test.js",
     "test:ui": "playwright test --ui",
     "lint": "echo 'Linting would go here'",
     "prettier": "echo 'Formatting would go here'"

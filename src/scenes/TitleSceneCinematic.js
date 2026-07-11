@@ -1,3 +1,5 @@
+import { applyTextQuality } from '../utils/textQuality.js';
+
 /**
  * @fileoverview Cinematic title screen scene for Battleships and Subs.
  * Builds a military-styled hero composition with rounded navigation buttons.
@@ -56,9 +58,18 @@ export class TitleScene extends Phaser.Scene {
 
         const isPortrait = height > width;
         const backgroundKey = isPortrait ? 'title-background-art-portrait' : 'title-background-art-landscape';
-        const bg = this.add.image(width / 2, height / 2, backgroundKey).setDepth(-100);
+        const bg = this.add.image(width / 2, height / 2, backgroundKey).setOrigin(0.5).setDepth(-100);
         const scale = Math.max(width / bg.width, height / bg.height);
+        const displayWidth = bg.width * scale;
+        const displayHeight = bg.height * scale;
+        const focalPoint = isPortrait
+            ? { x: 0.5, y: 0.44 }
+            : { x: 0.5, y: 0.46 };
         bg.setScale(scale);
+        bg.setPosition(
+            (width / 2) + ((0.5 - focalPoint.x) * displayWidth),
+            (height / 2) + ((0.5 - focalPoint.y) * displayHeight)
+        );
 
         const topShade = this.add.graphics().setDepth(-99);
         topShade.fillGradientStyle(0x071018, 0x071018, 0x0b1620, 0x0b1620, 0.5);
@@ -115,7 +126,15 @@ export class TitleScene extends Phaser.Scene {
             fontFamily: 'Arial',
             fill: '#d8dde2',
             fontStyle: 'bold',
-            letterSpacing: 3
+            letterSpacing: 3,
+            shadow: {
+                offsetX: 0,
+                offsetY: 2,
+                color: '#06090d',
+                blur: 10,
+                fill: true,
+                alpha: 0.8
+            }
         }).setOrigin(0.5).setDepth(15);
 
         const title = this.add.text(width / 2, height * 0.16, 'BATTLESHIPS', {
@@ -129,7 +148,8 @@ export class TitleScene extends Phaser.Scene {
                 offsetY: 4,
                 color: '#87939e',
                 blur: 12,
-                fill: true
+                fill: true,
+                alpha: 0.7
             }
         }).setOrigin(0.5).setDepth(16);
 
@@ -143,11 +163,21 @@ export class TitleScene extends Phaser.Scene {
         }).setOrigin(0.5).setDepth(16);
 
         this.tagline = this.add.text(width / 2, height * 0.295, 'Navigate / Strategise / Dominate', {
-            fontSize: Math.min(width * 0.02, 16) + 'px',
+            fontSize: Math.min(width * 0.024, 18) + 'px',
             fontFamily: 'Arial',
+            fontWeight: '900',
             fill: '#eef2f5',
-            fontStyle: 'italic'
+            fontStyle: 'italic',
+            shadow: {
+                offsetX: 0,
+                offsetY: 12,
+                color: '#000102',
+                blur: 64,
+                fill: true,
+                alpha: 1
+            }
         }).setOrigin(0.5).setDepth(16);
+        applyTextQuality([eyebrow, title, subtitle, this.tagline], 5);
 
         const separator = this.add.graphics().setDepth(15);
         separator.lineStyle(2, 0xdde3e8, 0.6);
@@ -205,27 +235,43 @@ export class TitleScene extends Phaser.Scene {
         const plateWidth = buttonWidth + (platePaddingX * 2);
         const plateHeight = stackHeight + (platePaddingY * 2);
 
-        const menuPlate = this.add.graphics().setDepth(21);
-        menuPlate.fillStyle(0x081019, 0.28);
-        menuPlate.fillRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 26);
-        menuPlate.lineStyle(2, 0xc5d0d7, 0.2);
-        menuPlate.strokeRoundedRect(plateLeft, plateTop, plateWidth, plateHeight, 26);
+        const menuPlateTexture = this.ensureMenuPlateTexture(plateWidth, plateHeight);
+        const menuPlate = this.add.image(plateLeft + (plateWidth / 2), plateTop + (plateHeight / 2), menuPlateTexture)
+            .setOrigin(0.5)
+            .setDepth(21);
+        menuPlate.setDisplaySize(plateWidth, plateHeight);
 
         buttonConfig.forEach((config, index) => {
             const y = startY + (index * spacing);
+            const well = this.add.graphics().setDepth(22);
+            const wellLeft = buttonX - (buttonWidth / 2) - 6;
+            const wellTop = y - (buttonHeight / 2) - 4;
+            const wellWidth = buttonWidth + 12;
+            const wellHeight = buttonHeight + 8;
+            well.fillStyle(0x1a2026, 0.84);
+            well.fillRoundedRect(wellLeft, wellTop, wellWidth, wellHeight, 16);
+            well.fillStyle(0x000000, 0.22);
+            well.fillRoundedRect(wellLeft + 2, wellTop + (wellHeight * 0.52), wellWidth - 4, wellHeight * 0.38, 14);
+            well.fillStyle(0xffffff, 0.08);
+            well.fillRoundedRect(wellLeft + 2, wellTop + 2, wellWidth - 4, wellHeight * 0.18, 14);
+            well.lineStyle(2, 0xf3f7fa, 0.16);
+            well.strokeRoundedRect(wellLeft, wellTop, wellWidth, wellHeight, 16);
+            well.lineStyle(2, 0x06090d, 0.55);
+            well.strokeRoundedRect(wellLeft + 3, wellTop + 3, wellWidth - 6, wellHeight - 6, 14);
+
             const button = this.createRoundedButton(buttonX, y, buttonWidth, buttonHeight, config);
             button.container.setAlpha(0);
             button.text.setAlpha(0);
 
             this.tweens.add({
-                targets: [button.container, button.text],
+                targets: [well, button.container, button.text],
                 alpha: 1,
                 delay: 450 + (index * 130),
                 duration: 450,
                 ease: 'Sine.Out'
             });
 
-            this.buttons.push(button);
+            this.buttons.push({ ...button, well });
         });
     }
 
@@ -248,7 +294,7 @@ export class TitleScene extends Phaser.Scene {
             `${config.key}-normal`,
             width,
             height,
-            0x3e4953,
+            0x4c5761,
             config.accent,
             0x141b22
         );
@@ -260,46 +306,220 @@ export class TitleScene extends Phaser.Scene {
             0xf3f6f9,
             0x1e252b
         );
+        const pressedTexture = this.ensureButtonTexture(
+            `${config.key}-pressed`,
+            width,
+            height,
+            0x343c44,
+            0x9ba5ad,
+            0x0e1318
+        );
         const panel = this.add.image(0, 0, normalTexture);
         panel.setDisplaySize(width, height);
 
         const text = this.add.text(0, 0, config.text, {
             fontSize: Math.min(height * 0.38, 20) + 'px',
             fontFamily: 'Arial Black',
-            fill: '#f5f7fa',
-            fontWeight: 'bold',
-            letterSpacing: 1
+            fill: '#f8fbfe',
+            fontWeight: '900',
+            letterSpacing: 1,
+            stroke: '#0f151b',
+            strokeThickness: 3,
+            shadow: {
+                offsetX: 0,
+                offsetY: 1,
+                color: '#000000',
+                blur: 3,
+                fill: true,
+                alpha: 0.8
+            }
         }).setOrigin(0.5);
         text.setResolution(3);
 
         const hitArea = this.add.zone(0, 0, width, height).setInteractive({ useHandCursor: true });
         container.add([shadow, panel, text, hitArea]);
 
-        hitArea.on('pointerover', () => {
-            panel.setTexture(hoverTexture);
+        let hovered = false;
+        let pressed = false;
+        let clickPending = false;
+
+        const applyState = (state) => {
+            let textureKey = normalTexture;
+            let targetY = 0;
+            let targetScale = 1;
+            let shadowAlpha = 0.45;
+            let shadowOffset = 8;
+
+            if (state === 'pressed') {
+                textureKey = pressedTexture;
+                targetY = 2;
+                targetScale = 0.985;
+                shadowAlpha = 0.26;
+                shadowOffset = 4;
+            } else if (state === 'hover') {
+                textureKey = hoverTexture;
+                targetY = -1;
+                targetScale = 1.02;
+                shadowAlpha = 0.34;
+                shadowOffset = 6;
+            }
+
+            panel.setTexture(textureKey);
+            shadow.clear();
+            shadow.fillStyle(0x020406, shadowAlpha);
+            shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + shadowOffset, width, height, 18);
+
             this.tweens.add({
                 targets: container,
-                scaleX: 1.03,
-                scaleY: 1.03,
-                duration: 140,
+                y: y + targetY,
+                scaleX: targetScale,
+                scaleY: targetScale,
+                duration: 120,
                 ease: 'Sine.Out'
             });
+        };
+
+        hitArea.on('pointerover', () => {
+            hovered = true;
+            if (!pressed) {
+                applyState('hover');
+            }
         });
 
         hitArea.on('pointerout', () => {
-            panel.setTexture(normalTexture);
-            this.tweens.add({
-                targets: container,
-                scaleX: 1,
-                scaleY: 1,
-                duration: 140,
-                ease: 'Sine.Out'
-            });
+            hovered = false;
+            if (!pressed) {
+                applyState('normal');
+            }
         });
 
-        hitArea.on('pointerdown', () => this.handleButtonClick(config.key));
+        hitArea.on('pointerdown', () => {
+            pressed = true;
+            clickPending = true;
+            applyState('pressed');
+        });
+
+        hitArea.on('pointerup', () => {
+            if (!pressed) {
+                return;
+            }
+
+            pressed = false;
+            applyState(hovered ? 'hover' : 'normal');
+
+            if (clickPending) {
+                clickPending = false;
+                this.time.delayedCall(90, () => this.handleButtonClick(config.key));
+            }
+        });
+
+        hitArea.on('pointerupoutside', () => {
+            pressed = false;
+            clickPending = false;
+            applyState(hovered ? 'hover' : 'normal');
+        });
 
         return { container, panel, text, config };
+    }
+
+    /**
+     * Build a high-resolution textured metal console plate behind the menu buttons.
+     * @param {number} width
+     * @param {number} height
+     * @returns {string}
+     */
+    ensureMenuPlateTexture(width, height) {
+        const textureKey = `title-menu-plate-${Math.round(width)}x${Math.round(height)}`;
+        if (this.textures.exists(textureKey)) {
+            return textureKey;
+        }
+
+        const scale = 6;
+        const texWidth = Math.round(width * scale);
+        const texHeight = Math.round(height * scale);
+        const radius = 28 * scale;
+        let seed = 0;
+        const seedSource = `menu-plate:${width}:${height}`;
+        for (let i = 0; i < seedSource.length; i += 1) {
+            seed = ((seed << 5) - seed + seedSource.charCodeAt(i)) >>> 0;
+        }
+        const rand = () => {
+            seed = (1103515245 * seed + 12345) >>> 0;
+            return seed / 0x100000000;
+        };
+
+        const graphics = this.make.graphics({ x: 0, y: 0, add: false });
+
+        graphics.fillStyle(0x969ea5, 1);
+        graphics.fillRoundedRect(0, 0, texWidth, texHeight, radius);
+
+        graphics.fillStyle(0x66707a, 1);
+        graphics.fillRoundedRect(2 * scale, 2 * scale, texWidth - (4 * scale), texHeight - (4 * scale), radius - (2 * scale));
+
+        graphics.fillGradientStyle(0xa0a8af, 0x88929a, 0x58616a, 0x3e454d, 0.96);
+        graphics.fillRoundedRect(4 * scale, 4 * scale, texWidth - (8 * scale), texHeight - (8 * scale), radius - (3 * scale));
+
+        graphics.fillStyle(0xffffff, 0.16);
+        graphics.fillRoundedRect(6 * scale, 6 * scale, texWidth - (12 * scale), texHeight * 0.14, radius - (4 * scale));
+
+        graphics.fillStyle(0x000000, 0.16);
+        graphics.fillRoundedRect(6 * scale, texHeight * 0.58, texWidth - (12 * scale), texHeight * 0.34, radius - (4 * scale));
+
+        graphics.fillStyle(0xffffff, 0.05);
+        graphics.fillRoundedRect(
+            texWidth * 0.08,
+            texHeight * 0.16,
+            texWidth * 0.84,
+            texHeight * 0.1,
+            12 * scale
+        );
+
+        graphics.fillStyle(0x7c848b, 0.05);
+        graphics.fillRoundedRect(
+            texWidth * 0.06,
+            texHeight * 0.76,
+            texWidth * 0.88,
+            texHeight * 0.1,
+            12 * scale
+        );
+
+        graphics.lineStyle(4 * scale, 0xffffff, 0.16);
+        graphics.strokeRoundedRect(0, 0, texWidth, texHeight, radius);
+        graphics.lineStyle(3 * scale, 0x7b838a, 0.42);
+        graphics.strokeRoundedRect(2 * scale, 2 * scale, texWidth - (4 * scale), texHeight - (4 * scale), radius - (2 * scale));
+        graphics.lineStyle(2 * scale, 0xffffff, 0.12);
+        graphics.strokeRoundedRect(6 * scale, 6 * scale, texWidth - (12 * scale), texHeight - (12 * scale), radius - (4 * scale));
+
+        graphics.lineStyle(1 * scale, 0xffffff, 0.06);
+        graphics.lineBetween(texWidth * 0.08, texHeight * 0.24, texWidth * 0.92, texHeight * 0.18);
+        graphics.lineStyle(1 * scale, 0x000000, 0.14);
+        graphics.lineBetween(texWidth * 0.08, texHeight * 0.82, texWidth * 0.92, texHeight * 0.86);
+
+        for (let i = 0; i < 30; i += 1) {
+            const y = texHeight * (0.12 + rand() * 0.76);
+            const x1 = texWidth * (0.06 + rand() * 0.82);
+            const len = texWidth * (0.04 + rand() * 0.12);
+            const slope = (rand() - 0.5) * 6 * scale;
+            graphics.lineStyle(Math.max(1, Math.round(scale * 0.28)), 0xffffff, 0.015 + (rand() * 0.035));
+            graphics.lineBetween(x1, y, x1 + len, y + slope);
+            graphics.lineStyle(Math.max(1, Math.round(scale * 0.24)), 0x000000, 0.018 + (rand() * 0.028));
+            graphics.lineBetween(x1 + (0.4 * scale), y + (0.3 * scale), x1 + len + (0.4 * scale), y + slope + (0.2 * scale));
+        }
+
+        for (let i = 0; i < 12; i += 1) {
+            const cx = texWidth * (0.08 + rand() * 0.84);
+            const cy = texHeight * (0.14 + rand() * 0.7);
+            const r = Math.max(2 * scale, scale * (0.5 + rand() * 1.1));
+            graphics.fillStyle(0xffffff, 0.025 + rand() * 0.02);
+            graphics.fillCircle(cx, cy, r);
+            graphics.fillStyle(0x000000, 0.05 + rand() * 0.035);
+            graphics.fillCircle(cx + (0.45 * scale), cy + (0.45 * scale), r * 0.72);
+        }
+
+        graphics.generateTexture(textureKey, texWidth, texHeight);
+        graphics.destroy();
+
+        return textureKey;
     }
 
     /**
@@ -318,18 +538,71 @@ export class TitleScene extends Phaser.Scene {
             return textureKey;
         }
 
-        const scale = 3;
+        const scale = 6;
         const texWidth = Math.round(width * scale);
         const texHeight = Math.round(height * scale);
         const radius = 18 * scale;
         const innerInset = 5 * scale;
+        let seed = 0;
+        const seedSource = `${stateKey}:${width}:${height}`;
+        for (let i = 0; i < seedSource.length; i += 1) {
+            seed = ((seed << 5) - seed + seedSource.charCodeAt(i)) >>> 0;
+        }
+        const rand = () => {
+            seed = (1664525 * seed + 1013904223) >>> 0;
+            return seed / 0x100000000;
+        };
 
         const graphics = this.make.graphics({ x: 0, y: 0, add: false });
-        graphics.fillStyle(fill, 1);
+        graphics.fillStyle(0x1b2127, 1);
         graphics.fillRoundedRect(0, 0, texWidth, texHeight, radius);
-        graphics.lineStyle(3 * scale, accent, 0.98);
+        graphics.fillStyle(fill, 1);
+        graphics.fillRoundedRect(2 * scale, 2 * scale, texWidth - (4 * scale), texHeight - (4 * scale), radius - (2 * scale));
+        graphics.fillStyle(0xffffff, 0.11);
+        graphics.fillRoundedRect(0, 0, texWidth, texHeight * 0.22, radius);
+        graphics.fillStyle(0xb7c0c7, 0.05);
+        graphics.fillRoundedRect(
+            texWidth * 0.08,
+            texHeight * 0.12,
+            texWidth * 0.84,
+            texHeight * 0.14,
+            12 * scale
+        );
+        graphics.fillStyle(0x000000, 0.2);
+        graphics.fillRoundedRect(
+            0,
+            texHeight * 0.56,
+            texWidth,
+            texHeight * 0.44,
+            radius
+        );
+        graphics.fillStyle(0x000000, 0.14);
+        graphics.fillRoundedRect(
+            0,
+            texHeight * 0.72,
+            texWidth,
+            texHeight * 0.28,
+            radius
+        );
+        graphics.fillStyle(0xffffff, 0.05);
+        graphics.fillRoundedRect(
+            texWidth * 0.1,
+            texHeight * 0.42,
+            texWidth * 0.8,
+            texHeight * 0.1,
+            10 * scale
+        );
+        graphics.fillStyle(0x000000, 0.08);
+        graphics.fillRoundedRect(
+            texWidth * 0.07,
+            texHeight * 0.28,
+            texWidth * 0.86,
+            texHeight * 0.08,
+            8 * scale
+        );
+        graphics.lineStyle(3 * scale, accent, 0.84);
         graphics.strokeRoundedRect(0, 0, texWidth, texHeight, radius);
-        graphics.lineStyle(2 * scale, inset, 0.92);
+        graphics.lineStyle(2 * scale, inset, 0.78);
         graphics.strokeRoundedRect(
             innerInset,
             innerInset,
@@ -337,14 +610,39 @@ export class TitleScene extends Phaser.Scene {
             texHeight - (innerInset * 2),
             radius - (innerInset * 0.7)
         );
-        graphics.fillStyle(0xffffff, 0.12);
-        graphics.fillRoundedRect(
-            texWidth * 0.08,
-            texHeight * 0.12,
-            texWidth * 0.84,
-            texHeight * 0.28,
-            12 * scale
+        graphics.lineStyle(1 * scale, 0xffffff, 0.1);
+        graphics.strokeRoundedRect(
+            innerInset * 1.2,
+            innerInset * 1.1,
+            texWidth - (innerInset * 2.4),
+            texHeight - (innerInset * 2.2),
+            radius - (innerInset * 0.95)
         );
+        graphics.lineStyle(1 * scale, 0xffffff, 0.035);
+        graphics.lineBetween(texWidth * 0.09, texHeight * 0.2, texWidth * 0.91, texHeight * 0.16);
+        graphics.lineStyle(1 * scale, 0x7c858d, 0.06);
+        graphics.lineBetween(texWidth * 0.08, texHeight * 0.8, texWidth * 0.92, texHeight * 0.84);
+
+        for (let i = 0; i < 18; i += 1) {
+            const y = texHeight * (0.14 + rand() * 0.7);
+            const x1 = texWidth * (0.06 + rand() * 0.8);
+            const len = texWidth * (0.03 + rand() * 0.14);
+            const slope = (rand() - 0.5) * 7 * scale;
+            graphics.lineStyle(Math.max(1, Math.round(scale * 0.32)), 0xffffff, 0.02 + (rand() * 0.045));
+            graphics.lineBetween(x1, y, x1 + len, y + slope);
+            graphics.lineStyle(Math.max(1, Math.round(scale * 0.28)), 0x000000, 0.015 + (rand() * 0.035));
+            graphics.lineBetween(x1 + (0.6 * scale), y + (0.4 * scale), x1 + len + (0.6 * scale), y + slope + (0.25 * scale));
+        }
+
+        for (let i = 0; i < 12; i += 1) {
+            const cx = texWidth * (0.1 + rand() * 0.8);
+            const cy = texHeight * (0.16 + rand() * 0.68);
+            const r = Math.max(1.5 * scale, scale * (0.5 + rand() * 1.0));
+            graphics.fillStyle(0xffffff, 0.015 + rand() * 0.016);
+            graphics.fillCircle(cx, cy, r);
+            graphics.fillStyle(0x808991, 0.03 + rand() * 0.02);
+            graphics.fillCircle(cx - (0.5 * scale), cy - (0.5 * scale), r * 0.72);
+        }
         graphics.generateTexture(textureKey, texWidth, texHeight);
         graphics.destroy();
 

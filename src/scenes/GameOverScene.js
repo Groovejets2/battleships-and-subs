@@ -6,6 +6,7 @@
 
 import { GAME_CONSTANTS } from '../config/gameConfig.js';
 import { createRoundedMenuButton } from '../utils/uiButtons.js';
+import { applyTextQuality } from '../utils/textQuality.js';
 
 /**
  * Game over scene showing victory or defeat with final stats and options.
@@ -79,6 +80,7 @@ export class GameOverScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: Math.max(3, titleSize * 0.06)
         }).setOrigin(0.5).setAlpha(0);
+        applyTextQuality(title, 5);
 
         // Entrance animation
         this.tweens.add({
@@ -118,13 +120,14 @@ export class GameOverScene extends Phaser.Scene {
         const score = this.gameData.total || 0;
         const scoreSize = Math.min(44, Math.max(22, width * 0.06));
 
-        this.add.text(width / 2, height * 0.25, 'FINAL SCORE', {
+        const scoreLabel = this.add.text(width / 2, height * 0.25, 'FINAL SCORE', {
             fontSize: Math.max(14, scoreSize * 0.5) + 'px',
             fontFamily: 'Arial',
             fill: '#aaaaaa',
             fontWeight: 'bold',
             letterSpacing: 3
         }).setOrigin(0.5);
+        applyTextQuality(scoreLabel, 5);
 
         const scoreText = this.add.text(width / 2, height * 0.33, score.toString(), {
             fontSize: scoreSize + 'px',
@@ -134,6 +137,7 @@ export class GameOverScene extends Phaser.Scene {
             stroke: '#000000',
             strokeThickness: 3
         }).setOrigin(0.5).setAlpha(0);
+        applyTextQuality(scoreText, 5);
 
         this.tweens.add({
             targets: scoreText,
@@ -196,18 +200,18 @@ export class GameOverScene extends Phaser.Scene {
         stats.forEach((stat, i) => {
             const y = startY + i * lineHeight;
 
-            this.add.text(width / 2 - bgWidth * 0.45, y, stat.label + ':', {
+            applyTextQuality(this.add.text(width / 2 - bgWidth * 0.45, y, stat.label + ':', {
                 fontSize: statsFontSize,
                 fontFamily: 'Arial',
                 fill: labelColor
-            });
+            }), 5);
 
-            this.add.text(width / 2 + bgWidth * 0.45, y, String(stat.value), {
+            applyTextQuality(this.add.text(width / 2 + bgWidth * 0.45, y, String(stat.value), {
                 fontSize: statsFontSize,
                 fontFamily: 'Arial',
                 fill: valueColor,
                 fontWeight: 'bold'
-            }).setOrigin(1, 0);
+            }).setOrigin(1, 0), 5);
         });
     }
 
@@ -318,6 +322,7 @@ export class GameOverScene extends Phaser.Scene {
             backgroundColor: '#000000',
             padding: { x: 12, y: 6 }
         }).setOrigin(0.5).setDepth(200);
+        applyTextQuality(toast, 5);
 
         this.tweens.add({
             targets: toast,

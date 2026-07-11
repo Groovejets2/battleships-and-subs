@@ -1,3 +1,5 @@
+import { applyTextQuality } from '../utils/textQuality.js';
+
 /**
  * Creates and renders a game grid with interactive cells and coordinate labels.
  * Adheres to SLAP (Single Level of Abstraction Principle) for clarity in grid creation.
@@ -73,6 +75,7 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
             String.fromCharCode(65 + i),
             labelStyle
         ).setOrigin(0.5);
+        applyTextQuality(label, 5);
         labels.push(label);
     }
 
@@ -84,6 +87,7 @@ export function createGrid(scene, xOffset, yOffset, gridSize, cellSize, gridType
             (i + 1).toString(),
             labelStyle
         ).setOrigin(1, 0.5);
+        applyTextQuality(label, 5);
         labels.push(label);
     }
 

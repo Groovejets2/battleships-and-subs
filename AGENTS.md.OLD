@@ -13,6 +13,13 @@ This file serves as a reference index for AI assistants working on this project.
 - **Silent Operation:** Do not announce to the user that you are saving or recalling memories; handle all Hindsight network syncs seamlessly and completely in the background.
 - **Durable Doc Rule:** Whenever you modify infrastructure settings, automatically call `hindsight-memory:retain` using the specific document_id "hindsight-remote-access-setup.md" to overwrite the central deployment document.
 
+## Karpathy Principles
+- Think before coding. Read the local context first and understand the task before making changes.
+- Simplicity first. Prefer the smallest clear solution that satisfies the requirement.
+- Make surgical changes. Keep edits narrow and avoid unrelated refactors.
+- Stay goal-driven. Optimise for the requested outcome, not broad cleanup.
+
+
 
 ## RESUME INSTRUCTIONS — START HERE
 
@@ -30,13 +37,22 @@ This file serves as a reference index for AI assistants working on this project.
 
 ## REQUIRED READING (All AI Agents)
 
+**CRITICAL:** Both Kerry McGregor (Sonnet 4.5) and Tony Stark (Opus 4.5) MUST read:
+1. This Claude.md file (always)
+2. `doc/output/sessions/Session-State_Sonnet-4.5_v1.4.1-planning_2026-02-17.md` ← **LATEST SESSION STATE**
+3. `/doc/output/Project-Vision_JH_v1.0_2026-02-17.md` (mission, pillars, graphics strategy, AI-first mandate)
+4. `/doc/output/Development-Workflow-Protocol_Sonnet-4.5_v1.0_2026-02-14.md` (workflow, model roles)
+5. `.claude/skills/gitflow/gitflow.md` (git operations)
+6. `/doc/output/Arcade-Design-Philosophy_Sonnet-4.5_v1.0_2026-02-15.md` (UI/UX design standards)
+7. `/doc/output/project-specs/` (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
 
-### Karpathy Principles
-- Think before coding. Read the local context first and understand the task before making changes.
-- Simplicity first. Prefer the smallest clear solution that satisfies the requirement.
-- Make surgical changes. Keep edits narrow and avoid unrelated refactors.
-- Stay goal-driven. Optimise for the requested outcome, not broad cleanup.
+---
 
+## Team Roles
+
+**Jon (JH) — Project Manager:** Vision, priorities, approvals, play testing, feedback. Does NOT write code.
+**Kerry McGregor (Sonnet 4.5) — Lead Developer:** All coding, docs, git, testing, implementation.
+**Tony Stark (Opus 4.5) — Architectural Consultant:** Deep analysis, root cause investigation, strategic decisions.
 
 ### AI-First Mandate (CORE PROJECT RULE)
 
@@ -429,117 +445,54 @@ src/
 
 ---
 
-## Recent Session Notes (2026-02-14)
+# Agents State
 
-### Completed: Comprehensive Codebase Analysis
+Last Updated: 2026-04-04
+Branch: `feature/week6-graphics-integration2-from-develop`
+Last Commit: `ca6d005` (`Refine combat grid and status UI`)
 
-**Root Cause Identified:**
-- Screen adaptation fails due to 5 architectural issues
-- Primary blocker: Hardcoded 1100px height (dimensions.js)
-- Secondary issues: Inconsistent resize handlers, missing Phaser scale integration
-- **Solution ready:** Detailed fix plan in Dynamic-UI-Resolution-Analysis document
+## Current State
 
-**Analysis Deliverables:**
-- Dynamic UI resolution analysis (complete architectural diagnosis)
-- Documentation assessment (B+ grade, minor gaps identified)
-- Accelerated delivery plan (5-7 day completion timeline)
-- Testing strategy (30-40% coverage, zero-cost tools)
+- Home/title screen remains intentionally unchanged from the approved version.
+- `GameScene` now uses a Phaser-rendered tiled wave background and metallic board chrome.
+- Combat boards scale much better across desktop, narrow desktop, and portrait mobile.
+- Board title bars (`YOUR FLEET`, `ENEMY WATERS`) use the metallic chrome style aligned to the board frame.
+- Ship status icons now use:
+  - `src/images/Ship-Icon-01-Safe.png`
+  - `src/images/Ship-Icon-02-Hit.png`
+- `ALLIES` and `ENEMY` labels now use the same family as `COMBAT` and the same white-with-dark-stroke treatment.
+- Enemy `MISS` tiles are transparent so the waves show through.
+- Player `MISS` tiles remain visible.
+- Ability buttons use the bottom-row layout and include ability-ready / ability-activated arcade burst feedback.
 
-**Key Findings:**
-- Phaser 3.90.0 fully supports dynamic orientation changes when configured correctly
-- Fix existing architecture rather than lock orientation (recommended approach)
-- Claude Code enables 10x acceleration vs solo developer
-- Estimated 58-62 hours to complete Weeks 3-10 work
+## Verified
 
-**Next Actions:**
-1. Present findings to JH
-2. Obtain approval for proposed solution architecture
-3. Execute 5-6 hour responsive design fix
-4. Proceed with accelerated delivery plan
+- Playwright/browser checks were run directly against `GameScene`, not only by clicking through the title screen.
+- Proof screenshots were generated under `test-results/board-chrome-check/`.
+- Most recent verified proof for enemy-only transparent misses:
+  - `test-results/board-chrome-check/enemy-only-miss-proof.png`
 
----
+## Open Items
 
-**Last Updated:** 2026-03-01 (Opus 4.6 session: Round arcade buttons implemented)
-**Project Status:** 🔧 Round Arcade Buttons — layout fixes needed
+- Grid boundary transparency still needs visual tuning. The user wants:
+  - boundary visible
+  - transparent/translucent appearance
+  - about 3px wide
+  - “floating over water” effect
+- The latest pass improved the effect, but the user still feels the transparent boundary is not visually correct enough.
+- `ALLIES` / `ENEMY` icon styling may still be refined further after more live testing with the new assets.
 
-## ⚡ IMMEDIATE TASK FOR SONNET 4.6 (Kerry McGregor)
+## Important Constraints
 
-**READ FIRST:** `doc/output/analysis/Round-Arcade-Buttons-Handover_Opus-4.6_2026-03-01.md`
+- Do not change the home page unless explicitly requested.
+- Keep gameplay logic unchanged while refining visuals.
+- Prefer validating `GameScene` directly with Playwright by starting the scene from `window.battleshipsGame.game.scene`.
+- Ignore untracked helper screenshots unless the user asks to commit them.
 
-Tony Stark (Opus 4.6) replaced the 3 rectangular GameScene buttons (SONAR, NUKE, FIRE) with round arcade-style buttons. The implementation works but has **layout issues on some viewports** — buttons overlap or are off-screen on small portrait phones and appear squished on some landscape screens.
+## Recommended Next Step
 
-**Tasks:**
-1. Fix button placement in `createArcadeButtons()` in `GameScene.js` so ALL 11 test viewports have perfect layout
-2. Update `HelpScene.js` text to describe the new round buttons (see handover doc for suggested text)
-3. Run `node tests/automated/game-scene-layout.test.js` and visually verify ALL screenshots
+Run one focused visual pass on grid boundaries only:
 
-**Do NOT start other work until these are resolved.** The handover doc has the root cause analysis and fix approach.
-**Branch Status:**
-- main: b2dc515 (tagged v1.4.1) - PRODUCTION
-- develop: 1212c60 - LATEST DEVELOPMENT
-- feature/week5-enhanced-features-from-develop: edafb07 (HEAD) - CURRENT WORK
-
-**Week 5 Completion Summary:**
-✅ Task 1: Addictiveness mechanics (Sonar Ping, Row Nuke, Chain Bonus) - commits d711551, 095721d, a48303a
-✅ Task 2: Settings overhaul (pip-dot controls 0-8, difficulty selector) - commit 110afd2
-✅ Task 3: Exit confirmation + game state save/load - commit 90a52eb
-✅ Unit tests: 13+ tests across TurnManager, Ship, Settings - all passing
-✅ Playwright tests: 8 files, 60+ visual scenarios - all passing
-✅ Skill created: playwright-visual-tests v1.0.0
-⚠️ **NEXT PRIORITY:** Fix GameScene + SettingsScene layouts (elements overlapping/off-screen)
-
-**Key Technical Decisions (Week 4):**
-- Auto-place player fleet (ship placement UI is Week 5)
-- Settings difficulty (0=EASY, 1=NORMAL, 2=HARD) maps to AIManager
-- MISS = turn switches, HIT = bonus turn (same player continues)
-- Score saved to localStorage 'battleships_highscores' (top 5)
-- Visual state arrays persist across screen resize (playerCellStates, enemyCellStates)
-- AI uses --theirs strategy for settings.local.json in all future merges
-
-**Week 5 Priorities (Next):**
-- Ship placement UI (drag-and-drop or click-to-place)
-- Special abilities (Nuclear Sub dive/torpedo, Cruiser depth charge, Attack Sub silent running)
-- Audio system integration
-- UI polish and animations
-
-**Release v1.3.0 Details:**
-- Complete responsive design for all scenes
-- 82 files changed, 2,631 insertions, 221 deletions
-- Automated testing (100% pass rate)
-- Tagged and pushed to production
-- Release branch cleaned up per gitflow
-
-**Timeline Review Completed:**
-Three options presented for remaining work (Weeks 4-10):
-- Option A: Week 4 MVP (AI Opponent) - 6-8 hours
-- Option B: Weeks 4-6 (MVP + Abilities + Audio) - 2-3 days
-- Option C: Full completion (Weeks 4-10) - 5-7 days
-
-**Awaiting Decision:** User to select development path (A, B, or C)
-
-**Next Session Context:**
-When resuming, reference this section to understand:
-1. v1.3.0 successfully released to production
-2. All responsive design work complete
-3. Ready to begin Week 4 (AI Opponent) or other chosen path
-4. Gitflow process fully understood and documented
-5. Line ending issues (.gitattributes) resolved
-6. Test infrastructure in place and working
-
-**Current Working State:**
-- On develop branch
-- All changes committed and pushed
-- No uncommitted work
-- test-screenshots/ folder (local only, gitignored)
-- Ready for new feature branch creation
-
-**Skills Added:** gitflow v1.0.0, ui-test v1.0.0
-**Tools Added:** Playwright for automated visual testing
-**Test Infrastructure:** `tests/ui/` directory, automated responsive testing
-**Documentation Structure:**
-- Workflow: /doc/output/Development-Workflow-Protocol
-- Investigations: /doc/output/Investigation/ (4 analysis documents)
-- Original Specs: /doc/output/project-specs/ (GAME_RULES, REQUIREMENTS, DELIVERY_PLAN)
-- Accelerated Plan: /doc/output/analysis/Accelerated-Delivery-Plan
-- Test Plans: /doc/output/Test-Plan/ (Manual testing procedures)
-- Skills: .claude/skills/gitflow/, .claude/skills/ui-test/ (also in global)
+1. Keep enemy-only transparent `MISS` cells as-is.
+2. Tune the board fill and grid stroke together until the boundary reads as translucent instead of solid or invisible.
+3. Re-verify with a direct `GameScene` Playwright screenshot before changing anything else.

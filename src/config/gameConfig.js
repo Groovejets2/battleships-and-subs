@@ -52,7 +52,7 @@ export const SHIP_TYPES = {
         name: 'Nuclear Submarine',
         length: 3,
         color: 0x0000ff,
-        sprite: 'ship-submarine'
+        sprite: 'ship-nuclear-sub'
     },
     CRUISER: {
         type: 'CRUISER',
@@ -66,7 +66,7 @@ export const SHIP_TYPES = {
         name: 'Attack Submarine',
         length: 2,
         color: 0xff00ff,
-        sprite: 'ship-submarine'
+        sprite: 'ship-attack-sub'
     },
     DESTROYER: {
         type: 'DESTROYER',
@@ -114,17 +114,21 @@ export function calculateGameDimensions() {
     };
 }
 
+const PHASER = globalThis.Phaser || null;
+
 /**
  * Enhanced Phaser game configuration object.
+ * Uses fallbacks so Node-based unit tests can import constants from this module
+ * without requiring a browser Phaser global.
  * @constant {object}
  */
 export const gameConfig = {
-    type: Phaser.AUTO,
+    type: PHASER ? PHASER.AUTO : 'AUTO',
     parent: 'game-container',
     backgroundColor: GAME_CONSTANTS.COLORS.BACKGROUND,
     scale: {
-        mode: Phaser.Scale.RESIZE,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+        mode: PHASER ? PHASER.Scale.RESIZE : 'RESIZE',
+        autoCenter: PHASER ? PHASER.Scale.CENTER_BOTH : 'CENTER_BOTH'
     },
     physics: {
         default: 'arcade',

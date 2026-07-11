@@ -6,6 +6,7 @@
 
 import { GAME_CONSTANTS } from '../config/gameConfig.js';
 import { createRoundedMenuButton } from '../utils/uiButtons.js';
+import { applyTextQuality } from '../utils/textQuality.js';
 
 /**
  * High Scores scene class with leaderboard display
@@ -92,21 +93,23 @@ export class HighScoresScene extends Phaser.Scene {
      * Create high scores title
      */
     createTitle(width, height) {
-        this.add.text(width / 2, height * 0.05, 'HIGH SCORES', {
+        const title = this.add.text(width / 2, height * 0.05, 'HIGH SCORES', {
             fontSize: Math.min(width * 0.06, 42) + 'px',
             fontFamily: 'Arial Black',
             fill: '#ffffff',
             stroke: '#000000',
             strokeThickness: 4
         }).setOrigin(0.5);
+        applyTextQuality(title, 5);
 
         // Subtitle
-        this.add.text(width / 2, height * 0.10, 'Top Commanders', {
+        const subtitle = this.add.text(width / 2, height * 0.10, 'Top Commanders', {
             fontSize: '16px',
             fontFamily: 'Arial',
             fill: '#a0c4ff',
             fontStyle: 'italic'
         }).setOrigin(0.5);
+        applyTextQuality(subtitle, 5);
     }
 
     /**
@@ -170,9 +173,9 @@ export class HighScoresScene extends Phaser.Scene {
             fontWeight: 'bold'
         };
 
-        this.add.text(rankX, startY + 15, 'RANK', headerStyle).setOrigin(0, 0.5);
-        this.add.text(nameX, startY + 15, 'NAME', headerStyle).setOrigin(0, 0.5);
-        this.add.text(scoreX, startY + 15, 'SCORE', headerStyle).setOrigin(1, 0.5);
+        applyTextQuality(this.add.text(rankX, startY + 15, 'RANK', headerStyle).setOrigin(0, 0.5), 5);
+        applyTextQuality(this.add.text(nameX, startY + 15, 'NAME', headerStyle).setOrigin(0, 0.5), 5);
+        applyTextQuality(this.add.text(scoreX, startY + 15, 'SCORE', headerStyle).setOrigin(1, 0.5), 5);
 
         // Header divider
         const headerY = startY + 15;
@@ -207,12 +210,13 @@ export class HighScoresScene extends Phaser.Scene {
 
         if (this.highScores.length === 0) {
             // No scores yet - show message
-            this.add.text(width / 2, startY + tableHeight / 2, 'No scores yet!\nBe the first to play!', {
+            const emptyText = this.add.text(width / 2, startY + tableHeight / 2, 'No scores yet!\nBe the first to play!', {
                 fontSize: '20px',
                 fontFamily: 'Arial',
                 fill: '#a0c4ff',
                 align: 'center'
             }).setOrigin(0.5);
+            applyTextQuality(emptyText, 5);
         } else {
             // Display scores with fly-in animation (arcade style!)
             this.highScores.forEach((score, index) => {
@@ -240,6 +244,7 @@ export class HighScoresScene extends Phaser.Scene {
                     ...rowStyle,
                     fontSize: rowFontSize
                 }).setOrigin(0, 0.5);
+                applyTextQuality(rankText, 5);
 
                 // Name (white text)
                 const nameText = this.add.text(
@@ -247,6 +252,7 @@ export class HighScoresScene extends Phaser.Scene {
                     score.name || 'Player',
                     rowStyle
                 ).setOrigin(0, 0.5);
+                applyTextQuality(nameText, 5);
 
                 // Medal (small colored circle for top 3)
                 let medal = null;
@@ -273,6 +279,7 @@ export class HighScoresScene extends Phaser.Scene {
                         fontWeight: 'bold'
                     }
                 ).setOrigin(1, 0.5);
+                applyTextQuality(scoreText, 5);
 
                 // Arcade-style fly-in animation (left to right!)
                 const animDelay = 500 + (index * 150); // Stagger each row

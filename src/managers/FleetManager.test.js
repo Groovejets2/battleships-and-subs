@@ -78,15 +78,15 @@ fm2.deserialize(serialized);
 console.log('Restored FleetManager state:');
 console.log('  Ships:', fm2.ships.length);
 console.log('  Ship 1:', fm2.ships[0].name, 'at', fm2.ships[0].startRow + ',' + fm2.ships[0].startCol, fm2.ships[0].orientation);
-console.log('  Ship 1 hits:', fm2.ships[0].segments.filter(s => s.hit).length);
+console.log('  Ship 1 hits:', fm2.ships[0].segments.filter(s => s.isHit).length);
 console.log('  Ship 2:', fm2.ships[1].name, 'at', fm2.ships[1].startRow + ',' + fm2.ships[1].startCol, fm2.ships[1].orientation);
-console.log('  Ship 2 hits:', fm2.ships[1].segments.filter(s => s.hit).length);
+console.log('  Ship 2 hits:', fm2.ships[1].segments.filter(s => s.isHit).length);
 
 console.assert(fm2.ships.length === 2, 'Should have 2 ships');
 console.assert(fm2.ships[0].name === 'Carrier', 'First ship should be Carrier');
 console.assert(fm2.ships[1].name === 'Cruiser', 'Second ship should be Cruiser');
-console.assert(fm2.ships[0].segments.filter(s => s.hit).length === 2, 'Carrier should have 2 hits');
-console.assert(fm2.ships[1].segments.filter(s => s.hit).length === 1, 'Cruiser should have 1 hit');
+console.assert(fm2.ships[0].segments.filter(s => s.isHit).length === 2, 'Carrier should have 2 hits');
+console.assert(fm2.ships[1].segments.filter(s => s.isHit).length === 1, 'Cruiser should have 1 hit');
 
 // Test grid reconstruction
 const gridShip1 = fm2.getShipAt(0, 0);
