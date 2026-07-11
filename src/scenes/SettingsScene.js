@@ -153,21 +153,21 @@ export class SettingsScene extends Phaser.Scene {
         const panelY = panelTop + (panelHeight / 2);
 
         const consolePanel = this.add.graphics().setDepth(-20);
-        consolePanel.fillStyle(0x3b434b, 0.42);
+        consolePanel.fillStyle(0x04070a, 0.48);
         consolePanel.fillRoundedRect(panelX - (panelWidth / 2) - 8, panelY - (panelHeight / 2) + 8, panelWidth + 16, panelHeight, 26);
-        consolePanel.fillStyle(0xb9c0c7, 0.78);
+        consolePanel.fillStyle(0x1a2026, 0.88);
         consolePanel.fillRoundedRect(panelX - (panelWidth / 2), panelY - (panelHeight / 2), panelWidth, panelHeight, 24);
-        consolePanel.fillGradientStyle(0xf8fbfd, 0xe2e7eb, 0xb4bcc3, 0x8f989f, 1);
+        consolePanel.fillGradientStyle(0x3f4a54, 0x2f3942, 0x172029, 0x0b1117, 1);
         consolePanel.fillRoundedRect(panelX - (panelWidth / 2) + 4, panelY - (panelHeight / 2) + 4, panelWidth - 8, panelHeight - 8, 22);
         consolePanel.fillStyle(0xffffff, 0.08);
         consolePanel.fillRoundedRect(panelX - (panelWidth / 2) + 10, panelY - (panelHeight / 2) + 10, panelWidth - 20, 42, 18);
-        consolePanel.fillStyle(0x4d565d, 0.1);
+        consolePanel.fillStyle(0x000000, 0.22);
         consolePanel.fillRoundedRect(panelX - (panelWidth / 2) + 10, panelY + (panelHeight / 2) - 58, panelWidth - 20, 48, 18);
-        consolePanel.lineStyle(4, 0xffffff, 0.24);
+        consolePanel.lineStyle(4, 0xf3f7fa, 0.22);
         consolePanel.strokeRoundedRect(panelX - (panelWidth / 2), panelY - (panelHeight / 2), panelWidth, panelHeight, 24);
-        consolePanel.lineStyle(3, 0x5f6871, 0.55);
+        consolePanel.lineStyle(3, 0x06090d, 0.7);
         consolePanel.strokeRoundedRect(panelX - (panelWidth / 2) + 4, panelY - (panelHeight / 2) + 4, panelWidth - 8, panelHeight - 8, 22);
-        consolePanel.lineStyle(2, 0x222931, 0.8);
+        consolePanel.lineStyle(2, 0xcdd4da, 0.24);
         consolePanel.strokeRoundedRect(panelX - (panelWidth / 2) + 10, panelY - (panelHeight / 2) + 10, panelWidth - 20, panelHeight - 20, 18);
 
         this.consolePanel = consolePanel;
@@ -213,7 +213,7 @@ export class SettingsScene extends Phaser.Scene {
         const dotSpacing = dotSize * (compact ? 2.45 : 2.75);
 
         const audioControls = [
-            { label: 'MASTER', key: 'masterVolume', value: this.settings.masterVolume },
+            { label: compact ? 'VOLUME' : 'MASTER VOLUME', key: 'masterVolume', value: this.settings.masterVolume },
             { label: 'SFX', key: 'sfxVolume', value: this.settings.sfxVolume },
             { label: 'MUSIC', key: 'musicVolume', value: this.settings.musicVolume }
         ];
@@ -221,20 +221,20 @@ export class SettingsScene extends Phaser.Scene {
         audioControls.forEach((control, index) => {
             const y = startY + (index * spacing);
             const rowPanel = this.add.graphics().setDepth(-10);
-            rowPanel.fillStyle(0x414951, 0.38);
             const rowTop = y - (rowHeight / 2);
+            rowPanel.fillStyle(0x04070a, 0.36);
             rowPanel.fillRoundedRect(rowCenterX - (rowWidth / 2) - 4, rowTop + 5, rowWidth + 8, rowHeight, 18);
-            rowPanel.fillStyle(0xd7dde2, 0.96);
+            rowPanel.fillStyle(0x1a2026, 0.86);
             rowPanel.fillRoundedRect(rowCenterX - (rowWidth / 2), rowTop, rowWidth, rowHeight, 16);
-            rowPanel.fillGradientStyle(0xf8fbfd, 0xe5eaee, 0xb6bec5, 0x8e979e, 1);
+            rowPanel.fillGradientStyle(0x4c5761, 0x3e4953, 0x202a33, 0x111820, 1);
             rowPanel.fillRoundedRect(rowCenterX - (rowWidth / 2) + 2, rowTop + 2, rowWidth - 4, rowHeight - 4, 15);
-            rowPanel.fillStyle(0xffffff, 0.06);
+            rowPanel.fillStyle(0xffffff, 0.1);
             rowPanel.fillRoundedRect(rowCenterX - (rowWidth / 2) + 8, rowTop + 2, rowWidth - 16, 10, 12);
-            rowPanel.fillStyle(0x5f6871, 0.08);
+            rowPanel.fillStyle(0x000000, 0.2);
             rowPanel.fillRoundedRect(rowCenterX - (rowWidth / 2) + 8, y + (compact ? 4 : 6), rowWidth - 16, 10, 12);
-            rowPanel.lineStyle(3, 0xffffff, 0.18);
+            rowPanel.lineStyle(3, 0xf3f7fa, 0.2);
             rowPanel.strokeRoundedRect(rowCenterX - (rowWidth / 2), rowTop, rowWidth, rowHeight, 16);
-            rowPanel.lineStyle(2, 0x5f6871, 0.36);
+            rowPanel.lineStyle(2, 0x06090d, 0.62);
             rowPanel.strokeRoundedRect(rowCenterX - (rowWidth / 2) + 3, rowTop + 3, rowWidth - 6, rowHeight - 6, 14);
             this.sectionPanels.push(rowPanel);
 
@@ -242,11 +242,11 @@ export class SettingsScene extends Phaser.Scene {
             const label = this.add.text(rowCenterX - (rowWidth / 2) + 24, y - 1, control.label, {
                 fontSize: compact ? '14px' : '17px',
                 fontFamily: 'Arial Black',
-                fill: '#0f151b',
+                fill: '#f8fbfe',
                 fontWeight: '900',
                 letterSpacing: 1,
-                stroke: '#ffffff',
-                strokeThickness: 2
+                stroke: '#0f151b',
+                strokeThickness: 3
             }).setOrigin(0, 0.5);
             applyTextQuality(label, 8);
             this.audioLabels.push(label);
@@ -265,7 +265,7 @@ export class SettingsScene extends Phaser.Scene {
                 const dotCore = this.add.circle(
                     dotX, y,
                     dotSize,
-                    isFilled ? 0xdce3e8 : 0x87919a
+                    isFilled ? 0xf8fbfe : 0x6d7882
                 );
                 dotCore.setStrokeStyle(1, isFilled ? 0xffffff : 0x5f6871, isFilled ? 0.9 : 0.75);
                 dot.setInteractive({ useHandCursor: true });
@@ -300,7 +300,7 @@ export class SettingsScene extends Phaser.Scene {
             const isFilled = index <= level;
             dot.shell.setFillStyle(0x1b2127, 0.45);
             dot.shell.setStrokeStyle(1, 0xffffff, 0.18);
-            dot.core.setFillStyle(isFilled ? 0xdce3e8 : 0x87919a);
+            dot.core.setFillStyle(isFilled ? 0xf8fbfe : 0x6d7882);
             dot.core.setStrokeStyle(1, isFilled ? 0xffffff : 0x5f6871, isFilled ? 0.9 : 0.75);
         });
 
@@ -319,15 +319,15 @@ export class SettingsScene extends Phaser.Scene {
         const difficultyHeight = compact ? 70 : 84;
 
         const difficultyFrame = this.add.graphics().setDepth(-10);
-        difficultyFrame.fillStyle(0x434b53, 0.34);
+        difficultyFrame.fillStyle(0x04070a, 0.36);
         difficultyFrame.fillRoundedRect(sectionLeft - 6, startY - 24, sectionWidth + 12, difficultyHeight, 18);
-        difficultyFrame.fillStyle(0xe8edf1, 0.95);
+        difficultyFrame.fillStyle(0x1a2026, 0.86);
         difficultyFrame.fillRoundedRect(sectionLeft, startY - 20, sectionWidth, difficultyHeight - 8, 16);
-        difficultyFrame.fillGradientStyle(0xf8fbfd, 0xe8edf1, 0xb6bdc4, 0x8d969d, 1);
+        difficultyFrame.fillGradientStyle(0x4c5761, 0x3e4953, 0x202a33, 0x111820, 1);
         difficultyFrame.fillRoundedRect(sectionLeft + 2, startY - 18, sectionWidth - 4, difficultyHeight - 12, 14);
-        difficultyFrame.lineStyle(3, 0xffffff, 0.18);
+        difficultyFrame.lineStyle(3, 0xf3f7fa, 0.2);
         difficultyFrame.strokeRoundedRect(sectionLeft, startY - 20, sectionWidth, difficultyHeight - 8, 16);
-        difficultyFrame.lineStyle(2, 0x5f6871, 0.4);
+        difficultyFrame.lineStyle(2, 0x06090d, 0.62);
         difficultyFrame.strokeRoundedRect(sectionLeft + 3, startY - 17, sectionWidth - 6, difficultyHeight - 14, 14);
         this.sectionPanels.push(difficultyFrame);
 
@@ -335,9 +335,9 @@ export class SettingsScene extends Phaser.Scene {
         this.add.text(width / 2, startY, 'DIFFICULTY', {
             fontSize: compact ? '14px' : '16px',
             fontFamily: 'Arial Black',
-            fill: '#0f151b',
-            stroke: '#ffffff',
-            strokeThickness: 2,
+            fill: '#f8fbfe',
+            stroke: '#0f151b',
+            strokeThickness: 3,
             letterSpacing: 1
         }).setOrigin(0.5);
 
@@ -360,20 +360,20 @@ export class SettingsScene extends Phaser.Scene {
                 height: buttonHeight,
                 label: diff,
                 fontSize: compact ? 11 : 14,
-                fill: isSelected ? 0xaab4bd : 0x7f8890,
-                hoverFill: 0xc8d0d6,
-                accent: isSelected ? 0xf6f8fa : 0xdfe5ea,
-                inset: 0x606972,
-                hoverAccent: 0xffffff,
-                hoverInset: 0x8b949b,
-                textFill: '#0f151b',
+                fill: 0x4c5761,
+                hoverFill: 0x66727c,
+                accent: isSelected ? 0xf3f6f9 : 0xaab4bd,
+                inset: 0x141b22,
+                hoverAccent: 0xf3f6f9,
+                hoverInset: 0x1e252b,
+                textFill: '#f8fbfe',
                 depth: 28,
                 onClick: () => this.setDifficulty(diff)
             });
 
             button.container.setScale(isSelected ? 1.04 : 1);
-            button.panel.setTint(isSelected ? 0xffffff : 0xf0f4f7);
-            button.text.setColor('#0f151b');
+            button.panel.setTint(isSelected ? 0xffffff : 0xd8dee3);
+            button.text.setColor('#f8fbfe');
             applyTextQuality(button.text, 8);
 
             this.difficultyButtons.push({ diff, ...button });
@@ -384,15 +384,15 @@ export class SettingsScene extends Phaser.Scene {
         const toggleSpacing = compact ? 52 : 64;
         const toggleFrameHeight = compact ? 112 : 150;
         const toggleFrame = this.add.graphics().setDepth(-10);
-        toggleFrame.fillStyle(0x434b53, 0.34);
+        toggleFrame.fillStyle(0x04070a, 0.36);
         toggleFrame.fillRoundedRect(sectionLeft - 6, toggleStartY - 26, sectionWidth + 12, toggleFrameHeight, 18);
-        toggleFrame.fillStyle(0xe8edf1, 0.95);
+        toggleFrame.fillStyle(0x1a2026, 0.86);
         toggleFrame.fillRoundedRect(sectionLeft, toggleStartY - 22, sectionWidth, toggleFrameHeight - 8, 16);
-        toggleFrame.fillGradientStyle(0xf8fbfd, 0xe8edf1, 0xb6bdc4, 0x8d969d, 1);
+        toggleFrame.fillGradientStyle(0x4c5761, 0x3e4953, 0x202a33, 0x111820, 1);
         toggleFrame.fillRoundedRect(sectionLeft + 2, toggleStartY - 20, sectionWidth - 4, toggleFrameHeight - 12, 14);
-        toggleFrame.lineStyle(3, 0xffffff, 0.18);
+        toggleFrame.lineStyle(3, 0xf3f7fa, 0.2);
         toggleFrame.strokeRoundedRect(sectionLeft, toggleStartY - 22, sectionWidth, toggleFrameHeight - 8, 16);
-        toggleFrame.lineStyle(2, 0x5f6871, 0.4);
+        toggleFrame.lineStyle(2, 0x06090d, 0.62);
         toggleFrame.strokeRoundedRect(sectionLeft + 3, toggleStartY - 19, sectionWidth - 6, toggleFrameHeight - 14, 14);
         this.sectionPanels.push(toggleFrame);
 
@@ -408,11 +408,11 @@ export class SettingsScene extends Phaser.Scene {
             const label = this.add.text(labelX, y, control.label, {
                 fontSize: compact ? '13px' : '16px',
                 fontFamily: 'Arial Black',
-                fill: '#0f151b',
+                fill: '#f8fbfe',
                 fontWeight: '900',
                 letterSpacing: 1,
-                stroke: '#ffffff',
-                strokeThickness: 2
+                stroke: '#0f151b',
+                strokeThickness: 3
             }).setOrigin(0, 0.5);
             applyTextQuality(label, 8);
             this.visualLabels.push(label);
@@ -427,13 +427,13 @@ export class SettingsScene extends Phaser.Scene {
                 const handleOffset = compact ? 12 : 16;
                 const handleRadius = compact ? 10 : 12;
                 toggleBg.fillRoundedRect(toggleX - toggleWidth / 2, y - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
-                toggleBg.fillGradientStyle(0xf4f7fa, 0xdde3e8, 0x97a0a8, 0x737d86, 1);
+                toggleBg.fillGradientStyle(0x66727c, 0x4c5761, 0x202a33, 0x141b22, 1);
                 toggleBg.fillRoundedRect(toggleX - (toggleWidth / 2) + 2, y - (toggleHeight / 2) + 2, toggleWidth - 4, toggleHeight - 4, (toggleHeight - 4) / 2);
                 toggleBg.lineStyle(2, 0xffffff, 0.22);
                 toggleBg.strokeRoundedRect(toggleX - toggleWidth / 2, y - toggleHeight / 2, toggleWidth, toggleHeight, toggleHeight / 2);
                 toggleBg.lineStyle(2, 0x5f6871, 0.42);
                 toggleBg.strokeRoundedRect(toggleX - (toggleWidth / 2) + 2, y - (toggleHeight / 2) + 2, toggleWidth - 4, toggleHeight - 4, (toggleHeight - 4) / 2);
-                toggleBg.fillStyle(enabled ? 0xe7ecef : 0x8f989f, 1);
+                toggleBg.fillStyle(enabled ? 0xf8fbfe : 0x6d7882, 1);
                 toggleBg.fillCircle(toggleX + (enabled ? handleOffset : -handleOffset), y, handleRadius);
                 toggleBg.lineStyle(2, enabled ? 0xffffff : 0x5f6871, 0.9);
                 toggleBg.strokeCircle(toggleX + (enabled ? handleOffset : -handleOffset), y, handleRadius);
@@ -463,13 +463,14 @@ export class SettingsScene extends Phaser.Scene {
         this.settings.difficulty = difficulty;
 
         // Update all button colors
-        this.difficultyButtons.forEach(({ diff, button }) => {
+        this.difficultyButtons.forEach(({ diff, container, panel, text }) => {
             const isSelected = diff === difficulty;
-            button.container.setScale(isSelected ? 1.04 : 1);
-            if (button.panel && typeof button.panel.clearTint === 'function') {
-                button.panel.clearTint();
-                button.panel.setTint(isSelected ? 0xffffff : 0xf0f4f7);
+            container.setScale(isSelected ? 1.04 : 1);
+            if (panel && typeof panel.clearTint === 'function') {
+                panel.clearTint();
+                panel.setTint(isSelected ? 0xffffff : 0xd8dee3);
             }
+            if (text) text.setColor('#f8fbfe');
         });
 
         this.saveSettings();
@@ -492,13 +493,13 @@ export class SettingsScene extends Phaser.Scene {
             height: buttonHeight,
             label: 'BACK',
             fontSize: compact ? 16 : 20,
-            fill: 0x8e979f,
-            hoverFill: 0xcdd4da,
-            accent: 0xf5f7fa,
-            inset: 0x65707a,
-            hoverAccent: 0xffffff,
-            hoverInset: 0x8b949b,
-            textFill: '#0f151b',
+            fill: 0x4c5761,
+            hoverFill: 0x66727c,
+            accent: 0xcdd4da,
+            inset: 0x141b22,
+            hoverAccent: 0xf3f6f9,
+            hoverInset: 0x1e252b,
+            textFill: '#f8fbfe',
             onClick: () => this.scene.start('TitleScene')
         });
 
